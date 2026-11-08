@@ -80,6 +80,7 @@ const AGENT_CONTENT = /^(skills|examples|data|evals)\//;
 for (const p of textFiles) {
   let text;
   try { text = readFileSync(p, 'utf8'); } catch { continue; }
+  if (/\.json$/i.test(p)) { try { JSON.parse(text); } catch (e) { fail(p, `invalid JSON: ${e.message}`); } }
   if (/\.mdx?$/i.test(p) && /[–—]/.test(text)) fail(p, 'contains an en or em dash, use a plain hyphen "-"');
   if (/api\.v1\.hinty\.eu|hinty\.token/i.test(text)) fail(p, 'contains a maintainer API address or token name');
   // The repository's own address is fine; any other mention of the maintainer in agent-facing content is not.

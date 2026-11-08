@@ -16,3 +16,15 @@ Thumbs.db
 results/
 .idea/
 .vscode/
+# example build outputs
+*.ehpk
+*.apk
+*.aab
+.check/
+Pods/
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
+DerivedData/
+.kotlin/
+captures/

@@ -1,13 +1,755 @@
 {
   "$schema": "./schema.json",
   "columns": [
-    { "id": "display", "title": "Display" },
-    { "id": "text", "title": "Text from your app" },
-    { "id": "mic", "title": "Mic for your app" },
-    { "id": "input", "title": "Input" },
-    { "id": "phones", "title": "Phones" },
-    { "id": "publish", "title": "Publish to everyone today" },
-    { "id": "test", "title": "Test without hardware" }
+    {
+      "id": "display",
+      "title": "Display"
+    },
+    {
+      "id": "text",
+      "title": "Text from your app"
+    },
+    {
+      "id": "mic",
+      "title": "Mic for your app"
+    },
+    {
+      "id": "input",
+      "title": "Input"
+    },
+    {
+      "id": "phones",
+      "title": "Phones"
+    },
+    {
+      "id": "publish",
+      "title": "Publish to everyone today"
+    },
+    {
+      "id": "test",
+      "title": "Test without hardware"
+    }
   ],
-  "platforms": []
+  "platforms": [
+    {
+      "id": "even-g2",
+      "name": "Even Realities G2",
+      "scope": "full",
+      "reference": "brands/even-g2.md",
+      "facts": {
+        "display": {
+          "value": "576x288 canvas, 16 levels of green, both eyes",
+          "source": "https://hub.evenrealities.com/docs/build/display",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Consumer spec pages and press quote a 640x350 panel; the SDK canvas is 576x288."
+        },
+        "text": {
+          "value": "Even Hub plugin: web app run by the Even phone app",
+          "source": "https://hub.evenrealities.com/docs/get-started/architecture",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Text, list and image containers only; one firmware font; Arabic, Hebrew, Thai, Indic dropped. Phone notifications are also forwarded."
+        },
+        "mic": {
+          "value": "Yes, glasses or phone, 16 kHz PCM, no speech-to-text",
+          "source": "https://hub.evenrealities.com/docs/build/device-apis",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Signed 16-bit little-endian mono via audioControl; STT request is open: https://github.com/even-realities/everything-evenhub/issues/9"
+        },
+        "input": {
+          "value": "Temple touchpads, R1 ring, system menu items",
+          "source": "https://hub.evenrealities.com/docs/reference/glossary",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Tap, double tap, swipe, long press; root double tap must open the system exit dialog."
+        },
+        "speaker": {
+          "value": "None, no audio output API",
+          "source": "https://hub.evenrealities.com/docs/get-started/overview",
+          "checked": "2026-11-08",
+          "confidence": "official"
+        },
+        "phones": {
+          "value": "iOS and Android (WebView in the Even app)",
+          "source": "https://hub.evenrealities.com/docs/get-started/architecture",
+          "checked": "2026-11-08",
+          "confidence": "official"
+        },
+        "publish": {
+          "value": "Yes, Even Hub store, manual review, no paid apps yet",
+          "source": "https://hub.evenrealities.com/docs/reference/faq",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Beta channel with invited testers; worldwide only; review time not published. Review rules: https://hub.evenrealities.com/docs/ship/app-submission"
+        },
+        "test": {
+          "value": "Official simulator (Windows, macOS, Linux), HTTP API",
+          "source": "https://hub.evenrealities.com/docs/test/simulator",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Not a hardware emulator: no BLE timing, lifecycle, permissions or status events."
+        },
+        "skill": {
+          "value": "npx skills add even-realities/everything-evenhub",
+          "source": "https://github.com/even-realities/everything-evenhub",
+          "checked": "2026-11-08",
+          "confidence": "official"
+        }
+      }
+    },
+    {
+      "id": "meta-ray-ban-display",
+      "name": "Meta Ray-Ban Display + Neural Band",
+      "scope": "full",
+      "reference": "brands/meta-display.md",
+      "facts": {
+        "display": {
+          "value": "600x600, full colour, right eye only, ~20 deg FOV",
+          "source": "https://roadtovr.com/meta-ray-ban-smart-glasses-display-price-release-date-specs/",
+          "checked": "2026-11-08",
+          "confidence": "press",
+          "note": "600x600 is confirmed in Meta's DAT display docs. Dims after 20 s, sleeps at 25 s (DAT docs); no API to observe or wake it."
+        },
+        "text": {
+          "value": "DAT Display API from a phone app, or a Web App",
+          "source": "https://wearables.developer.meta.com/docs/develop/dat/display-overview/",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Web Apps: HTTPS page in the browser on the glasses, see https://wearables.developer.meta.com/docs/develop/webapps"
+        },
+        "mic": {
+          "value": "DAT: HFP, ends Display session today; Web Apps: none",
+          "source": "https://github.com/meta/meta-wearables-dat-android/issues/210",
+          "checked": "2026-11-08",
+          "confidence": "community",
+          "note": "HFP is beamformed to the wearer (official docs). Meta staff on 2026-11-04: a Display fix comes 'at a later date'. Use the phone mic."
+        },
+        "input": {
+          "value": "Neural Band + touchpad: button taps; Web Apps: arrow keys",
+          "source": "https://wearables.developer.meta.com/docs/develop/webapps/build/input-and-navigation/",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Back ends a DAT session and is not delivered to apps (ios #349). Raw Inputs capability is beta only."
+        },
+        "phones": {
+          "value": "DAT: Android 10+, iOS 17.2+; Web Apps run on the glasses",
+          "source": "https://wearables.developer.meta.com/docs/develop/dat/getting-started-toolkit/",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "DAT 1.0.1 needs Meta AI app V292+ and glasses V128+, Kotlin 2.2+, Xcode 26.4+."
+        },
+        "publish": {
+          "value": "No: DAT Beta channel testers only; Web Apps via Dev Mode",
+          "source": "https://github.com/meta/meta-wearables-dat-android/discussions/229",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Meta staff 2026-11-05: publishing to all users isn't open. iOS App Store blocked by MFi (ios discussion #313). Web Apps show 'unverified'."
+        },
+        "test": {
+          "value": "MockDeviceKit display preview, Chrome simulator extension",
+          "source": "https://wearables.developer.meta.com/docs/develop/dat/display-simulation/",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Extension 'Meta Ray-Ban Display Simulator' also previews Web Apps; it does not do spatial navigation."
+        },
+        "countries": {
+          "value": "US, Canada, UK, France, Germany, Italy",
+          "source": "https://www.meta.com/help/ai-glasses/4961066940605960/",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Web Apps may be hidden outside supported countries or for accounts failing age checks; Developer Mode changes neither."
+        }
+      }
+    },
+    {
+      "id": "rokid-glasses",
+      "name": "Rokid Glasses",
+      "scope": "full",
+      "reference": "brands/rokid.md",
+      "facts": {
+        "display": {
+          "value": "Monochrome green micro-LED, both eyes, ~480 px wide",
+          "source": "https://www.tomsguide.com/computing/smart-glasses/rokid-glasses-review",
+          "checked": "2026-11-08",
+          "confidence": "press",
+          "note": "Press: 480x398 per eye, 23 degrees, 1500 nits; retailers print other figures. Community measures a 480x640 portrait Android display at 240 dpi. Black is transparent."
+        },
+        "text": {
+          "value": "CXR-L custom view from your phone app, or notifications",
+          "source": "https://developerdoc.rokid.com/sdk?lang=zh",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Ladder rungs 1, 4 and 5. CXR-L goes through the Hi Rokid app; CUSTOM_VIEW takes a JSON view tree and incremental text updates."
+        },
+        "mic": {
+          "value": "Yes, CXR-L audio stream, PCM 16 kHz mono 16-bit",
+          "source": "https://developerdoc.rokid.com/sdk?lang=zh",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "From the CXR-L 1.1.2 changelog. Needs the MICROPHONE scope and a started session; pauses while the Rokid assistant runs."
+        },
+        "input": {
+          "value": "Taps do not reach phone apps; touchpad needs a glasses APK",
+          "source": "https://github.com/fasaiph/rokid-cxr-glasses",
+          "checked": "2026-11-08",
+          "confidence": "community",
+          "note": "Two independent device tests (iOS and Android). Phone apps get pause, resume, close, wearing and screen events. Glasses-side apps (CXR-S) get the temple touchpad."
+        },
+        "phones": {
+          "value": "Android (Maven client-l), iOS (RGCxrClient)",
+          "source": "https://developerdoc.rokid.com/sdk?lang=zh",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Android minSdk 28, ARM only. The iOS pod needs Rokid's private specs source, or the source modules from Rokid's iOS sample. Hi Rokid comes as Global and China builds."
+        },
+        "publish": {
+          "value": "Yes, your own store listing; no Rokid review in the docs",
+          "source": "https://developerdoc.rokid.com/sdk?lang=zh",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "CXR-L is marked public; the user approves your app inside Hi Rokid. Community reports a one-time unverified-app prompt. iOS docs ask for a Rokid developer account (community says not needed, unverified). AIUI agents use the reviewed Hi Rokid Agent Store."
+        },
+        "test": {
+          "value": "No CXR-L simulator; fake the session behind an interface",
+          "source": "https://developerdoc.rokid.com/sdk?lang=zh",
+          "checked": "2026-11-08",
+          "confidence": "unverified",
+          "note": "No simulator found in the CXR-L docs. Native libs are ARM only, so x86 emulators cannot create a session. AIUI Studio has a web simulator for AIUI agents only."
+        },
+        "sdk": {
+          "value": "CXR-L 1.1.2 (2026-09-08), iOS RGCxrClient 1.1.1.1",
+          "source": "https://maven.rokid.com/repository/maven-public/com/rokid/cxr/client-l/maven-metadata.xml",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Maven also carries 1.2.X-SNAPSHOT (2026-11-05). CXR-M (business only, cannot run next to Hi Rokid) is 1.1.0 on the portal, 1.2.2 on Maven."
+        },
+        "licence": {
+          "value": "No published licence for CXR-L",
+          "source": "https://maven.rokid.com/repository/maven-public/com/rokid/cxr/client-l/1.1.2/client-l-1.1.2.pom",
+          "checked": "2026-11-08",
+          "confidence": "unverified",
+          "note": "The POM has no licenses element and the AAR has no licence file; no licence page found on the developer portal. Treat as all rights reserved."
+        },
+        "market": {
+          "value": "Rokid claims No. 1 in display AI glasses, 41%, H1 2026",
+          "source": "https://mixed-news.com/en/?p=35020",
+          "checked": "2026-11-08",
+          "confidence": "press",
+          "note": "From Rokid's 2026-09-29 press release citing Counterpoint; Counterpoint has not published the segment table itself (MIXED, 2026-10-03). Display models were about 4% of AI glasses shipped in H1 2026."
+        }
+      }
+    },
+    {
+      "id": "vuzix-z100",
+      "name": "Vuzix Z100",
+      "scope": "full",
+      "reference": "brands/vuzix-z100.md",
+      "facts": {
+        "display": {
+          "value": "640x480, monochrome green, right eye",
+          "source": "https://www.vuzix.com/products/z100-smart-glasses",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Product page read via search (site rate-limited); 640x480 also in the SDK Canvas constants. About 30 degrees, 4 brightness levels."
+        },
+        "text": {
+          "value": "Ultralite SDK in your phone app, or mirrored notifications",
+          "source": "https://github.com/Vuzix/ultralite-sdk-android",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Ladder rungs 1 and 4. Full control is last-requester-wins; sendNotification works without control."
+        },
+        "mic": {
+          "value": "None, use the phone microphone",
+          "source": "https://vuzix.github.io/ultralite-sdk-android/javadoc/allclasses-index.html",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "No audio API in either SDK; no speaker or camera either. Extentos (2026-08-24) cites the Vuzix spec as Audio: None."
+        },
+        "input": {
+          "value": "1-3 taps anywhere on the frame, power button events",
+          "source": "https://support.vuzix.com/docs/user-input",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "No left/right, no swipes. Taps need control and maxNumTaps 1-3 (default 0 reports nothing)."
+        },
+        "phones": {
+          "value": "Android 12+ with Vuzix Connect; iOS 14+",
+          "source": "https://github.com/Vuzix/ultralite-sdk-android",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "iOS also watchOS 9+ and macOS 11+; on iOS your app links the glasses itself (https://github.com/Vuzix/UltraliteSDK-releases-iOS)."
+        },
+        "publish": {
+          "value": "Yes, as a normal app on Google Play or the App Store",
+          "source": "https://extentos.com/docs/ecosystem/platforms/vuzix",
+          "checked": "2026-11-08",
+          "confidence": "community",
+          "note": "No Vuzix store or review for Z100 apps. SDK licence accepted by use; military, defence, law enforcement and first-responder apps need written consent."
+        },
+        "test": {
+          "value": "No simulator; fake the SDK behind an interface",
+          "source": "https://github.com/Vuzix/UltraliteSDK-releases-iOS",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Vuzix documents no simulator or emulator. The iOS XCFramework runs in the iOS Simulator but connects to nothing."
+        },
+        "sdk": {
+          "value": "Android 1.9 (JitPack), iOS 1.9.0 (SPM, CocoaPods)",
+          "source": "https://jitpack.io/api/builds/com.vuzix/ultralite-sdk-android/latest",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Both released March 2025 (Android tag 1.9 on 2025-03-14, iOS v1.9.0 on 2025-03-17); no newer release."
+        },
+        "licence": {
+          "value": "Proprietary, accepted by use, royalty-free",
+          "source": "https://www.vuzix.com/pages/vuzix%C2%AE-software-development-kit-license-and-confidentiality-agreement",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Agreement dated 2023-07-24. No copying, redistribution or reverse engineering of the SDK (s3.3). Samples are BSD-3-Clause."
+        },
+        "availability": {
+          "value": "USD 499 at launch (2024-11); current sale unclear",
+          "source": "https://ir.vuzix.com/news-events/press-releases/detail/2104/vuzix-announces-general-availability-of-z100-smart-glasses",
+          "checked": "2026-11-08",
+          "confidence": "unverified",
+          "note": "Extentos reported the Z100 no longer sold on vuzix.com as of 2026-07-30; not confirmed on 2026-11-08. Mentra Mach1 is the same hardware."
+        }
+      }
+    },
+    {
+      "id": "meta-audio-glasses",
+      "name": "Ray-Ban Meta, Oakley Meta, Ray-Ban Meta Audio",
+      "scope": "full",
+      "reference": "brands/meta-audio-glasses.md",
+      "facts": {
+        "display": {
+          "value": "None (open-ear speakers, mics; camera except Audio)",
+          "source": "https://wearables.developer.meta.com/docs/develop/dat/getting-started-toolkit/",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Ray-Ban Meta Audio has no camera and is not supported by DAT (Meta staff, ios #345, 2026-11-02). Gen 3 is supported (android discussion #221)."
+        },
+        "text": {
+          "value": "None; voice in the ear (TTS over Bluetooth A2DP)",
+          "source": "https://wearables.developer.meta.com/docs/develop/dat/microphones-and-speakers/",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "DAT has no audio output API; A2DP is standard Bluetooth and needs no Meta SDK."
+        },
+        "mic": {
+          "value": "HFP headset mic (wearer only); DAT in-stream PCM is beta",
+          "source": "https://wearables.developer.meta.com/docs/develop/dat/microphones-and-speakers/",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "HFP drops output to 16/8 kHz mono and ends a running DAT session on current firmware (android #206). In-stream audio needs a camera stream; LED stays on."
+        },
+        "input": {
+          "value": "Touchpad, capture button; DAT Inputs is beta only",
+          "source": "https://wearables.developer.meta.com/docs/develop/dat/inputs/",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "In a DAT session single tap pauses and tap-and-hold stops it. Media-key delivery to your app without DAT is unverified."
+        },
+        "phones": {
+          "value": "Any phone (Bluetooth); DAT: Android 10+, iOS 17.2+",
+          "source": "https://wearables.developer.meta.com/docs/develop/dat/getting-started-toolkit/",
+          "checked": "2026-11-08",
+          "confidence": "official"
+        },
+        "publish": {
+          "value": "Bluetooth audio app: yes; DAT: Beta channel testers only",
+          "source": "https://github.com/meta/meta-wearables-dat-android/discussions/229",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Plain Bluetooth use involves no Meta component (our reading). DAT on iOS: TestFlight only, App Store blocked by MFi."
+        },
+        "test": {
+          "value": "Any Bluetooth headset; DAT MockDeviceKit",
+          "source": "https://wearables.developer.meta.com/docs/develop/dat/mock-device-kit/",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "MockDeviceKit covers camera, device state, inputs and speech; not HFP conflicts or real gestures."
+        }
+      }
+    },
+    {
+      "id": "usb-c-display-glasses",
+      "name": "USB-C display glasses (XREAL, VITURE, RayNeo Air)",
+      "scope": "full",
+      "reference": "brands/usb-c-displays.md",
+      "facts": {
+        "display": {
+          "value": "External monitor over USB-C DP Alt Mode, tinted",
+          "source": "https://tutorials.xreal.com/docs/glasses/one-series/first-use/connect-device",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "VITURE and RayNeo document the same DP Alt Mode connection."
+        },
+        "text": {
+          "value": "Android Presentation, iOS external display scene",
+          "source": "https://developer.android.com/reference/android/app/Presentation",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "iOS: https://developer.apple.com/documentation/uikit/presenting-content-on-a-connected-display (iOS 27 needs a scene accessory)."
+        },
+        "mic": {
+          "value": "Use the phone mic; glasses audio varies by model",
+          "source": "https://viture.gorgias.help/en-US/articles/luma-series-xr-glasses-%E2%80%94-specs-and-functions-315281",
+          "checked": "2026-11-08",
+          "confidence": "unverified",
+          "note": "Glasses with mics may appear as a USB audio device and take over routing."
+        },
+        "input": {
+          "value": "None to your app; use phone or headset buttons",
+          "source": "https://developer.android.com/reference/android/app/Presentation",
+          "checked": "2026-11-08",
+          "confidence": "unverified",
+          "note": "Buttons on the glasses control brightness and modes; not confirmed per model."
+        },
+        "phones": {
+          "value": "Android with DP out; iPhone 15+ except 16e, 17e, Air",
+          "source": "https://support.apple.com/en-us/105099",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Apple list: iPhone 18 Pro, Duo, 17 (not 17e), 16 (not 16e), 15. Android: Pixel 8 and later, Samsung flagships."
+        },
+        "publish": {
+          "value": "Yes, your normal app store listing, no vendor step",
+          "source": "https://www.rayneo.com/pages/product-compatibilities",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Inference: vendors document plain DP Alt Mode, so no SDK or approval is involved."
+        },
+        "test": {
+          "value": "Android emulator secondary display, iOS Simulator",
+          "source": "https://developer.android.com/studio/run/emulator-extended-controls",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Also Developer options > Simulate secondary displays."
+        }
+      }
+    },
+    {
+      "id": "standalone-android-glasses",
+      "name": "Standalone Android glasses (RayNeo X3 Pro, INMO Air3)",
+      "scope": "full",
+      "reference": "brands/standalone-android-glasses.md",
+      "facts": {
+        "display": {
+          "value": "X3 Pro 640x480 colour, both eyes; Air3 1080p",
+          "source": "https://rayneo.gitbook.io/rayneo-devdoc/x-xi-lie/she-ji-gui-fan.md",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "INMO Air3 resolution from press."
+        },
+        "text": {
+          "value": "Web page in a browser on the glasses, or your APK",
+          "source": "https://rayneo.gitbook.io/rayneo-devdoc/x-xi-lie/she-bei-jie-shao",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "RayNeo has no confirmed built-in browser; the community TapLink X3 browser is sideloaded."
+        },
+        "mic": {
+          "value": "On the glasses via normal Android audio APIs",
+          "source": "https://rayneo.gitbook.io/rayneo-devdoc/x-xi-lie/she-bei-jie-shao",
+          "checked": "2026-11-08",
+          "confidence": "unverified"
+        },
+        "input": {
+          "value": "Temple touchpad; RayNeo sends MotionEvents",
+          "source": "https://rayneo.gitbook.io/rayneo-devdoc/x-xi-lie/android-kai-fa/neng-li-jie-shao/chu-kong-ban-guan-li.md",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "INMO Air3 key mapping is not documented officially."
+        },
+        "phones": {
+          "value": "Glasses run Android (X3 Pro: 12, Air3: 14)",
+          "source": "https://rayneo.gitbook.io/rayneo-devdoc/x-xi-lie/she-bei-jie-shao",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Air3: https://www.inmo.com/blogs/news/whats-difference-between-inmo-air3-and-meta-ray-ban-display-glasses"
+        },
+        "publish": {
+          "value": "RayNeo: sideload via ADB; Air3: Google Play",
+          "source": "https://rayneo.gitbook.io/rayneo-devdoc/chang-jian-wen-ti/adb-tiao-shi/adb-zhi-ling.md",
+          "checked": "2026-11-08",
+          "confidence": "official"
+        },
+        "test": {
+          "value": "Android emulator at 640x480 (layout only)",
+          "source": "https://github.com/hkust-spark/xg-glass-sdk",
+          "checked": "2026-11-08",
+          "confidence": "unverified",
+          "note": "Our suggestion; xg-glass-sdk also has a simulator mode."
+        }
+      }
+    },
+    {
+      "id": "notification-glasses",
+      "name": "Any display glasses via phone notifications (no SDK)",
+      "scope": "full",
+      "reference": "brands/notification-glasses.md",
+      "facts": {
+        "display": {
+          "value": "Title plus 1-3 lines for a few seconds, per brand",
+          "source": "https://support.evenrealities.com/hc/en-us/articles/14274501482639-Notifications",
+          "checked": "2026-11-08",
+          "confidence": "unverified",
+          "note": "Length and display time are not documented by most vendors."
+        },
+        "text": {
+          "value": "Post a normal notification; companion app mirrors it",
+          "source": "https://developer.android.com/develop/xr/jetpack-xr-sdk/glasses/notifications/behavior",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Even, Rokid, Vuzix, RayNeo, INMO Go3, Halliday, MentraOS and Android XR mirror; Meta Display is limited."
+        },
+        "mic": {
+          "value": "Not part of this path; record on the phone",
+          "source": "https://developer.android.com/develop/xr/jetpack-xr-sdk/glasses/notifications/behavior",
+          "checked": "2026-11-08",
+          "confidence": "unverified",
+          "note": "Follows from the mechanism; no vendor states it."
+        },
+        "input": {
+          "value": "Dismiss; direct reply on Android XR MessagingStyle",
+          "source": "https://developer.android.com/develop/xr/jetpack-xr-sdk/glasses/notifications/behavior",
+          "checked": "2026-11-08",
+          "confidence": "official"
+        },
+        "phones": {
+          "value": "Android (listener), iOS (ANCS), varies by brand",
+          "source": "https://docs.mentraglass.com/glasses-oems/firmware-spec.md",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "RayNeo forwarding from iPhone is unreliable per press."
+        },
+        "publish": {
+          "value": "Yes, no approval; user enables your app per brand",
+          "source": "https://developer.android.com/develop/xr/jetpack-xr-sdk/glasses/notifications/behavior",
+          "checked": "2026-11-08",
+          "confidence": "official"
+        },
+        "test": {
+          "value": "Android XR glasses emulator; others need hardware",
+          "source": "https://developer.android.com/develop/xr/jetpack-xr-sdk/run/emulator/glasses",
+          "checked": "2026-11-08",
+          "confidence": "official"
+        }
+      }
+    },
+    {
+      "id": "android-xr-display",
+      "name": "Android XR display and audio glasses",
+      "scope": "pointer",
+      "reference": "brands/android-xr.md",
+      "facts": {
+        "display": {
+          "value": "Display glasses: none on sale yet",
+          "source": "https://developer.android.com/develop/xr/devices",
+          "checked": "2026-11-08",
+          "confidence": "press",
+          "note": "No vendor gives a date. Audio glasses (no display) pre-order from 2026-11-12 per Warby Parker, via press."
+        },
+        "text": {
+          "value": "Projected activity + Compose Glimmer (alpha)",
+          "source": "https://developer.android.com/jetpack/androidx/releases/xr-glimmer",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Glimmer 1.0.0-alpha22 needs compileSdk 37.1, AGP 9.2 or newer, Kotlin 2.2."
+        },
+        "mic": {
+          "value": "Yes, glasses mic over Bluetooth HFP, 16 kHz",
+          "source": "https://developer.android.com/develop/xr/jetpack-xr-sdk/access-hardware-projected-context",
+          "checked": "2026-11-08",
+          "confidence": "official"
+        },
+        "input": {
+          "value": "Touchpad gestures, camera button, voice",
+          "source": "https://developer.android.com/develop/xr/jetpack-xr-sdk/glasses/physical-input",
+          "checked": "2026-11-08",
+          "confidence": "official"
+        },
+        "phones": {
+          "value": "Android; the activity runs in your phone app",
+          "source": "https://developer.android.com/develop/xr/jetpack-xr-sdk/glasses/first-activity",
+          "checked": "2026-11-08",
+          "confidence": "official"
+        },
+        "publish": {
+          "value": "Audio glasses: Google Play; display: not yet",
+          "source": "https://developer.android.com/develop/xr/package-and-distribute",
+          "checked": "2026-11-08",
+          "confidence": "official"
+        },
+        "test": {
+          "value": "Glasses emulator in Android Studio Canary",
+          "source": "https://developer.android.com/develop/xr/jetpack-xr-sdk/run/emulator/glasses",
+          "checked": "2026-11-08",
+          "confidence": "official"
+        }
+      }
+    },
+    {
+      "id": "mentraos",
+      "name": "MentraOS (Even G1/G2, Vuzix Z100, Mentra Live)",
+      "scope": "pointer",
+      "reference": "brands/mentra.md",
+      "facts": {
+        "display": {
+          "value": "Per glasses; design for 500x220 text",
+          "source": "https://docs.mentraglass.com/app-devs/core-concepts/display/layouts.md",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Mentra Live has no display."
+        },
+        "text": {
+          "value": "Miniapp: session.display.render (beta SDK)",
+          "source": "https://docs.mentraglass.com/app-devs/core-concepts/display/layouts.md",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "@mentra/miniapp 3.3.0, 2026-10-31."
+        },
+        "mic": {
+          "value": "Yes, session.mic chunks (PCM or LC3)",
+          "source": "https://docs.mentraglass.com/app-devs/core-concepts/microphone/audio-chunks.md",
+          "checked": "2026-11-08",
+          "confidence": "official"
+        },
+        "input": {
+          "value": "Taps, swipes, long press, button (per glasses)",
+          "source": "https://docs.mentraglass.com/app-devs/core-concepts/input.md",
+          "checked": "2026-11-08",
+          "confidence": "official"
+        },
+        "phones": {
+          "value": "Android and iOS (inside the Mentra app)",
+          "source": "https://docs.mentraglass.com/app-devs/core-concepts/two-layer-architecture.md",
+          "checked": "2026-11-08",
+          "confidence": "official"
+        },
+        "publish": {
+          "value": "No: miniapps cannot be distributed yet",
+          "source": "https://docs.mentraglass.com/app-devs/getting-started/distribution.md",
+          "checked": "2026-11-08",
+          "confidence": "official"
+        },
+        "test": {
+          "value": "Runs without glasses, nothing drawn; no simulator",
+          "source": "https://docs.mentraglass.com/app-devs/getting-started/quickstart.md",
+          "checked": "2026-11-08",
+          "confidence": "official"
+        }
+      }
+    },
+    {
+      "id": "brilliant-labs-halo",
+      "name": "Brilliant Labs Halo (and Frame)",
+      "scope": "pointer",
+      "reference": "brands/brilliant-labs.md",
+      "facts": {
+        "display": {
+          "value": "Halo: colour, 256x256 round area; Frame 640x400",
+          "source": "https://docs.brilliant.xyz/llms-full.txt",
+          "checked": "2026-11-08",
+          "confidence": "official"
+        },
+        "text": {
+          "value": "Lua sent over BLE from your host app",
+          "source": "https://docs.brilliant.xyz/llms-full.txt",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Halo font is ASCII only."
+        },
+        "mic": {
+          "value": "Yes, 2 mics (PCM or LC3) via Lua",
+          "source": "https://docs.brilliant.xyz/llms-full.txt",
+          "checked": "2026-11-08",
+          "confidence": "official"
+        },
+        "input": {
+          "value": "Halo: button and IMU taps; Frame: taps",
+          "source": "https://docs.brilliant.xyz/llms-full.txt",
+          "checked": "2026-11-08",
+          "confidence": "official"
+        },
+        "phones": {
+          "value": "Any BLE host: Android, iOS, desktop, web",
+          "source": "https://github.com/brilliantlabsAR/brilliant_sdk",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Official SDKs: Python, Flutter, Web Bluetooth."
+        },
+        "publish": {
+          "value": "Yes, ship your own host app; no store",
+          "source": "https://docs.brilliant.xyz/llms-full.txt",
+          "checked": "2026-11-08",
+          "confidence": "official"
+        },
+        "test": {
+          "value": "halo-emulator (PyPI) for the Lua side",
+          "source": "https://pypi.org/project/halo-emulator/",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Experimental, 2.3.0."
+        }
+      }
+    },
+    {
+      "id": "snap-spectacles",
+      "name": "Snap Specs (Spectacles)",
+      "scope": "pointer",
+      "reference": "brands/snap-spectacles.md",
+      "facts": {
+        "display": {
+          "value": "Standalone AR, both eyes; Specs not shipping yet",
+          "source": "https://www.specs.com/smart-glasses/specs-27",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "From $2,195, pre-order in the US, UK and France, expected Fall 2026."
+        },
+        "text": {
+          "value": "Lens in Lens Studio 5.24 (TypeScript, Text)",
+          "source": "https://ar.snap.com/download",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Spectacles (2024) stays on Lens Studio 5.15.4."
+        },
+        "mic": {
+          "value": "Yes, ASR module; prompt and LED with internet",
+          "source": "https://developers.snap.com/spectacles/permission-privacy/transparent-permission",
+          "checked": "2026-11-08",
+          "confidence": "official"
+        },
+        "input": {
+          "value": "Hand pinch (GestureModule), voice",
+          "source": "https://developers.snap.com/spectacles/about-spectacles-features/apis/gesture-module",
+          "checked": "2026-11-08",
+          "confidence": "official"
+        },
+        "phones": {
+          "value": "Runs on the glasses (Snap OS)",
+          "source": "https://developers.snap.com/spectacles",
+          "checked": "2026-11-08",
+          "confidence": "official"
+        },
+        "publish": {
+          "value": "Snap review 2-3 days; no Experimental APIs",
+          "source": "https://developers.snap.com/spectacles/get-started/start-building/publishing-lens",
+          "checked": "2026-11-08",
+          "confidence": "official",
+          "note": "Policy: no functionality behind a paywall."
+        },
+        "test": {
+          "value": "Lens Studio Preview, device override Spectacles",
+          "source": "https://developers.snap.com/spectacles/get-started/start-building/preview-panel",
+          "checked": "2026-11-08",
+          "confidence": "official"
+        }
+      }
+    }
+  ]
 }

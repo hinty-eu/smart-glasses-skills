@@ -12,10 +12,9 @@ const TAG = { official: 'O', community: 'S', press: 'P', unverified: '?' };
 const check = process.argv.includes('--check');
 
 const data = JSON.parse(readFileSync('data/platforms.json', 'utf8'));
-const columnIds = new Set(data.columns.map(c => c.id));
 for (const p of data.platforms) {
   for (const [id, f] of Object.entries(p.facts)) {
-    if (!columnIds.has(id)) throw new Error(`${p.id}: unknown column "${id}"`);
+    // Facts outside the table columns (sdk, licence, countries...) are kept as data and validated, not rendered.
     for (const key of ['value', 'source', 'checked', 'confidence']) {
       if (!f[key]) throw new Error(`${p.id}.${id}: missing "${key}"`);
     }

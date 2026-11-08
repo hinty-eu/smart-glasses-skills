@@ -1,0 +1,30 @@
+name: Links
+
+# Runs on a schedule instead of on every pull request, so a vendor site being down for an hour does not block work.
+on:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check links
+        id: lychee
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: --no-progress --max-retries 3 --accept 200,206,429 --exclude-path LICENSE --exclude-path LICENSE-DATA "**/*.md" data/platforms.json
+          fail: false
+      - name: Open an issue when links are broken
+        if: steps.lychee.outputs.exit_code != 0
+        uses: peter-evans/create-issue-from-file@v5
+        with:
+          title: Broken links found by the weekly check
+          content-filepath: ./lychee/out.md
+          labels: links

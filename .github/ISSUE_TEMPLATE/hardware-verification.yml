@@ -1,0 +1,51 @@
+name: Hardware verification report
+description: You ran an example or followed a skill on real glasses. Tell us what happened.
+title: "[verified] <glasses model> - <example or skill>"
+labels: ["hardware-verification"]
+body:
+  - type: markdown
+    attributes:
+      value: Thank you. Reports from real devices are how facts here move from "docs-only" to "hardware".
+  - type: input
+    id: glasses
+    attributes:
+      label: Glasses model and firmware
+      placeholder: "Rokid Glasses, firmware 1.2.3"
+    validations:
+      required: true
+  - type: input
+    id: phone
+    attributes:
+      label: Phone, OS version and companion app version
+      placeholder: "Pixel 8, Android 16, Hi Rokid 2.4.1 (Global)"
+    validations:
+      required: true
+  - type: input
+    id: what
+    attributes:
+      label: Example or skill you tested
+      placeholder: "examples/live-captions/android, Rokid target"
+    validations:
+      required: true
+  - type: dropdown
+    id: result
+    attributes:
+      label: Result
+      options:
+        - Works as described
+        - Works with changes (describe below)
+        - Does not work
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: What you did, what you saw, anything that differs from the docs. Photos of the display are welcome.
+  - type: input
+    id: date
+    attributes:
+      label: Date of the test
+      placeholder: "2026-11-20"
+    validations:
+      required: true

@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # Keep install tests out of the public skills.sh counters.
+  DISABLE_TELEMETRY: "1"
+  DO_NOT_TRACK: "1"
+
+jobs:
+  checks:
+    name: Skills, limits and tables
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Repository checks
+        run: node scripts/check-repo.mjs
+      - name: Tables match data
+        run: node scripts/gen-tables.mjs --check
+      - name: JSON files parse
+        run: |
+          for f in $(git ls-files '*.json'); do
+            node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))" || { echo "Invalid JSON: $f"; exit 1; }
+          done
+
+  plugin:
+    name: Claude Code plugin manifest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm install -g @anthropic-ai/claude-code
+      - run: claude plugin validate .
+
+  install:
+    name: Install with npx skills
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: List skills in the repository
+        run: npx -y skills add "$GITHUB_WORKSPACE" --list
+      - name: Install every skill into an empty project
+        run: |
+          tmp="$(mktemp -d)"
+          cd "$tmp"
+          npx -y skills add "$GITHUB_WORKSPACE" --skill '*' --agent claude-code --copy -y
+          expected="$(ls "$GITHUB_WORKSPACE/skills" | sort)"
+          installed="$(ls .claude/skills | sort)"
+          echo "expected: $expected"; echo "installed: $installed"
+          [ "$expected" = "$installed" ] || { echo "Installed skills differ from skills/"; exit 1; }
+
+  secrets:
+    name: Secret scan (full history)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Install gitleaks
+        env:
+          GITLEAKS_VERSION: 8.30.1
+        run: |
+          base="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}"
+          curl -sSfLO "$base/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSfLO "$base/gitleaks_${GITLEAKS_VERSION}_checksums.txt"
+          grep "linux_x64.tar.gz" "gitleaks_${GITLEAKS_VERSION}_checksums.txt" | sha256sum -c -
+          tar -xzf "gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" gitleaks
+      - name: Scan
+        run: ./gitleaks git --redact --verbose --exit-code 1 .

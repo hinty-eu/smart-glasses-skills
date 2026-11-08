@@ -1,0 +1,22 @@
+name: New brand or platform
+description: Propose glasses or a platform the skills should cover.
+labels: ["new-brand"]
+body:
+  - type: input
+    id: brand
+    attributes:
+      label: Brand and model
+    validations:
+      required: true
+  - type: textarea
+    id: sdk
+    attributes:
+      label: How apps get text or UI onto the glasses
+      description: SDK, web app, notifications, on-device app. Links to official docs, please.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it matters
+      description: Who builds for it, can apps be published today, can it be tested without hardware.

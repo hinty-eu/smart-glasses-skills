@@ -1,0 +1,9 @@
+{
+  "$schema": "https://skills.sh/schemas/skills.sh.schema.json",
+  "notGrouped": "bottom",
+  "groupings": [
+    { "title": "Start here", "description": "Pick a target, get text onto any glasses, input, audio, testing and publishing.", "skills": ["smart-glasses"] },
+    { "title": "Patterns", "description": "Live captions, translation and real-time hints on glasses.", "skills": ["smart-glasses-live-captions"] },
+    { "title": "Brands without an official skill", "description": "Deep guides where the vendor ships no agent skill.", "skills": ["smart-glasses-rokid", "smart-glasses-vuzix"] }
+  ]
+}

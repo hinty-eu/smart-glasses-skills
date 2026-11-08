@@ -1,0 +1,24 @@
+name: Wrong or outdated fact
+description: Something in a skill, a table or an example is wrong or no longer true.
+labels: ["facts"]
+body:
+  - type: input
+    id: where
+    attributes:
+      label: Where
+      placeholder: "skills/smart-glasses/references/publishing.md, Meta row"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What is wrong and what is correct
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Source (link) and date
+      placeholder: "https://... checked 2026-11-20"
+    validations:
+      required: true

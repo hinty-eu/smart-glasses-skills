@@ -1,0 +1,13 @@
+{
+  "$schema": "./schema.json",
+  "columns": [
+    { "id": "display", "title": "Display" },
+    { "id": "text", "title": "Text from your app" },
+    { "id": "mic", "title": "Mic for your app" },
+    { "id": "input", "title": "Input" },
+    { "id": "phones", "title": "Phones" },
+    { "id": "publish", "title": "Publish to everyone today" },
+    { "id": "test", "title": "Test without hardware" }
+  ],
+  "platforms": []
+}

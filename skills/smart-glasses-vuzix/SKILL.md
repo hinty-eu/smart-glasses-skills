@@ -1,6 +1,6 @@
 ---
 name: smart-glasses-vuzix
-description: Vuzix Z100 apps on Android and iOS with the Vuzix Ultralite SDK - bind through Vuzix Connect on Android or link the glasses inside your own app on iOS, request and release control of the display, draw text on the 640x480 monochrome green canvas, run live captions with LiveText, send notifications without control, and handle 1 to 3 taps on the frame. Covers JitPack, Swift Package Manager and CocoaPods setup, the SDK licence, background behaviour and the missing microphone and speaker. Use when the user mentions Vuzix, Z100, Ultralite, UltraliteSDK, Vuzix Connect or the Mentra Mach1 (same hardware), even for small tasks such as mapping taps to actions, because taps only arrive while the app holds control with a tap count set. Not for Vuzix Blade, Blade 2, M400 or M4000, which run Android on the glasses themselves, and not for writing MentraOS miniapps.
+description: Vuzix Z100 apps on Android and iOS with the Vuzix Ultralite SDK - bind through Vuzix Connect on Android or link the glasses inside your own app on iOS, request and release control of the display, draw text on the 640x480 monochrome green canvas, run live captions with LiveText, send notifications without control, and handle 1 to 3 taps on the frame. Covers JitPack, Swift Package Manager and CocoaPods setup, the SDK licence, background behaviour and the missing microphone and speaker. The Z100 is no longer sold, so this is for apps that serve existing owners. Use when the user mentions Vuzix, Z100, Ultralite, UltraliteSDK, Vuzix Connect or the Mentra Mach1 (same hardware), even for small tasks such as mapping taps to actions, because taps only arrive while the app holds control with a tap count set. Not for Vuzix Blade, Blade 2, M400 or M4000, which run Android on the glasses themselves, and not for writing MentraOS miniapps.
 license: Apache-2.0
 metadata:
   version: "1.0.0"
@@ -15,6 +15,10 @@ Last checked: 2026-11-08. Verification: docs-only (no hardware test yet). API na
 written for this skill and not compiled here. Anything marked `unverified` must be checked on a real Z100.
 
 ## Decide first
+
+**The Z100 is no longer sold** (as of 2026-11-09, details under "Licence and publishing"). The SDK, Vuzix Connect and
+store distribution still work, so build for people who already own a pair, and do not make the Z100 the first or only
+target of a new product.
 
 The Z100 is a display only: 640x480, monochrome green, right eye, about 30 degrees field of view, Bluetooth LE.
 It has **no microphone, no speaker and no camera**, and the SDK has no audio API. Your code runs on the phone; the
@@ -256,7 +260,7 @@ Android `sendNotification(key, title, message, peekText, icon)` and `clearNotifi
 peek (Android `peekText` or the title) is shown. Prefer them for passive alerts; do not send the same text as a
 notification and on your canvas at the same time.
 
-## Licence and publishing (as of 2026-11-08)
+## Licence and publishing (as of 2026-11-09)
 
 - The SDK is proprietary, under the
   [Vuzix SDK License and Confidentiality Agreement](https://www.vuzix.com/pages/vuzix%C2%AE-software-development-kit-license-and-confidentiality-agreement)
@@ -269,10 +273,20 @@ notification and on your canvas at the same time.
 - No right to Vuzix trademarks or logos (§3.7). Vuzix may collect usage statistics only after asking (§6.1).
 - The official sample apps are separate repos under BSD-3-Clause.
 - Publishing: a Z100 app is an ordinary phone app on Google Play or the App Store. Vuzix runs no store and no review
-  for Z100 apps ([Extentos](https://extentos.com/docs/ecosystem/platforms/vuzix), community).
+  for Z100 apps ([Extentos](https://extentos.com/docs/ecosystem/platforms/vuzix), community). Vuzix Connect is still
+  listed on both stores (2026-11-09).
 - Hardware: launched 2024-11-20 at USD 499 ([Vuzix](https://ir.vuzix.com/news-events/press-releases/detail/2104/vuzix-announces-general-availability-of-z100-smart-glasses)).
-  Extentos reports it was no longer sold on vuzix.com as of 2026-07-30; we could not confirm (vuzix.com rate-limited
-  us on 2026-11-08). Mentra's Mach1 is a white-label Z100 ([Vuzix on X](https://x.com/Vuzix/status/1886838744050811080), 2025-02).
+  **Vuzix no longer lists the Z100.** Its product page showed "Sold Out" on 2026-07-10 and redirects to the general
+  smart-glasses page since 2026-09-06 (still on 2026-11-09); that page offers the LX1, M400 and the Ultralite OEM
+  Platform, not the Z100 ([archived 2026-10-12](https://web.archive.org/web/20261012144148/https://www.vuzix.com/pages/smart-glasses)).
+  Vuzix's Q2 2026 report blames part of the drop in product sales on discontinued products: "smart glasses that were
+  discontinued at the end of 2025" (CFO on the 2026-08-13 call, [transcript](https://www.tradingkey.com/news/transcripts/262107145-tradingkey)),
+  "products that were discontinued" ([10-Q](https://ir.vuzix.com/reports-filings/all-sec-filings/content/0001104659-26-095889/0001104659-26-095889.pdf)).
+  Neither names the products; the Z100 leaving the catalogue fits that timing. Mentra's Mach1 is a white-label Z100
+  ([Vuzix on X](https://x.com/Vuzix/status/1886838744050811080), 2025-02), formerly sold by Mentra and no longer
+  listed on mentraglass.com (2026-11-09).
+- **Build only for existing owners.** Nobody new can buy the glasses from Vuzix or Mentra, so a Z100 adapter makes
+  sense as one rung behind a shared interface, not as the product's main target.
 
 This is a reading of the licence for engineering decisions, not legal advice.
 

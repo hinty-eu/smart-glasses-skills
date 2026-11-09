@@ -2,18 +2,16 @@
 
 Run on 2026-11-09. Raw data: [`runs/2026-11-09/`](runs/2026-11-09/).
 
-## Summary
+## Headline (run 2, the skill text released as v1.0.0)
 
 | | With the skills | Without |
 |---|---|---|
-| Average checklist score (22 answers each) | **87%** | 39% |
-| Answers that pass (70% or more, no critical error) | **20 of 22** | 1 of 22 |
-| Confirmed critical errors | **0** | 4 |
+| Average checklist score (11 answers each) | **89%** | 39% |
+| Answers that pass (70% or more, no critical error) | **10 of 11** | 0 of 11 |
+| Confirmed critical errors | **0** | 2 |
 
-Skill triggering, 40 prompts: no false triggers on 20 near misses (Meta Quest, Apple Vision Pro, Wear OS, ARCore,
-OBS captions and similar); 17 of 20 hits on the prompts that should use a skill. The 3 misses were Even G2 questions
-answered by Even's own official skill, which was installed on the test machine; this repository tells agents to
-prefer that skill for Even SDK detail.
+Run 1 used the skill text before the fixes described below: 84% vs 38%, 10 of 11 vs 1 of 11 passing, 0 vs 2 critical
+errors. The without-skill arm is the same in both runs, so it shows the run-to-run noise (38% and 39%).
 
 ## Method
 
@@ -22,55 +20,77 @@ prefer that skill for Even SDK detail.
   errors, choosing glasses for a teleprompter, voice hints on Ray-Ban Meta, Arabic on G2, testing a G2 app in CI,
   one double-tap action on four brands, subtitles on XREAL glasses.
 - **Checklists:** 11 to 14 items per task, each factual item with an official source and a date, plus a list of
-  critical errors (for example recommending an SDK that is not public, or a store that cannot distribute apps). The
-  checklists were written from vendor documentation, not from the skill text.
-- **Agents:** `claude plugin eval` with `--ablation with-without`, Claude Code 2.1.318, model alias `sonnet`, in a
-  fresh isolated session per run with read-only tools and no web access in either arm. Each task ran twice per arm
-  (two separate runs on the same day; the skill text received fixes between them, see below).
-- **Grading:** all 44 answers were shuffled and graded blind by Claude Opus 5.5, item by item (1, 0.5 or 0). The
-  grader never saw which arm produced an answer, verified every flagged critical error against the official source,
-  and kept a critical error only with a verbatim quote. Local file paths in two answers were replaced with `<repo>/`;
-  answers are otherwise verbatim.
+  critical errors (for example recommending an SDK that is not public, or a store that cannot distribute apps). They
+  were written from vendor documentation, not copied from the skill text, but by the same maintainers: the tasks cover
+  what the skills cover, so read the numbers as "the skills do what they claim", not as a general benchmark.
+- **Agents:** `claude plugin eval` with `--ablation with-without`, Claude Code 2.1.318, model alias `sonnet` (Claude
+  Sonnet 5.5 on 2026-11-09), one fresh isolated session per run, read-only tools, no web access in either arm.
+- **Grading:** answers from both runs (44 in total) were shuffled and graded blind by Claude Opus 5.5, item by item
+  (1, 0.5 or 0), with web access to check sources. The grader never saw which arm produced an answer, and kept a
+  critical error only with a verbatim quote that it had verified against an official page. The exact prompt is in
+  [`grading-prompt.md`](runs/2026-11-09/grading-prompt.md); every score has a one-line reason in
+  [`grades/`](runs/2026-11-09/grades/). Local file paths in one answer were replaced with `<repo>/`; answers are
+  otherwise verbatim (stored as `.txt`).
 
-## Per task (run 1 / run 2)
+## Per task
 
-| Task | With | Without |
-|---|---|---|
-| choose-glasses-teleprompter | 75 / 92 | 38 / 33 (both recommend MentraOS, which cannot distribute apps) |
-| double-tap-every-brand | 100 / 96 | 23 / 18 |
-| even-g2-arabic | 75 / 100 | 21 / 21 |
-| even-g2-ci-without-glasses | 79 / 75 | 17 / 17 |
-| even-g2-live-captions | 65 / 92 | 31 / 69 |
-| meta-dat-no-eligible-device | 73 / 68 | 41 / 36 |
-| meta-display-publish-next-month | 88 / 92 | 21 / 21 |
-| ray-ban-meta-voice-hints | 100 / 100 | 79 / 63 |
-| rokid-text-from-server | 92 / 92 | 35 / 31 (both build on Rokid's business-only CXR-M SDK) |
-| vuzix-z100-ios-captions | 92 / 85 | 58 / 62 |
-| xreal-subtitles-android | 89 / 92 | 54 / 62 |
+Blind item scores in percent, and the built-in `claude plugin eval` judge votes (P = pass, F = fail, three votes).
 
-Averages by run: with the skills 84% (run 1) and 89% (run 2); without 38% and 39%.
+| Task | Run 1 with / without | Run 2 with / without | Judge votes run 1 (with, without) | Judge votes run 2 (with, without) |
+|---|---|---|---|---|
+| choose-glasses-teleprompter | 75 / 38 | 92 / 33 | FFF, FFF | FFP, FFF |
+| double-tap-every-brand | 100 / 23 | 96 / 18 | PPP, FFF | FFF, FFF |
+| even-g2-arabic | 75 / 21 | 100 / 21 | FFF, FFF | PPP, FFF |
+| even-g2-ci-without-glasses | 79 / 17 | 75 / 17 | PPP, FFF | FPF, FFF |
+| even-g2-live-captions | 65 / 31 | 92 / 69 | FFF, FFF | FFF, FFF |
+| meta-dat-no-eligible-device | 73 / 41 | 68 / 36 | PPP, FFF | PFF, FFF |
+| meta-display-publish-next-month | 88 / 21 | 92 / 21 | FPP, FFF | FFF, FFF |
+| ray-ban-meta-voice-hints | 100 / 79 | 100 / 63 | PPP, FFF | PPP, FFF |
+| rokid-text-from-server | 92 / 35 | 92 / 31 | FPF, FFF | FFF, FFF |
+| vuzix-z100-ios-captions | 92 / 58 | 85 / 62 | FPP, FFF | FFP, FFF |
+| xreal-subtitles-android | 89 / 54 | 92 / 62 | PPP, FFF | FFF, FFF |
+
+Confirmed critical errors without the skills: both runs of `choose-glasses-teleprompter` recommend MentraOS as a
+distribution path (Mentra: miniapps cannot be distributed yet), and both runs of `rokid-text-from-server` build on
+CXR-M, Rokid's business-only SDK.
+
+## The built-in judge disagrees, and we cannot see why
+
+`claude plugin eval` scores each run pass or fail with three votes (Sonnet, pass at 70%). It never passed a
+without-skill answer, but it was also harsh and inconsistent on with-skill answers: 7 of 11 passes in run 1 and 2 of 11
+in run 2. The clearest disagreement is `double-tap-every-brand` in run 2: three FAIL votes, while the blind grade is
+96% with every item justified in [`grades/double-tap-every-brand.json`](runs/2026-11-09/grades/double-tap-every-brand.json).
+The built-in judge stores only its votes, not its reasons, so we cannot explain individual votes. We report the blind
+item scores because each point can be checked; the judge's raw output is in `plugin-eval-run1.json` and
+`plugin-eval-run2.json`.
 
 ## What changed between the runs
 
 After run 1 we fixed the gaps it exposed: a worked "ship this month" example in `choose-target.md`, Even G2 font and
 image rules for scripts the glasses cannot render, microphone capture inside an Even Hub plugin, and the Rokid iOS
-account requirement. We also told judges to quote any critical error they report.
+account requirement. We also told judges to quote any critical error they report. After run 2 we made factual
+corrections only (Vuzix Z100 discontinued, version numbers); no rerun yet.
 
-## About the built-in judge
+## Skill triggering
 
-`claude plugin eval` also scores each run pass or fail with a three-vote judge (Sonnet, pass at 70%). It gave the
-skills 7 of 11 passes in run 1 and 2 of 11 in run 2, and 0 of 11 without the skills both times. The blind item-by-item
-grading above rated run 2 higher than run 1, so we treat the pass/fail judge as too noisy near its threshold and report
-the item scores. Both judge outputs are in [`runs/2026-11-09/`](runs/2026-11-09/) (`plugin-eval-run1.json`,
-`plugin-eval-run2.json`).
+40 prompts: 20 that should use one of the skills and 20 near misses (Meta Quest, Apple Vision Pro, Wear OS, ARCore,
+OBS captions and similar). Claude Code with the `sonnet` model, one run per prompt, on a machine that also had Even
+Realities' and Meta's official skills installed.
+
+| Run | Should trigger: our skill | Taken by Even's official skill | No skill | Near misses that triggered |
+|---|---|---|---|---|
+| 1 | 13 of 20 | 3 | 4 | 0 of 20 |
+| 2 (after sharpening the descriptions) | 17 of 20 | 3 | 0 | 0 of 20 |
+
+The three Even questions going to Even's own skill is the behaviour we want. A run on a clean profile with no other
+skills installed is still to do.
 
 ## Limits
 
-- One model family and two runs per arm. Expect a few points of variance per task.
+- One model, two runs per arm. Expect several points of variance per task.
 - No web access in either arm. An agent with web search would close part of the gap, more slowly and with older
   sources; we did not measure that.
-- The checklists check knowledge and decisions, not whether the code runs on glasses. Nothing here was tested on
-  hardware.
+- The checklists test knowledge and decisions, not whether code runs on glasses. Nothing here was tested on hardware.
 
 ## Reproduce
 

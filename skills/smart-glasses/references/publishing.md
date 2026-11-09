@@ -15,7 +15,8 @@ the source it rests on; re-check the source before you plan a launch.
 > - Even Hub paid apps: "TBD. There is no paid distribution yet" ([FAQ](https://hub.evenrealities.com/docs/reference/faq)).
 > - Snap Specs: pre-order, "Expected to ship starting Fall 2026" ([specs.com](https://www.specs.com/smart-glasses/specs-27)).
 > - Google Play: 16 KB page support blocks app updates from 2027-02-01 ([page sizes](https://developer.android.com/guide/practices/page-sizes)); targetSdk 36 required since 2026-08-31 ([target SDK](https://developer.android.com/google/play/requirements/target-sdk)).
-> - Vuzix Z100 retail availability is unclear; Rokid Glasses 2 support in CXR-L is unverified.
+> - Vuzix Z100: no longer sold. Vuzix no longer lists it (product page redirects since 2026-09-06, still on 2026-11-09) and its Q2 2026 report cites smart glasses discontinued at the end of 2025 ([vuzix-z100.md](brands/vuzix-z100.md#publishing-and-distribution)). Apps still publish, for existing owners only.
+> - Rokid Glasses 2 support in CXR-L is unverified.
 
 ## Can everyone install it today?
 
@@ -27,7 +28,7 @@ the source it rests on; re-check the source before you plan a launch.
 | Meta Ray-Ban Display Web Apps | **No** | URL or QR for wearers in Developer Mode; the add screen says "unverified" | Explore is curated; submission "soon" | Developer Mode | [meta-display.md](brands/meta-display.md#publishing-and-distribution) |
 | Ray-Ban Meta, Oakley Meta as a Bluetooth headset (TTS, HFP) | **Yes** | Your normal store listing | None, no Meta component (our reading) | n/a | [meta-audio-glasses.md](brands/meta-audio-glasses.md#publishing-and-distribution) |
 | Rokid Glasses (CXR-L) | **Yes** | Your own Google Play or App Store listing; the user authorises your app in Hi Rokid | None documented for Android; iOS: the CXR-L docs (v1.2, 2026-09-08) require a registered Rokid developer account with your bundle ID | n/a | [SDK overview](https://developerdoc.rokid.com/sdk?lang=zh), [Rokid skill](../../smart-glasses-rokid/SKILL.md#publishing) |
-| Vuzix Z100 | **Yes** | Your own store listing | None; SDK licence accepted by use | n/a | [vuzix-z100.md](brands/vuzix-z100.md#publishing-and-distribution) |
+| Vuzix Z100 | **Yes**, but the hardware is discontinued (existing owners only) | Your own store listing | None; SDK licence accepted by use | n/a | [vuzix-z100.md](brands/vuzix-z100.md#publishing-and-distribution) |
 | Android XR audio glasses | **Yes** | Google Play mobile track, same APK | Play policies plus the glasses policies | Emulator | [package and distribute](https://developer.android.com/develop/xr/package-and-distribute) |
 | Android XR display glasses | **Not yet** | "stay tuned" | n/a | Emulator only | same |
 | MentraOS miniapp | **No** | None; the packaged ZIP is for a future store | n/a | QR on the local network | [mentra.md](brands/mentra.md) |
@@ -39,7 +40,7 @@ the source it rests on; re-check the source before you plan a launch.
 | Phone notifications (rung 4) | **Yes** | Your normal app; the user enables it in the companion app | None | n/a | [notification-glasses.md](brands/notification-glasses.md#publishing-and-distribution) |
 
 Practical rule: keep a brand-independent core and one adapter per brand, ship the adapters that can ship today (Even,
-Rokid, Vuzix, USB-C, notifications, voice), and keep Meta DAT behind a tester flag until publishing opens. For where
+Rokid, Vuzix for existing owners, USB-C, notifications, voice), and keep Meta DAT behind a tester flag until publishing opens. For where
 each rung fits, see [display-text-ladder.md](display-text-ladder.md) and [choose-target.md](choose-target.md).
 
 ## Brand notes that decide a launch

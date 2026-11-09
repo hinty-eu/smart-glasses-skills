@@ -15,8 +15,8 @@ This is the cross-brand summary. For depth (setup, full code, display JSON, audi
 - Microphone for your app: yes, CXR-L audio stream, PCM 16 kHz mono 16-bit.
 - Speaker: yes, the glasses play phone audio over Bluetooth.
 - Phones / where your code runs: your Android app (Maven `com.rokid.cxr:client-l:1.1.2`, minSdk 28, ARM only) or iOS
-  app (`RGCxrClient` 1.1.1.1); every call goes through the Hi Rokid app, Global (`com.rokid.sprite.global.aiapp`) or
-  China (`com.rokid.sprite.aiapp`) build.
+  app (`RGCxrClient` 1.1.1 on CocoaPods trunk, 1.1.1.1 in Rokid's sample project); every call goes through the Hi
+  Rokid app, Global (`com.rokid.sprite.global.aiapp`) or China (`com.rokid.sprite.aiapp`) build.
 - Publishing to everyone today: yes, as your own app on Google Play or the App Store; the CXR-L docs describe no Rokid
   review, and the user approves you in Hi Rokid (as of 2026-11-08, [SDK overview](https://developerdoc.rokid.com/sdk?lang=zh)).
   Android needs no app key or registration. iOS: the CXR-L page "iOS: SDK import" (v1.2, 2026-09-08, re-read
@@ -65,7 +65,7 @@ Rokid's teleprompter and translation scenes, is business only and cannot run nex
 ## Pitfalls
 - Re-authorise after every process start: the Global/China choice is made per process.
 - The SDK's R8 rules strip your `Log.d` / `Log.v` in release builds.
-- The English SDK page and many blog posts describe the old 1.0.x `CxrLink` API.
+- Many blog posts and community doc mirrors describe the old 1.0.x `CxrLink` API.
 - Rokid publishes no licence for CXR-L: link to the docs, depend on Maven, never copy SDK files or samples.
 
 ## Official resources

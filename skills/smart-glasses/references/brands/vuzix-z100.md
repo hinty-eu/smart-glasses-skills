@@ -1,6 +1,9 @@
 # Vuzix Z100 (Vuzix Ultralite SDK)
 
-Last checked: 2026-11-08. Verification: docs-only (no hardware test yet). Depth: the `smart-glasses-vuzix` skill.
+Last checked: 2026-11-09. Verification: docs-only (no hardware test yet). Depth: the `smart-glasses-vuzix` skill.
+
+**No longer sold** (as of 2026-11-09): build Z100 support only for people who already own a pair. Details under
+Publishing and distribution.
 
 ## At a glance
 - Display: 640x480, monochrome green (4 levels, black = see-through), right eye only, about 30 degrees.
@@ -12,7 +15,8 @@ Last checked: 2026-11-08. Verification: docs-only (no hardware test yet). Depth:
 - Phones / where your code runs: your phone app. Android 12+ with the Vuzix Connect app; iOS 14+ (also watchOS 9+,
   macOS 11+), where your app links the glasses itself.
 - Publishing to everyone today: yes, as an ordinary app on Google Play or the App Store; Vuzix runs no store or review
-  for Z100 apps (as of 2026-11-08, [Extentos](https://extentos.com/docs/ecosystem/platforms/vuzix)).
+  for Z100 apps (as of 2026-11-08, [Extentos](https://extentos.com/docs/ecosystem/platforms/vuzix)). The app ships,
+  but the glasses are discontinued: only existing owners can use it.
 - Test without hardware: no simulator. Fake the SDK behind your own interface.
 - Official agent skill: none (none found on skills.sh as of 2026-11-08). Use `smart-glasses-vuzix` from this repo.
 
@@ -42,8 +46,15 @@ runs in the iOS Simulator but connects to nothing.
 - Licence: proprietary [Vuzix SDK License and Confidentiality Agreement](https://www.vuzix.com/pages/vuzix%C2%AE-software-development-kit-license-and-confidentiality-agreement),
   accepted by using the SDK; royalty-free; no redistribution or reverse engineering; military, defence, law enforcement
   and first-responder apps need written consent; no use of Vuzix marks.
-- Hardware: USD 499 at launch (2024-11-20). Availability on vuzix.com is unclear: Extentos reported it unlisted as of
-  2026-07-30; we could not confirm on 2026-11-08. Mentra's Mach1 is the same hardware.
+- Hardware: USD 499 at launch, 2024-11-20 ([Vuzix](https://ir.vuzix.com/news-events/press-releases/detail/2104/vuzix-announces-general-availability-of-z100-smart-glasses)).
+  Vuzix no longer lists it: the product page showed "Sold Out" on 2026-07-10, redirects to the general smart-glasses
+  page since 2026-09-06 (still on 2026-11-09), and that page offers the LX1, M400 and Ultralite OEM Platform only
+  ([archived 2026-10-12](https://web.archive.org/web/20261012144148/https://www.vuzix.com/pages/smart-glasses)).
+  Vuzix's Q2 2026 report cites sales lost to "smart glasses that were discontinued at the end of 2025" (CFO, 2026-08-13
+  call) without naming them ([10-Q](https://ir.vuzix.com/reports-filings/all-sec-filings/content/0001104659-26-095889/0001104659-26-095889.pdf)).
+  Mentra's Mach1, the same hardware, was formerly sold by Mentra and is no longer listed on mentraglass.com (2026-11-09).
+- What still works (2026-11-09): the SDK on JitPack and in the iOS repo, Vuzix Connect on both stores, your own store
+  listing. Ship a Z100 adapter for existing owners behind a shared interface; do not plan a product around it.
 - Alternative path: MentraOS supports the Z100, but its Miniapp SDK is beta and miniapps cannot be distributed in
   MentraOS 3.0 ([Mentra docs](https://docs.mentraglass.com/app-devs/getting-started/overview), 2026-11-08).
 

@@ -29,7 +29,11 @@ skills, use them for the details.
 - Audio glasses: Warby Parker opens pre-orders for its first Android XR collection on 2026-11-12 with delivery in the
   holiday season (company release via [press](https://9to5google.com/2026/11/05/android-xr-glasses-pre-order/)).
   Launch countries are not official; reports say the US and South Korea first (unverified).
-- XREAL Aura is a wired Android XR device with a compute puck, not the projected glasses API.
+- XREAL Aura runs Android XR on its own compute puck: optical see-through glasses for spatial apps, not the projected
+  glasses API in this file. It is orderable now: XREAL's page has "Buy Now" and a launch offer "starting at $1,099"
+  through the end of 2026 ([XREAL](https://www.xreal.com/aura), checked 2026-11-09). The lower price applies to orders
+  from 2026-10-28, and shipping "is expected to start in mid-November" ([MIXED, 2026-10-29](https://mixed-news.com/en/?p=38674),
+  press); we found no confirmation that units have shipped.
 
 ## Getting text on the display
 Declare a projected activity and start it with projected options from your phone UI. The manifest attributes and the

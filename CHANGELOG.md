@@ -32,7 +32,7 @@ been tested on real glasses yet; every file states how it was verified (`simulat
   and a confidence level. `scripts/gen-tables.mjs` generates the tables in the README and in the `smart-glasses`
   skill.
 - `examples/live-captions`: a Node caption server (demo script, browser microphone, optional Deepgram streaming
-  speech-to-text) and five targets that share one WebSocket protocol:
+  speech-to-text) and four targets that share one WebSocket protocol:
   - web app for glasses browsers, Meta Web Apps and second screens (`browser`);
   - Even Realities G2 plugin, 15 of 15 checks in the official Even Hub simulator 0.9.5 (`simulator`);
   - Android app with Rokid, Vuzix, Meta DAT, USB-C display, notification and speech targets (`compiles`);

@@ -5,8 +5,10 @@ reference and has not been compiled or run on glasses.
 
 ## At a glance
 - Display: 600x600, full colour, right eye only, about 20 degrees FOV, 30 Hz content, 30 to 5,000 nits adaptive
-  ([Road to VR](https://roadtovr.com/meta-ray-ban-smart-glasses-display-price-release-date-specs/), press; 600x600 also
-  in [Meta's docs](https://wearables.developer.meta.com/docs/develop/dat/display-overview/)). Black is transparent.
+  (600x600: "The display resolution is 600x600" in
+  [Meta's DAT display overview](https://wearables.developer.meta.com/docs/develop/dat/display-overview/), official; the
+  rest from [Road to VR](https://roadtovr.com/meta-ray-ban-smart-glasses-display-price-release-date-specs/), press).
+  Black is transparent.
 - How your app puts text on it: rung 1 (DAT Display capability from your Android or iOS app) or rung 2 (a Web App:
   an HTTPS page in the glasses' browser). Rung 5 (TTS in the ear) as fallback. Rung 4 is not a path to plan on: at
   launch only built-in messaging showed; press reports a later all-or-nothing phone notification mirror
@@ -29,7 +31,11 @@ reference and has not been compiled or run on glasses.
   `claude plugin install mwdat-android@mwdat-android-marketplace` (iOS: `-ios`, `mwdat-ios`; `facebook/` redirects to
   `meta/`). Web Apps (not on skills.sh):
   `/plugin marketplace add https://github.com/meta/meta-wearables-webapp` + `/plugin install meta-wearables-webapp@meta-wearables`.
-  Docs MCP, no auth: `claude mcp add --transport http wearables https://mcp.developer.meta.com/wearables`.
+  Docs MCP: `https://mcp.developer.meta.com/wearables` over HTTP, no auth. Meta's `dat-docs-mcp` skill says the
+  `mwdat-android` / `mwdat-ios` plugin registers it in Claude Code with no separate setup
+  ([skill](https://github.com/meta/meta-wearables-dat-android/blob/main/plugins/mwdat-android/skills/dat-docs-mcp/SKILL.md),
+  checked 2026-11-09). Without the plugin, our own command (not from Meta's docs):
+  `claude mcp add --transport http wearables-dat https://mcp.developer.meta.com/wearables`.
   **For SDK details install the official skill**; this file covers cross-brand decisions.
 
 ## Getting text on the display

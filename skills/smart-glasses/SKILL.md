@@ -19,9 +19,9 @@ Nothing in this skill has been tested on real glasses yet. Brand files say how e
 ## How to work with this skill
 
 1. **Pin down the target.** If the user has not named the glasses, or named several, read
-   [references/choose-target.md](references/choose-target.md) and ask only the questions it lists. When you recommend
-   glasses, go through each option in choose-target.md's "ship this month" list and give one line on why it is in or
-   out.
+   [references/choose-target.md](references/choose-target.md) and ask only the questions it lists. If you cannot ask
+   (CI, headless runs), state your assumptions and continue. When you recommend glasses, go through each option in
+   choose-target.md's "ship this month" list and give one line on why it is in or out.
 2. **Read the brand file** for each target in `references/brands/` (table below). It tells you how text gets onto the
    display, what input and audio exist, how to test, and whether you can publish today.
 3. **Pick the rung of the display-text ladder** (next section). If the app must work on more than one brand, build
@@ -55,7 +55,7 @@ most universal. Prefer the highest rung the user's glasses support, and fall bac
 | Even Realities G2 | 1 (Even Hub plugin) | Yes, Even Hub store with manual review | [brands/even-g2.md](references/brands/even-g2.md) |
 | Meta Ray-Ban Display | 1 (DAT Display) or 2 (Web App) | No: DAT is limited to Beta channel testers, Web Apps run in Developer Mode | [brands/meta-display.md](references/brands/meta-display.md) |
 | Rokid Glasses | 1 (CXR-L from an Android phone) | Yes, through your own store listing | [brands/rokid.md](references/brands/rokid.md) and the `smart-glasses-rokid` skill |
-| Vuzix Z100 | 1 (Ultralite SDK, Android and iOS) | Yes, as a normal app | [brands/vuzix-z100.md](references/brands/vuzix-z100.md) and the `smart-glasses-vuzix` skill |
+| Vuzix Z100 | 1 (Ultralite SDK, Android and iOS) | Yes, as a normal app; hardware no longer sold, existing owners only | [brands/vuzix-z100.md](references/brands/vuzix-z100.md) and the `smart-glasses-vuzix` skill |
 | Ray-Ban Meta, Oakley Meta | 5 (voice), DAT for camera and mic | Audio app yes; DAT Beta testers only | [brands/meta-audio-glasses.md](references/brands/meta-audio-glasses.md) |
 | XREAL, VITURE, RayNeo Air | 3 (external display) | Yes | [brands/usb-c-displays.md](references/brands/usb-c-displays.md) |
 | RayNeo X3 Pro, INMO Air3 | 2 (Chrome on Air3, a sideloaded browser on RayNeo) or an APK on the glasses | RayNeo by sideload, INMO Air3 through Google Play | [brands/standalone-android-glasses.md](references/brands/standalone-android-glasses.md) |
@@ -77,8 +77,9 @@ you go deep on one brand, and keep this skill for cross-brand decisions:
 - Meta Wearables Device Access Toolkit: `npx skills add meta/meta-wearables-dat-android` and
   `npx skills add meta/meta-wearables-dat-ios`
 - Android XR display glasses (Jetpack Compose Glimmer):
-  `npx skills add android/skills --skill display-glasses-with-jetpack-compose-glimmer` (and `--skill projected-hardware`);
-  Google's own CLI and plugin commands are in [brands/android-xr.md](references/brands/android-xr.md)
+  `npx skills add android/skills --skill display-glasses-with-jetpack-compose-glimmer` (and `--skill projected-hardware`).
+  skills.sh documents the full-URL form, `npx skills add https://github.com/android/skills --skill <name>` (checked
+  2026-11-09); Google's own CLI and plugin commands are in [brands/android-xr.md](references/brands/android-xr.md)
 - Rokid and Vuzix have no official skill: use `smart-glasses-rokid` and `smart-glasses-vuzix` from this repository.
 
 ## Live captions, translation and hints

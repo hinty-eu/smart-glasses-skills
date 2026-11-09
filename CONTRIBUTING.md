@@ -20,10 +20,10 @@ Thanks for helping. This project lives or dies by accurate, current facts, so th
 ## Ways to help
 
 - **Hardware verification:** you own a pair of glasses and ran one of the examples? Open a
-  [Hardware verification report](../../issues/new?template=hardware-verification.yml). It is the most valuable
+  [Hardware verification report](https://github.com/hinty-eu/smart-glasses-skills/issues/new?template=hardware-verification.yml). It is the most valuable
   contribution we get.
 - **Wrong or outdated fact:** open an issue with the source, or a pull request that edits `data/platforms.json`.
-- **New brand:** open a [New brand](../../issues/new?template=new-brand.yml) issue first, so we can agree on scope.
+- **New brand:** open a [New brand](https://github.com/hinty-eu/smart-glasses-skills/issues/new?template=new-brand.yml) issue first, so we can agree on scope.
 
 ## Before you open a pull request
 

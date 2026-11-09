@@ -64,8 +64,8 @@ Do not ship or post full logcat dumps: debug builds of the SDK log the auth toke
 
 - "The official SDK only works with the Chinese app." True for client-l 1.0.1 and 1.0.2; 1.0.3 and later support
   Global Hi Rokid.
-- "minSdk 31" and `CxrLink(context, CXRSessionType.CUSTOMVIEW)`: the 1.0.x API on the stale English SDK page.
-  1.1.x uses `CxrSessionManager` and minSdk 28.
+- "minSdk 31" and `CxrLink(context, CXRSessionType.CUSTOMVIEW)`: the 1.0.x API, still in old blog posts and
+  community mirrors. 1.1.x uses `CxrSessionManager` and minSdk 28.
 - "Use CXR-M for teleprompter text": CXR-M is business only and cannot run next to Hi Rokid on the same phone.
 - Community documentation mirrors of the Rokid docs exist; some of their API tables do not match 1.1.2. Prefer
   Rokid's own pages.

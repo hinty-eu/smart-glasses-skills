@@ -116,26 +116,6 @@ prompts.
 - Re-check every dated fact before each scored run; vendor platforms change monthly.
 - Add a case for each new brand file or skill, with at least one critical error that a wrong answer would make.
 
-## Results: to be filled in E4
+## Results
 
-| Date | Agent model | Judge model | CLI | Commit | Cost |
-|---|---|---|---|---|---|
-| | | | | | |
-
-| Case | WITH | W/OUT | Δ | Notes |
-|---|---|---|---|---|
-| `even-g2-live-captions` | | | | |
-| `rokid-text-from-server` | | | | |
-| `vuzix-z100-ios-captions` | | | | |
-| `meta-display-publish-next-month` | | | | |
-| `meta-dat-no-eligible-device` | | | | |
-| `choose-glasses-teleprompter` | | | | |
-| `ray-ban-meta-voice-hints` | | | | |
-| `even-g2-arabic` | | | | |
-| `even-g2-ci-without-glasses` | | | | |
-| `double-tap-every-brand` | | | | |
-| `xreal-subtitles-android` | | | | |
-
-| Trigger check | Should trigger (hit %) | Should not trigger (clean %) | Overall % |
-|---|---|---|---|
-| | | | |
+See [RESULTS.md](RESULTS.md) for the latest run, the method and the raw answers.

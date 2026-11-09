@@ -107,10 +107,10 @@
       "facts": {
         "display": {
           "value": "600x600, full colour, right eye only, ~20 deg FOV",
-          "source": "https://roadtovr.com/meta-ray-ban-smart-glasses-display-price-release-date-specs/",
-          "checked": "2026-11-08",
-          "confidence": "press",
-          "note": "600x600 is confirmed in Meta's DAT display docs. Dims after 20 s, sleeps at 25 s (DAT docs); no API to observe or wake it."
+          "source": "https://wearables.developer.meta.com/docs/develop/dat/display-overview/",
+          "checked": "2026-11-09",
+          "confidence": "official",
+          "note": "Meta DAT display overview: The display resolution is 600x600. Full colour, right eye and about 20 degrees from press (https://roadtovr.com/meta-ray-ban-smart-glasses-display-price-release-date-specs/). Dims and sleeps after inactivity (20 s / 25 s in the DAT docs); no API to observe or wake it."
         },
         "text": {
           "value": "DAT Display API from a phone app, or a Web App",
@@ -200,9 +200,9 @@
         "phones": {
           "value": "Android (Maven client-l), iOS (RGCxrClient)",
           "source": "https://developerdoc.rokid.com/sdk?lang=zh",
-          "checked": "2026-11-08",
+          "checked": "2026-11-09",
           "confidence": "official",
-          "note": "Android minSdk 28, ARM only. The iOS pod needs Rokid's private specs source, or the source modules from Rokid's iOS sample. Hi Rokid comes as Global and China builds."
+          "note": "Android minSdk 28, ARM only. iOS: RGCxrClient 1.1.1 on CocoaPods trunk; 1.1.1.1 (Rokid sample project) needs Rokid private specs source or the source modules from the sample. Hi Rokid comes as Global and China builds."
         },
         "publish": {
           "value": "Yes, your own store listing; no Rokid review in the docs",
@@ -219,11 +219,11 @@
           "note": "No simulator found in the CXR-L docs. Native libs are ARM only, so x86 emulators cannot create a session. AIUI Studio has a web simulator for AIUI agents only."
         },
         "sdk": {
-          "value": "CXR-L 1.1.2 (2026-09-08), iOS RGCxrClient 1.1.1.1",
+          "value": "CXR-L 1.1.2 (2026-09-08), iOS RGCxrClient 1.1.1",
           "source": "https://maven.rokid.com/repository/maven-public/com/rokid/cxr/client-l/maven-metadata.xml",
-          "checked": "2026-11-08",
+          "checked": "2026-11-09",
           "confidence": "official",
-          "note": "Maven also carries 1.2.X-SNAPSHOT (2026-11-05). CXR-M (business only, cannot run next to Hi Rokid) is 1.1.0 on the portal, 1.2.2 on Maven."
+          "note": "iOS: RGCxrClient 1.1.1 on CocoaPods trunk (2026-08-27, https://trunk.cocoapods.org/api/v1/pods/RGCxrClient); Rokid sample project and overview use 1.1.1.1 from Rokid private specs source. Maven also carries 1.2.X-SNAPSHOT (2026-11-05). CXR-M (business only, cannot run next to Hi Rokid) is 1.1.0 on the portal, 1.2.2 on Maven."
         },
         "licence": {
           "value": "No published licence for CXR-L",
@@ -249,10 +249,10 @@
       "facts": {
         "display": {
           "value": "640x480, monochrome green, right eye",
-          "source": "https://www.vuzix.com/products/z100-smart-glasses",
-          "checked": "2026-11-08",
+          "source": "https://support.vuzix.com/docs/display-process",
+          "checked": "2026-11-09",
           "confidence": "official",
-          "note": "Product page read via search (site rate-limited); 640x480 also in the SDK Canvas constants. About 30 degrees, 4 brightness levels."
+          "note": "640x480 on Vuzix Display Process page and in the SDK Canvas constants. Monochrome green, right eye and about 30 degrees from the Z100 product page as archived on 2026-07-10 (https://web.archive.org/web/20260710075701/https://www.vuzix.com/products/z100-smart-glasses); the live URL redirects since 2026-09-06. 4 brightness levels."
         },
         "text": {
           "value": "Ultralite SDK in your phone app, or mirrored notifications",
@@ -283,11 +283,11 @@
           "note": "iOS also watchOS 9+ and macOS 11+; on iOS your app links the glasses itself (https://github.com/Vuzix/UltraliteSDK-releases-iOS)."
         },
         "publish": {
-          "value": "Yes, as a normal app on Google Play or the App Store",
+          "value": "App stores yes; hardware discontinued, existing owners only",
           "source": "https://extentos.com/docs/ecosystem/platforms/vuzix",
-          "checked": "2026-11-08",
+          "checked": "2026-11-09",
           "confidence": "community",
-          "note": "No Vuzix store or review for Z100 apps. SDK licence accepted by use; military, defence, law enforcement and first-responder apps need written consent."
+          "note": "No Vuzix store or review for Z100 apps; Vuzix Connect still on Google Play and the App Store (2026-11-09). SDK licence accepted by use; military, defence, law enforcement and first-responder apps need written consent. Vuzix no longer sells the Z100 (see availability)."
         },
         "test": {
           "value": "No simulator; fake the SDK behind an interface",
@@ -311,11 +311,11 @@
           "note": "Agreement dated 2023-07-24. No copying, redistribution or reverse engineering of the SDK (s3.3). Samples are BSD-3-Clause."
         },
         "availability": {
-          "value": "USD 499 at launch (2024-11); current sale unclear",
-          "source": "https://ir.vuzix.com/news-events/press-releases/detail/2104/vuzix-announces-general-availability-of-z100-smart-glasses",
-          "checked": "2026-11-08",
-          "confidence": "unverified",
-          "note": "Extentos reported the Z100 no longer sold on vuzix.com as of 2026-07-30; not confirmed on 2026-11-08. Mentra Mach1 is the same hardware."
+          "value": "Discontinued; Vuzix no longer lists the Z100",
+          "source": "https://ir.vuzix.com/reports-filings/all-sec-filings/content/0001104659-26-095889/0001104659-26-095889.pdf",
+          "checked": "2026-11-09",
+          "confidence": "official",
+          "note": "Launched 2024-11-20 at USD 499 (https://ir.vuzix.com/news-events/press-releases/detail/2104/vuzix-announces-general-availability-of-z100-smart-glasses). Product page showed Sold Out on 2026-07-10 and redirects to the general smart-glasses page since 2026-09-06 (still on 2026-11-09); that page lists LX1, M400 and the Ultralite OEM Platform only (archived 2026-10-12). Vuzix Q2 2026 10-Q cites sales of discontinued products; CFO on the 2026-08-13 call: smart glasses discontinued at the end of 2025. Neither names the Z100. Mentra Mach1 (same hardware) was formerly sold and is no longer listed on mentraglass.com (2026-11-09)."
         }
       }
     },

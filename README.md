@@ -6,6 +6,9 @@
 
 Agent skills that teach coding agents to build apps for smart glasses from every major brand.
 
+Agent Skills are folders with a `SKILL.md` file (instructions plus optional reference files) that a coding agent loads
+when a task matches; the format is defined in the [Agent Skills specification](https://agentskills.io/specification).
+
 ```bash
 npx skills add hinty-eu/smart-glasses-skills
 ```
@@ -30,7 +33,7 @@ Nothing has been tested on real glasses yet, and every file says how it was veri
 - Full guides for Rokid Glasses (CXR-L) and Vuzix Z100 (Ultralite SDK), which have no official agent skill.
 - Live captions end to end: choosing speech-to-text, turning partial and final results into lines that fit each
   display, a latency budget, and non-Latin scripts.
-- A runnable live-captions example with one server and five targets.
+- A runnable live-captions example with one server and four targets (web, Even Hub, Android, iOS).
 - For Even Realities, Meta and Google, which ship their own skills: what matters for cross-brand decisions, and the
   command that installs the vendor's skill.
 
@@ -63,7 +66,7 @@ does not have to guess.
 | [`smart-glasses`](skills/smart-glasses/SKILL.md) | Start here: choosing glasses, text on any display, input, audio, testing without hardware, publishing. It routes to the other skills and to vendor skills. |
 | [`smart-glasses-live-captions`](skills/smart-glasses-live-captions/SKILL.md) | Captions, translation, a teleprompter or real-time hints on glasses, or captions that lag, flicker or wrap badly. |
 | [`smart-glasses-rokid`](skills/smart-glasses-rokid/SKILL.md) | A phone app that puts text on Rokid Glasses or reads their microphone (CXR-L through Hi Rokid). |
-| [`smart-glasses-vuzix`](skills/smart-glasses-vuzix/SKILL.md) | Vuzix Z100 or Mentra Mach1 from Android or iOS with the Ultralite SDK. |
+| [`smart-glasses-vuzix`](skills/smart-glasses-vuzix/SKILL.md) | Vuzix Z100 or Mentra Mach1 from Android or iOS with the Ultralite SDK, for existing owners (neither is sold any more). |
 
 To install one skill only: `npx skills add hinty-eu/smart-glasses-skills --skill smart-glasses-rokid`.
 
@@ -77,9 +80,9 @@ S community, P press, ? unverified.
 | Glasses | Display | Text from your app | Publish to everyone today | Checked |
 |---|---|---|---|---|
 | Even Realities G2 | 576x288 per eye, green; text 5 levels, images 16 [O](https://hub.evenrealities.com/docs/build/display) | Even Hub plugin: web app run by the Even phone app [O](https://hub.evenrealities.com/docs/get-started/architecture) | Yes, Even Hub store, manual review, no paid apps yet [O](https://hub.evenrealities.com/docs/reference/faq) | 2026-11-08 |
-| Meta Ray-Ban Display + Neural Band | 600x600, full colour, right eye only, ~20 deg FOV [P](https://roadtovr.com/meta-ray-ban-smart-glasses-display-price-release-date-specs/) | DAT Display API from a phone app, or a Web App [O](https://wearables.developer.meta.com/docs/develop/dat/display-overview/) | No: DAT Beta channel testers only; Web Apps via Dev Mode [O](https://github.com/meta/meta-wearables-dat-android/discussions/229) | 2026-11-08 |
+| Meta Ray-Ban Display + Neural Band | 600x600, full colour, right eye only, ~20 deg FOV [O](https://wearables.developer.meta.com/docs/develop/dat/display-overview/) | DAT Display API from a phone app, or a Web App [O](https://wearables.developer.meta.com/docs/develop/dat/display-overview/) | No: DAT Beta channel testers only; Web Apps via Dev Mode [O](https://github.com/meta/meta-wearables-dat-android/discussions/229) | 2026-11-08 |
 | Rokid Glasses | Monochrome green micro-LED, both eyes, ~480 px wide [P](https://www.tomsguide.com/computing/smart-glasses/rokid-glasses-review) | CXR-L custom view from your phone app, or notifications [O](https://developerdoc.rokid.com/sdk?lang=zh) | Yes, your own store listing; no Rokid review in the docs [O](https://developerdoc.rokid.com/sdk?lang=zh) | 2026-11-08 |
-| Vuzix Z100 | 640x480, monochrome green, right eye [O](https://www.vuzix.com/products/z100-smart-glasses) | Ultralite SDK in your phone app, or mirrored notifications [O](https://github.com/Vuzix/ultralite-sdk-android) | Yes, as a normal app on Google Play or the App Store [S](https://extentos.com/docs/ecosystem/platforms/vuzix) | 2026-11-08 |
+| Vuzix Z100 | 640x480, monochrome green, right eye [O](https://support.vuzix.com/docs/display-process) | Ultralite SDK in your phone app, or mirrored notifications [O](https://github.com/Vuzix/ultralite-sdk-android) | App stores yes; hardware discontinued, existing owners only [S](https://extentos.com/docs/ecosystem/platforms/vuzix) | 2026-11-08 |
 | Ray-Ban Meta, Oakley Meta, Ray-Ban Meta Audio | None (open-ear speakers, mics; camera except Audio) [O](https://wearables.developer.meta.com/docs/develop/dat/getting-started-toolkit/) | None; voice in the ear (TTS over Bluetooth A2DP) [O](https://wearables.developer.meta.com/docs/develop/dat/microphones-and-speakers/) | Bluetooth audio app: yes; DAT: Beta channel testers only [O](https://github.com/meta/meta-wearables-dat-android/discussions/229) | 2026-11-08 |
 | USB-C display glasses (XREAL, VITURE, RayNeo Air) | External monitor over USB-C DP Alt Mode, tinted [O](https://tutorials.xreal.com/docs/glasses/one-series/first-use/connect-device) | Android Presentation, iOS external display scene [O](https://developer.android.com/reference/android/app/Presentation) | Yes, your normal app store listing, no vendor step [O](https://www.rayneo.com/pages/product-compatibilities) | 2026-11-08 |
 | Standalone Android glasses (RayNeo X3 Pro, INMO Air3) | X3 Pro 640x480 colour, both eyes; Air3 1080p [O](https://rayneo.gitbook.io/rayneo-devdoc/x-xi-lie/she-ji-gui-fan.md) | Web page in a browser on the glasses, or your APK [O](https://rayneo.gitbook.io/rayneo-devdoc/x-xi-lie/she-bei-jie-shao) | RayNeo: sideload via ADB; Air3: Google Play [O](https://rayneo.gitbook.io/rayneo-devdoc/chang-jian-wen-ti/adb-tiao-shi/adb-zhi-ling.md) | 2026-11-08 |
@@ -92,7 +95,7 @@ S community, P press, ? unverified.
 
 ## Examples
 
-[`examples/live-captions`](examples/live-captions/) has one small Node server that produces captions and five
+[`examples/live-captions`](examples/live-captions/) has one small Node server that produces captions and four
 targets that show them. All of them speak the same WebSocket protocol, so you can copy only the target you need.
 
 | Target | Folder | Verified | Date |
@@ -135,18 +138,19 @@ Then open `http://localhost:8787/?room=K7MPQ4` with your code. The
 ## Evaluation
 
 <!-- results:start -->
-We gave a coding agent 11 real developer requests ([evals/](evals/)), each twice with these skills and twice without,
-and graded all 44 answers blind against checklists built from official vendor documentation.
+We gave a coding agent 11 real developer requests ([evals/](evals/)), with these skills and without, and graded the
+answers blind against checklists built from official vendor documentation. Released version (run 2):
 
 | | With the skills | Without |
 |---|---|---|
-| Average checklist score | **87%** | 39% |
-| Answers that pass (70% or more, no critical error) | **20 of 22** | 1 of 22 |
-| Critical errors, such as building on a business-only SDK or a store that cannot distribute apps | **0** | 4 |
+| Average checklist score | **89%** | 39% |
+| Answers that pass (70% or more, no critical error) | **10 of 11** | 0 of 11 |
+| Critical errors, such as building on a business-only SDK or a store that cannot distribute apps | **0** | 2 |
 
-Claude Code 2.1.318 with the `sonnet` model, no web access in either arm, graded by Claude Opus 5.5 on 2026-11-09.
-Trigger test: no false triggers on 20 near misses (Meta Quest, Vision Pro, Wear OS...), 17 of 20 hits; the 3 misses
-went to Even's own official skill. Method, per-task scores and raw answers: [evals/RESULTS.md](evals/RESULTS.md).
+Run 1, before we fixed the gaps it exposed: 84% vs 38%. Claude Code 2.1.318 with the `sonnet` model, no web access in
+either arm, graded by Claude Opus 5.5 on 2026-11-09. Trigger test on 40 prompts: no false triggers on 20 near misses
+(Meta Quest, Vision Pro, Wear OS...); 17 of 20 hits after sharpening the descriptions (13 before), the 3 misses went to
+Even's own official skill. Method, per-task scores, both runs and raw answers: [evals/RESULTS.md](evals/RESULTS.md).
 <!-- results:end -->
 
 ## Install for other agents
@@ -157,18 +161,16 @@ pass `-a <agent>` to choose without the prompt, and `-g` to install for your use
 <details>
 <summary>Claude Code</summary>
 
-As a plugin:
-
-```
-/plugin install smart-glasses-skills --marketplace hinty-eu/smart-glasses-skills
-```
-
-Or in two steps:
+As a plugin, add the marketplace, then install:
 
 ```
 /plugin marketplace add hinty-eu/smart-glasses-skills
 /plugin install smart-glasses-skills@hinty-eu
 ```
+
+The same from a terminal: `claude plugin marketplace add hinty-eu/smart-glasses-skills`, then
+`claude plugin install smart-glasses-skills@hinty-eu`. The CLI also takes one step:
+`claude plugin install smart-glasses-skills --marketplace hinty-eu/smart-glasses-skills`.
 
 Skills only, into `.claude/skills/`:
 
@@ -253,6 +255,14 @@ Agents that do not load skills can read [`AGENTS.md`](AGENTS.md), which points t
 The skills are plain Markdown files that your agent reads. They do not run code on install, send data anywhere or
 download anything. The examples in `examples/` are small apps you build yourself; each one says what it connects to.
 
+## Related projects
+
+- [even-realities/everything-evenhub](https://github.com/even-realities/everything-evenhub): Even Realities' official skills for Even Hub plugins on G2.
+- [meta/meta-wearables-dat-android](https://github.com/meta/meta-wearables-dat-android) and [meta/meta-wearables-dat-ios](https://github.com/meta/meta-wearables-dat-ios): Meta's Device Access Toolkit SDKs with official agent skills.
+- [android/skills](https://github.com/android/skills): Google's official Android skills, including Android XR display glasses with Jetpack Compose Glimmer.
+- [hkust-spark/xg-glass-sdk](https://github.com/hkust-spark/xg-glass-sdk): one API for camera, microphone, display and audio across several glasses brands.
+- [extentos/smart-glasses-ecosystem](https://github.com/extentos/smart-glasses-ecosystem): a sourced, dated capability map of smart-glasses platforms and devices.
+
 ## Contributing
 
 Hardware verification reports help most, then corrections with a source. [CONTRIBUTING.md](CONTRIBUTING.md) has the
@@ -262,7 +272,7 @@ request. This project follows the [Code of Conduct](CODE_OF_CONDUCT.md). Report 
 
 ## Who maintains this
 
-Built and maintained by the team behind [Hinty Voice Assistant](https://www.hinty.eu/assistant/smart-glasses?utm_source=github&utm_medium=readme&utm_campaign=smart-glasses-skills).
+Built and maintained by the team behind [Hinty Voice Assistant](https://www.hinty.eu/assistant/smart-glasses).
 
 ## License
 

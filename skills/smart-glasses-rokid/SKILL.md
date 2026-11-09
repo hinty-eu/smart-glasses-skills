@@ -9,10 +9,10 @@ metadata:
 
 # Rokid Glasses from a phone (CXR-L)
 
-Last checked: 2026-11-08. Verification: docs-only (no hardware test yet). SDK names, roles and versions were read
-today from Rokid's SDK overview ([developerdoc.rokid.com/sdk](https://developerdoc.rokid.com/sdk?lang=zh), Chinese
-page; the English page still shows CXR-L 1.0.3), the Rokid Maven metadata, and the public signatures of the
-published `client-l` 1.1.2 artifact. The snippets were written for this skill and not compiled here.
+Last checked: 2026-11-09. Verification: docs-only (no hardware test yet). SDK names, roles and versions were read
+from Rokid's SDK overview ([developerdoc.rokid.com/sdk](https://developerdoc.rokid.com/sdk?lang=en); the English and
+Chinese pages both show CXR-L 1.1.2 dated 2026-09-08), the Rokid Maven metadata, CocoaPods trunk, and the public
+signatures of the published `client-l` 1.1.2 artifact. The snippets were written for this skill and not compiled here.
 Rokid publishes no licence for CXR-L, so this skill only describes the API in its own words and links to Rokid.
 
 ## Decide first
@@ -26,10 +26,13 @@ Rokid's SDKs (as of 2026-11-08, SDK overview page):
 
 | SDK | Runs on | Needs Hi Rokid | Access | Latest |
 |---|---|---|---|---|
-| **CXR-L** (`com.rokid.cxr:client-l`) | phone, Android + iOS | yes, it is the proxy | public | 1.1.2 (2026-09-08), iOS `RGCxrClient` 1.1.1.1 |
+| **CXR-L** (`com.rokid.cxr:client-l`) | phone, Android + iOS | yes, it is the proxy | public | 1.1.2 (2026-09-08); iOS `RGCxrClient` 1.1.1 on CocoaPods trunk (1.1.1.1 in Rokid's sample project) |
 | CXR-M (`com.rokid.cxr:client-m`) | phone, Android | no, direct link | business only (`Glasses.BD@rokid.com`) | 1.1.0 on the portal, 1.2.2 on Maven |
 | CXR-S (`com.rokid.cxr:cxr-service-bridge`) | glasses, inside your glasses APK | used with CXR-L `CUSTOM_APP` | public, documented inside the CXR-L docs | 1.8 on Maven (2026-10-30) |
 | Bare-metal development | glasses (AOSP) | no | public | 1.0.0 (2026-06-05) |
+
+CXR-S has no entry of its own on the overview: it is mentioned only inside the CXR-M entry ("can be used with the
+on-device CXR-S SDK") and in a CXR-L changelog line (1.0.3: glasses-side CXR-S integration merged into the CXR-L docs).
 
 The overview says CXR-M "cannot run alongside" the Rokid AI App on the same phone, and it needs business onboarding.
 For an app that ordinary owners install next to Hi Rokid, **CXR-L is the only option**.
@@ -219,9 +222,10 @@ Summary of [display.md](references/display.md):
   Full touchpad input needs your own APK on the glasses. See [input.md](references/input.md).
 - **Glasses microphone:** `startAudioStream()` delivers PCM 16 kHz, mono, 16-bit, once the session is `Started` and
   `GlassPermission.MICROPHONE` was granted. See [audio.md](references/audio.md).
-- **iPhone:** CXR-L iOS exists (`RGCxrClient` 1.1.1.1 via Rokid's private CocoaPods specs, or the source modules in
-  Rokid's iOS sample), with the same JSON and state model and an auth round trip through Hi Rokid by URL scheme.
-  Notifications are the low-effort path. See [setup.md](references/setup.md#ios) and [notifications.md](references/notifications.md).
+- **iPhone:** CXR-L iOS exists (`RGCxrClient` 1.1.1 on CocoaPods trunk; Rokid's sample project pins 1.1.1.1 from
+  Rokid's private specs source, or uses the source modules bundled in the sample), with the same JSON and state
+  model and an auth round trip through Hi Rokid by URL scheme. Notifications are the low-effort path. See
+  [setup.md](references/setup.md#ios) and [notifications.md](references/notifications.md).
 
 ## Live captions
 
@@ -257,8 +261,7 @@ libraries mean the real path cannot run on an x86 emulator. AIUI Studio's web si
 3. If both Hi Rokid builds are installed and the China build is new enough, the SDK picks the China build.
 4. Hi Rokid must keep running. Aggressive battery managers on some phones kill it and the link drops.
 5. `customViewUpdate` success does not prove a redraw on every Global build.
-6. Old blog posts and the English SDK page describe the pre-1.1 `CxrLink` API and minSdk 31; use the 1.1.x session API.
-7. The Maven `1.2.X-SNAPSHOT` (updated 2026-11-05) is a moving target; stay on 1.1.2.
+6. The Maven `1.2.X-SNAPSHOT` (updated 2026-11-05) is a moving target; stay on 1.1.2.
 
 More, with links: [references/troubleshooting.md](references/troubleshooting.md).
 

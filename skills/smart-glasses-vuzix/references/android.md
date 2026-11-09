@@ -9,7 +9,8 @@ Last checked: 2026-11-08. Verification: docs-only (no hardware test yet). Source
 - Android 12 or later (README). The official sample app uses `minSdk = 31`, `compileSdk = 34`.
 - The **Vuzix Connect** app (`com.vuzix.connect`, [Google Play](https://play.google.com/store/apps/details?id=com.vuzix.connect))
   installed, with the glasses paired in it. On Android, Connect owns the Bluetooth link and your app talks to Connect.
-- A Vuzix Z100 (or the Mentra Mach1, the same hardware).
+- A Vuzix Z100 (or a Mentra Mach1, the same hardware). Neither is sold any more (as of 2026-11-09), so you need an
+  existing pair; see "Licence and publishing" in `SKILL.md`.
 - Transitive dependencies of 1.9 (from its POM): `androidx.appcompat:appcompat:1.6.1` and
   `org.jetbrains.kotlin:kotlin-stdlib:1.9.24`. Newer versions in your app win during resolution.
 

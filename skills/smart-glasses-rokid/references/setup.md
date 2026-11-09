@@ -23,10 +23,11 @@ Changelog points that matter (CXR-L 1.1.2, 2026-09-08, from the SDK overview):
 - audio is PCM 16 kHz / mono / 16-bit, photos are WebP;
 - the first `CUSTOM_VIEW` session no longer hits `LINK_TIMEOUT`;
 - `CUSTOM_APP` can auto-install your glasses APK on connect (`glassesApkPath`);
-- the sample was rewritten as `CxrlSample`; iOS moved to `RGCxrClient` 1.1.1.1.
+- the sample was rewritten as `CxrlSample`; iOS moved to `RGCxrClient` 1.1.1.1 (CocoaPods trunk has 1.1.1, see iOS below).
 
-Code written for 1.0.x (`CxrLink`, `CXRSessionType.CUSTOMVIEW`, `onCXRLConnected`) is the old API. The English SDK
-page still shows it, with "minSdk must be >= 31"; the current Chinese quick start says minSdk >= 28.
+Code written for 1.0.x (`CxrLink`, `CXRSessionType.CUSTOMVIEW`, `onCXRLConnected`) is the old API, still found in old
+blog posts and community mirrors with "minSdk must be >= 31". The current quick start (English and Chinese, 1.1.2)
+uses `CxrSessionManager` and says minSdk >= 28.
 
 ## Gradle
 
@@ -155,9 +156,12 @@ It relies on undocumented action names and has no licence file, so read it, do n
 
 ## iOS
 
-As of 2026-11-08 the CXR-L doc set covers iOS and the SDK overview lists `pod 'RGCxrClient', '1.1.1.1'`.
-- The pod needs Rokid's private CocoaPods specs source. Public developers are pointed to the source modules inside
-  Rokid's iOS sample (`CXRClientDemo.zip`, linked from the CXR-L docs).
+As of 2026-11-09 the CXR-L doc set covers iOS, and the SDK overview and Rokid's sample project use
+`pod 'RGCxrClient', '1.1.1.1'`.
+- `RGCxrClient` 1.1.1 (2026-08-27) is on public CocoaPods trunk, published by a Rokid account
+  ([trunk API](https://trunk.cocoapods.org/api/v1/pods/RGCxrClient)); its podspec says "Copyright 2026 Rokid", iOS 13+,
+  and excludes arm64 simulators. Version 1.1.1.1 needs Rokid's private CocoaPods specs source; the alternative is the
+  source modules inside Rokid's iOS sample (`CXRClientDemo.zip`, linked from the CXR-L docs).
 - Flow: `CxrClient.makeLink(appDisplayName:)` (a class method), `authenticate(scopes:)`, then a custom view session;
   forward the auth callback URL with `CxrClient.shared.handleOpenURL(url)`. The overview describes the iOS state
   machine as available / started / paused / unavailable.

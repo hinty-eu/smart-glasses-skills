@@ -20,8 +20,8 @@ again without a duplicate line), `CaptionController` for throttling and actions,
 | 4 | `NotificationDisplay` | A new local notification per final caption, at most one every 2.5 s, the last 3 kept | glasses app that mirrors notifications, this app allowed there | notification actions |
 | 5 | `SpeechDisplay` | `AVSpeechSynthesizer`, session `.playback` + `.spokenAudio`, ducking others | any Bluetooth audio | phone buttons |
 
-Not here: Rokid's iOS SDK (CocoaPods `RGCxrClient`) needs Rokid's private specs repository, and the CXR-L docs ask
-for a registered Rokid developer account (as of 2026-11-08; one community project reports it worked without one,
+Not here: Rokid's iOS SDK (`RGCxrClient` 1.1.1 on CocoaPods trunk, 1.1.1.1 in Rokid's sample project), because the
+CXR-L docs ask for a registered Rokid developer account (as of 2026-11-09; one community project reports it worked without one,
 unverified). Meta DAT for iOS is best followed with Meta's official agent skills (`npx skills add
 meta/meta-wearables-dat-ios`, or as Meta's README documents for Claude Code:
 `claude plugin marketplace add facebook/meta-wearables-dat-ios`, then

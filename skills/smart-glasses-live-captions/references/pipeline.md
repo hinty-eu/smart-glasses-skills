@@ -36,7 +36,7 @@ wearer to put it on the table or hold it. A clip-on or USB-C microphone on the p
 | Meta Ray-Ban Display Web App | none | - | https://wearables.developer.meta.com/docs/develop/webapps |
 | Meta glasses with DAT | the glasses as a Bluetooth headset (HFP); the Speech capability (beta, dev and beta channels) returns text on the glasses side | HFP audio, or text | https://wearables.developer.meta.com/docs/develop/dat/knownissues/ |
 | Rokid Glasses (CXR-L from the phone) | `startAudioStream()`, callback `onAudioReceived(ByteArray)`, needs the microphone scope approved in the Hi Rokid app | PCM 16 kHz, 16-bit, mono (CXR-L 1.1.2 changelog, 2026-09-08, on Rokid's SDK overview, read 2026-11-08) | https://developerdoc.rokid.com/sdk?lang=zh |
-| Vuzix Z100 | no microphone | - | https://www.vuzix.com/products/z100-smart-glasses |
+| Vuzix Z100 | no microphone | - | https://vuzix.github.io/ultralite-sdk-android/javadoc/allclasses-index.html (no audio API) |
 | USB-C display glasses (XREAL, VITURE, RayNeo Air) | the phone's audio input routing, when the glasses expose a USB microphone | device dependent | unverified |
 | Audio-only glasses (Ray-Ban Meta, others) | Bluetooth headset microphone (HFP) | call quality | general Bluetooth behaviour |
 

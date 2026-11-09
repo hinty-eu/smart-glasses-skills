@@ -8,7 +8,7 @@ Last checked: 2026-11-08. Verification: docs-only (no hardware test yet). Source
 ## Requirements
 
 - iOS 14+, watchOS 9+ or macOS 11+, Swift 5.7+ (README; the podspec sets iOS 14.0 and watchOS 9.0).
-- A Vuzix Z100. **Vuzix Connect is optional on iOS**: on iOS your app owns the Bluetooth connection
+- A Vuzix Z100 (no longer sold as of 2026-11-09; you need an existing pair). **Vuzix Connect is optional on iOS**: on iOS your app owns the Bluetooth connection
   ([Vuzix overview](https://support.vuzix.com/docs/overview-28)). Connect is still useful for firmware updates,
   settings and the notification path described below. The App Store listing
   ([Vuzix Connect](https://apps.apple.com/us/app/vuzix-connect/id6467056741)) shows version 1.10.1 from 2025-09-29,

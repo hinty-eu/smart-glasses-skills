@@ -8,7 +8,8 @@ Last checked: 2026-11-08. Verification: docs-only (no hardware test yet). API fa
 ## Hardware
 
 - 640x480 (4:3), monochrome green microLED waveguide, **right eye only**, about 30 degrees field of view
-  ([product page](https://www.vuzix.com/products/z100-smart-glasses), via search on 2026-11-08). The SDK constants
+  (Vuzix product page [archived 2026-07-10](https://web.archive.org/web/20260710075701/https://www.vuzix.com/products/z100-smart-glasses);
+  the live URL redirects since 2026-09-06). The SDK constants
   agree: Android `UltraliteSDK.Canvas.WIDTH = 640`, `HEIGHT = 480`; iOS `Ultralite.DISPLAY_WIDTH` / `DISPLAY_HEIGHT`.
 - The display adds light. Four levels per pixel (Android `UltraliteColor`, iOS `Canvas.Color`):
   `BLACK` / `.black` adds no light (fully see-through), `DIM`, `MID`, `WHITE` (brightest green). There is no colour.

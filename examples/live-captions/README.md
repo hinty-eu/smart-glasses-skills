@@ -38,7 +38,7 @@ Nothing in this folder has run on glasses yet.
 | Web page | `web-glasses/` | 2 | `browser` | 2026-11-08, buttons 2026-11-09 | headless Chromium at 600x600 and 390x300: entry form, WebSocket, `?http=1` polling, Back, wrong code, lines fit; on 2026-11-09 with `--enable-spatial-navigation`: arrows move focus between the buttons, Enter presses the focused one once, a repeat adds no duplicate line, `?buttons=0` maps keys directly; `node fit.test.mjs`. Not run in the Meta simulator or on glasses |
 | Even Realities G2 | `even-hub/` | 1 | `simulator` | 2026-11-08 | official Even Hub simulator 0.9.5 (npm; Even's simulator page still names v0.9.3) through its automation API, 12 of 12 checks (`npm run test:sim`): captions over WebSocket and over HTTP polling, tap, swipes, menu, double tap. `evenhub pack` accepts `app.json` |
 | Android (Rokid, Vuzix, Meta, USB-C, notification, voice) | `android/` | 1, 3, 4, 5 | see `android/README.md` | 2026-11-08 | written in parallel against this protocol |
-| iOS (Vuzix, external display, notification, voice) | `ios/` | 1, 3, 4, 5 | see `ios/README.md` | 2026-11-08 | written in parallel against this protocol |
+| iOS (Vuzix, external display, notification, voice) | `ios/` | 1, 3, 4, 5 | `compiles` (CI, unsigned) | 2026-11-09 | builds on macOS in the `examples` workflow |
 
 ## Protocol
 

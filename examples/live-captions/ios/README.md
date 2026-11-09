@@ -1,8 +1,8 @@
 # Live captions: native iOS target
 
-Verification: `docs-only` (2026-11-08). Written against Apple's documentation and the Vuzix Ultralite iOS API
-reference, never compiled: the maintainers write this on Windows. The `examples` workflow builds it on macOS once the
-repository is public; until a green run exists, treat every line here as unverified.
+Verification: `compiles` (2026-11-09). Written against Apple's documentation and the Vuzix Ultralite iOS API
+reference, and built unsigned on macOS by the `examples` workflow (first green run on 2026-11-09). It has not run on
+a device or on glasses yet.
 
 A minimal SwiftUI app with the same shape as the Android target: one `GlassesDisplay` protocol
 (`connect`, `show(_ lines:)`, `onFinal`, `clear`, `disconnect`), the shared actions `repeat` / `skip` / `hide`,

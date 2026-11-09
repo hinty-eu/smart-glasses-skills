@@ -5,7 +5,7 @@ glasses they own, with one interface and an automatic fallback.
 
 Last checked: 2026-11-08. Verification: docs-only for the brand facts. The interfaces below have the same shape as
 the ones in [`examples/live-captions/`](../../../examples/live-captions/) (repository `hinty-eu/smart-glasses-skills`);
-the Android target compiles, the iOS target is `docs-only` (never compiled). The selection code in this file is
+the Android and iOS targets compile in CI (iOS since 2026-11-09); neither has run on glasses. The selection code in this file is
 written for it and has not been compiled.
 
 ## The five rungs

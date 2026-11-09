@@ -1,0 +1,20 @@
+**Why nothing shows up:** The G2's firmware font has no Arabic glyphs. The display docs say characters outside the font set are "silently dropped", so you get no error and no placeholder, just a blank container. The font covers Latin (including Latin Extended-A), Cyrillic, Greek, Chinese, Japanese kana and Korean Hangul. Hebrew, Thai and Devanagari are dropped the same way. This is a known issue ([#37](https://github.com/even-realities/everything-evenhub/issues/37)).
+
+You can't fix it through text settings. The FAQ says you can't ship your own font, and no container option changes encoding, language or direction. Even with glyphs, Arabic would also need right-to-left ordering and contextual letter shaping, which text containers don't provide.
+
+**How to get Arabic on the display:** Render the text to an image in your plugin's WebView and send that image to the glasses.
+
+1. **Draw it on a canvas.** Canvas 2D in the WebView uses the phone's own Arabic shaping and RTL ordering. Use `direction = 'rtl'` and `textAlign = 'right'`. Draw at exactly the container's size, white on black, because black is off.
+2. **Send it as PNG bytes.** Call `updateImageRawData` with the PNG bytes. The SDK converts them to the 4-bit greyscale the display uses.
+3. **Create the image container first.** Image containers start empty and can't be filled inside `createStartUpPageContainer`. Create the page, then send the image.
+4. **Keep a text container behind it.** Image containers can't capture input. Keep one full-screen text container with `content: ' '` and `isEventCapture: 1` behind the image.
+5. **Respect the limits.** You get at most 4 image containers per page, each at most 288×144 pixels. Await each send, keep one in flight, and leave about 100 ms between sends.
+6. **Switch per message.** Keep sending English and other supported scripts as normal text. Check each message with `getAdvW` from `@evenrealities/pretext`, and use the image path only when it contains unsupported glyphs.
+
+**Trade-offs:**
+- A full-screen image refresh takes about 800 ms. That suits your short server messages but not live captions.
+- Long messages need wrapping into several lines. Use `measureText` to wrap them, and use several image containers or paging.
+- After `shutDownPageContainer(1)` (the exit dialog), image sends fail until the app is relaunched ([#18](https://github.com/even-realities/everything-evenhub/issues/18)). Keep your root page text-only where you can.
+- Test on real glasses. The simulator isn't a hardware emulator and doesn't match font or greyscale rendering.
+
+I took all of this from the skill's documentation. It hasn't been run on real G2 hardware, and the skill marks the image sketch as type-checked only. The reference file has a full sketch of the container setup and the canvas-to-`updateImageRawData` function. It's at `<repo>/skills\smart-glasses\references\brands\even-g2.md`, in the "Arabic and other scripts the font lacks" section. I can adapt it to your code if you point me at your plugin.

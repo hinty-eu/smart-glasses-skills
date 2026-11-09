@@ -1,0 +1,254 @@
+## Architecture
+
+```
+ speaker's voice
+      │
+      ▼
+ [1] Audio source ── glasses mic (via SDK) or phone mic, 16 kHz PCM16, 100 ms chunks
+      │
+      ▼
+ [2] Streaming STT ── WebSocket, interim results on (Deepgram, AssemblyAI, Google, etc.)
+      │  partial + final transcripts
+      ▼
+ [3] Caption buffer ── merge partial/final, word-wrap, keep the last N lines
+      │
+      ▼
+ [4] Throttled renderer ── coalesce updates, ≤ ~4/sec, one BLE write in flight
+      │
+      ▼
+ [5] Glasses display adapter ── the only part that touches the G2 SDK
+```
+
+**Choices that matter**
+
+- **Latency (~1 s):** this comes almost entirely from streaming STT with interim results, not from the glasses. Show partials immediately and let them be corrected. Waiting for finals alone will feel like 2–3 s.
+- **Where it runs:** the G2 is driven over BLE from the phone, so the app logic lives on the phone, either as an Even Hub web app or a native app. The STT API key should not ship in it. Have your backend mint short-lived tokens.
+- **Audio source:** a glasses mic hears the wearer as well as the other person. If you need only the other person, you'll want speaker diarization from the STT, or the phone mic held toward them. Test this early.
+- **The display is the bottleneck:** it's small and monochrome, and BLE writes are slow. Show 2–3 lines, roll the oldest off, never send identical frames, and never queue writes. Send only the latest state.
+
+## Code
+
+I haven't verified the G2 SDK's method names against current docs, and I can't browse from here. So I isolated everything SDK-specific behind a `GlassesDisplay` interface with one stub to fill in. The rest is plain TypeScript and doesn't depend on the SDK.
+
+```ts
+// caption-types.ts
+export interface TranscriptEvent {
+  text: string;
+  isFinal: boolean;
+}
+
+export interface GlassesDisplay {
+  /** Replace what's on screen with these lines. Resolve when the write is done. */
+  showLines(lines: string[]): Promise<void>;
+  clear(): Promise<void>;
+}
+```
+
+```ts
+// caption-buffer.ts
+export interface LayoutOptions {
+  maxCharsPerLine: number; // tune to the G2 font/width; measure on-device
+  maxLines: number;        // 2–3 reads well
+}
+
+function wrap(text: string, width: number): string[] {
+  const lines: string[] = [];
+  let cur = "";
+  for (const word of text.split(/\s+/).filter(Boolean)) {
+    // hard-split words longer than a line
+    let w = word;
+    while (w.length > width) {
+      if (cur) { lines.push(cur); cur = ""; }
+      lines.push(w.slice(0, width));
+      w = w.slice(width);
+    }
+    if (!cur) cur = w;
+    else if (cur.length + 1 + w.length <= width) cur += " " + w;
+    else { lines.push(cur); cur = w; }
+  }
+  if (cur) lines.push(cur);
+  return lines;
+}
+
+export class CaptionBuffer {
+  private finalized = "";  // committed text
+  private partial = "";    // current in-flight hypothesis
+  private readonly maxHistoryChars = 600;
+
+  constructor(private opts: LayoutOptions) {}
+
+  push(ev: TranscriptEvent): void {
+    if (ev.isFinal) {
+      this.finalized = (this.finalized + " " + ev.text).trim();
+      this.partial = "";
+      if (this.finalized.length > this.maxHistoryChars) {
+        this.finalized = this.finalized.slice(-this.maxHistoryChars);
+      }
+    } else {
+      this.partial = ev.text;
+    }
+  }
+
+  /** The last `maxLines` wrapped lines of finalized + partial text. */
+  lines(): string[] {
+    const all = wrap(`${this.finalized} ${this.partial}`, this.opts.maxCharsPerLine);
+    return all.slice(-this.opts.maxLines);
+  }
+
+  reset(): void { this.finalized = ""; this.partial = ""; }
+}
+```
+
+```ts
+// renderer.ts
+import { CaptionBuffer } from "./caption-buffer";
+import { GlassesDisplay } from "./caption-types";
+
+/**
+ * Coalescing renderer: at most one write in flight, always sends the
+ * *latest* state, skips duplicates, and enforces a minimum interval.
+ */
+export class CaptionRenderer {
+  private lastSent = "";
+  private inFlight = false;
+  private timer: ReturnType<typeof setTimeout> | null = null;
+  private lastSendAt = 0;
+  private idleTimer: ReturnType<typeof setTimeout> | null = null;
+
+  constructor(
+    private buffer: CaptionBuffer,
+    private display: GlassesDisplay,
+    private minIntervalMs = 250,
+    private clearAfterIdleMs = 6000,
+  ) {}
+
+  /** Call after every buffer.push(). */
+  requestRender(): void {
+    if (this.timer || this.inFlight) return; // a flush is already pending/running
+    const wait = Math.max(0, this.minIntervalMs - (Date.now() - this.lastSendAt));
+    this.timer = setTimeout(() => { this.timer = null; void this.flush(); }, wait);
+  }
+
+  private async flush(): Promise<void> {
+    const lines = this.buffer.lines();
+    const key = lines.join("\n");
+    if (key === this.lastSent) return;
+
+    this.inFlight = true;
+    try {
+      await this.display.showLines(lines);
+      this.lastSent = key;
+    } catch (e) {
+      console.warn("glasses write failed", e); // next requestRender will retry
+    } finally {
+      this.inFlight = false;
+      this.lastSendAt = Date.now();
+    }
+
+    // If new text arrived during the write, send again.
+    if (this.buffer.lines().join("\n") !== this.lastSent) this.requestRender();
+
+    // Blank the display after silence so stale text doesn't linger.
+    if (this.idleTimer) clearTimeout(this.idleTimer);
+    this.idleTimer = setTimeout(async () => {
+      this.buffer.reset();
+      this.lastSent = "";
+      await this.display.clear().catch(() => {});
+    }, this.clearAfterIdleMs);
+  }
+}
+```
+
+```ts
+// stt-deepgram.ts: one STT option; swap for any streaming provider
+import { TranscriptEvent } from "./caption-types";
+
+export class DeepgramStream {
+  private ws!: WebSocket;
+
+  /** `token` should be a short-lived key minted by YOUR backend, not a long-lived secret. */
+  connect(token: string, onTranscript: (e: TranscriptEvent) => void): Promise<void> {
+    const url =
+      "wss://api.deepgram.com/v1/listen" +
+      "?encoding=linear16&sample_rate=16000&channels=1" +
+      "&interim_results=true&endpointing=300&smart_format=true";
+    // Browsers can't set headers on WebSockets, so auth goes in the subprotocol.
+    this.ws = new WebSocket(url, ["token", token]);
+    this.ws.binaryType = "arraybuffer";
+
+    this.ws.onmessage = (msg) => {
+      const data = JSON.parse(msg.data as string);
+      const alt = data.channel?.alternatives?.[0];
+      if (alt?.transcript) {
+        onTranscript({ text: alt.transcript, isFinal: !!data.is_final });
+      }
+    };
+    return new Promise((res, rej) => {
+      this.ws.onopen = () => res();
+      this.ws.onerror = (e) => rej(e);
+    });
+  }
+
+  sendAudio(pcm16: ArrayBuffer): void {
+    if (this.ws.readyState === WebSocket.OPEN) this.ws.send(pcm16);
+  }
+
+  close(): void {
+    try { this.ws.send(JSON.stringify({ type: "CloseStream" })); } catch {}
+    this.ws.close();
+  }
+}
+```
+
+```ts
+// glasses-display.ts: the ONLY file that should touch the G2 SDK
+import { GlassesDisplay } from "./caption-types";
+
+export class G2Display implements GlassesDisplay {
+  // constructor(private sdk: <G2 SDK client>) {}
+
+  async showLines(lines: string[]): Promise<void> {
+    const text = lines.join("\n");
+    // TODO: replace with the real Even Hub / G2 SDK call that renders a text
+    // container or page. Confirm the method name, the max text length per
+    // write, and whether it needs an explicit "create page" step first.
+    throw new Error("not implemented: send `text` to the G2 text display");
+  }
+
+  async clear(): Promise<void> {
+    // TODO: SDK call to clear the text container or exit the screen.
+  }
+}
+```
+
+```ts
+// main.ts: wiring
+import { CaptionBuffer } from "./caption-buffer";
+import { CaptionRenderer } from "./renderer";
+import { DeepgramStream } from "./stt-deepgram";
+import { G2Display } from "./glasses-display";
+
+async function start(getToken: () => Promise<string>) {
+  const buffer = new CaptionBuffer({ maxCharsPerLine: 32, maxLines: 3 }); // tune on-device
+  const renderer = new CaptionRenderer(buffer, new G2Display());
+  const stt = new DeepgramStream();
+
+  await stt.connect(await getToken(), (ev) => {
+    buffer.push(ev);
+    renderer.requestRender();
+  });
+
+  // Feed audio: from the SDK's glasses-mic stream, or the phone mic via AudioWorklet.
+  // Either way, convert to 16 kHz mono PCM16 and call:
+  //   stt.sendAudio(chunk)
+}
+```
+
+## Next steps
+
+1. **Fill in `G2Display`.** Check the Even Hub SDK docs for the text-display call, the per-write length limit, and whether glasses mic audio is exposed to your app. If it isn't, use the phone mic.
+2. **Measure `maxCharsPerLine` and `maxLines` on the glasses.** I picked 32 and 3 as placeholders.
+3. **Test the speaker-versus-wearer problem** in a real conversation before building more. It decides whether you need diarization.
+4. **Tune `endpointing` and `minIntervalMs`.** Lower values mean snappier captions but more flicker and BLE traffic.
+
+I can also write the phone-mic AudioWorklet (resample to 16 kHz PCM16) or the token-minting backend endpoint. If you paste the G2 SDK docs, I can fill in the real `G2Display`.

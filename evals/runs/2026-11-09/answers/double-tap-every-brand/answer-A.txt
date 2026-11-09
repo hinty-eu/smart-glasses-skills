@@ -1,0 +1,42 @@
+"Double tap = repeat the last caption" works cleanly on one of the four, partly on a second, and not at all on the other two. This comes from the skill docs, which are docs-only and haven't been tested on hardware. Check each claim on real glasses.
+
+| Glasses | Double tap possible? | What to do |
+|---|---|---|
+| **Vuzix Z100** | Yes | Taps arrive only while you hold control, and only if you set the tap count. |
+| **Even G2** | Delivered, but reserved | Use a different gesture for repeat. |
+| **Rokid Glasses** | No, not from a normal phone app | Add a phone button, or ship your own APK on the glasses. |
+| **Meta Ray-Ban Display** | No | Use an on-screen "Repeat" button. |
+
+**Vuzix Z100**
+- Pass `maxNumTaps = 2` when you set the layout. On Android that's `setLayout(Layout.CANVAS, 30, true, false, 2)`. On iOS it's the `maxNumTaps:` argument of `requestControl`. The default of 0 reports nothing, and no error tells you so.
+- Android receives taps in `EventListener.onTap(tapCount)`. iOS receives `Notification.Name.tap` with `userInfo["tap"]`. Handle `tapCount == 2` as repeat.
+- Every extra tap count delays each report. Single taps will feel slightly slower, so don't use 3 unless you need it.
+- Left and right aren't distinguished. Ignore taps while nothing is on screen, because adjusting the frame causes false taps.
+- You must hold control, and another app can take it. Re-apply the tap count after each grant.
+
+**Even G2**
+- Android and iOS both get the event through `bridge.onEvenHubEvent`. You get `OsEventTypeList.DOUBLE_CLICK_EVENT` in `sysEvent`, from either temple or the R1 ring.
+- Store review requires a root-page double tap to call `shutDownPageContainer(1)` (the exit dialog). Using it for repeat would be rejected.
+- A single tap has no `eventType`, so treat a present envelope without one as `CLICK_EVENT`.
+- I suggest tap for repeat, swipe down for skip and long press for hide. That's the mapping the skill docs use.
+- I didn't find whether a double tap on a non-root page is free for your own use. Test it in the simulator, then on glasses.
+
+**Rokid Glasses**
+- A CXR-L `CUSTOM_VIEW` session gets lifecycle events only: paused, resumed, closed, wearing and screen state. The touchpad belongs to the glasses system.
+- Option A is a repeat button in the phone app. That's the low-effort path.
+- Option B is `CUSTOM_APP` with your own APK on the glasses (CXR-S), where you can read touchpad gestures. That's a much bigger build.
+- The AI key via `onAiWake()` with `AiInterceptMode.BLOCK_AI` is an experiment, and it isn't a double tap.
+
+**Meta Ray-Ban Display**
+- A DAT app gets focus-based buttons only. The Neural Band or touchpad moves focus, and a pinch or tap fires `onClick`.
+- The raw `Inputs` API is beta and Meta's terms keep it out of production. Meta also reserves several gestures, including the Meta AI gesture, wake/sleep and the app switcher.
+- Put a **Repeat** button on screen. In a Web App, use a real `<button>` with a `click` handler. Don't handle arrow keys or Enter yourself.
+- Back ends the DAT session, so don't use it as an action.
+- Publishing is also blocked: DAT is limited to Beta-channel testers and Web Apps need Developer Mode.
+
+**What to tell product**
+1. Define one **repeat** action, not a gesture. Each platform maps its own input to it, through a small gate that debounces at about 300 ms.
+2. State the real mapping per device: Vuzix double tap, Even single tap, Rokid and Meta an on-screen or phone button.
+3. Rokid parity with the others means an on-glasses APK, which is a separate decision.
+
+I can sketch the shared action interface and the four adapters if you want.

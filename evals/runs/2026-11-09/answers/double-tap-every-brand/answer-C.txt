@@ -1,0 +1,24 @@
+Short answer: probably not as a native gesture on all four. I'm answering from memory without checking current SDK docs, and these SDKs change quickly, so confirm each "likely" below against the vendor docs.
+
+**Feasibility**
+
+| Glasses | Input surface | Double tap available to your app? |
+|---|---|---|
+| Even Realities G2 | Temple touch and the R1 ring | Likely yes. The Even Hub SDK, as I remember it, delivers click, double-click and scroll events to your app. |
+| Vuzix Z100 | Temple touchpad | Likely yes. The Ultralite SDK exposes touchpad and tap events, but check whether it reports double tap or only single tap and swipes. |
+| Rokid Glasses | Temple touchpad | Probably. It's Android-based, so the touchpad arrives as key or motion events. You may have to detect double tap yourself, for example with a timing window or `GestureDetector`. The phone-companion SDK path may expose less. |
+| Meta Ray-Ban Display | Meta Neural Band (wrist EMG pinches) and temple touch | Least likely. As far as I know, third-party access to the display and to Neural Band gestures was very limited or in preview. Double-pinch is also tied to system actions. Verify before promising anything. |
+
+**Wiring approach**
+
+1. Define one internal event, `REPEAT_LAST_CAPTION`, and have one handler that re-renders the last caption from your caption buffer.
+2. Write a small adapter per device that maps native input to that event:
+   - **G2 and Vuzix:** subscribe to the SDK's double-tap event if it exists. If the SDK only gives single taps, detect the double tap yourself.
+   - **Rokid:** handle the key or touch event and detect a double tap with a ~300 ms window.
+   - **Meta:** use the SDK's gesture callback if one is exposed. Otherwise fall back to a phone-side control, or to a voice command if the SDK offers one.
+3. Do your own double-tap detection from single taps, but only when the SDK has no native double-tap event. It adds latency to single taps, so use it only if single tap has no other job in your app.
+4. Check whether the OS reserves double tap, for example to exit an app or wake the display. On some of these devices it is a system gesture, and your app never sees it.
+
+**What to tell product:** "Double tap everywhere" is realistic on G2, and probably on Vuzix and Rokid. Meta Ray-Ban Display is the risk. Ask for a per-device fallback there, such as a phone button, a ring or band gesture, or voice. I'd confirm the Meta and Vuzix event lists first, since those two decide whether the requirement can be met everywhere.
+
+If your repo already has adapters for these devices, point me at them and I can write the actual wiring.

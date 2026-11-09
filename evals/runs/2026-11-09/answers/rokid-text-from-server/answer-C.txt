@@ -1,0 +1,91 @@
+## Recommended approach
+
+Keep the WebSocket in your phone app and forward the text to the glasses through Rokid's **CXR-M SDK**, the phone-side SDK. The glasses pair with the phone over Bluetooth, and the SDK lets your app push UI to them. The CXR-M "custom view" feature takes a small JSON layout, such as a text view, and updates it live. The alternative is to run your own APK on the glasses with CXR-S or plain Android. That means a second WebSocket client and a second deployment, so it only makes sense if the glasses must work without the phone.
+
+At a few messages per second you don't need a queue. Glasses displays are tiny and hard to read, so show the latest line and drop stale ones. I'd also coalesce updates to about 2 per second so the display doesn't flicker.
+
+I wrote the Rokid calls from memory and couldn't check them here. Method names and the JSON schema may differ in your SDK version, so verify them against the current CXR-M docs. I've isolated them in one class so only that class needs fixing.
+
+## Kotlin sketch
+
+```kotlin
+// 1. Abstraction: the rest of your app never touches Rokid APIs
+interface GlassesDisplay {
+    fun show(text: String)
+    fun close()
+}
+
+// 2. WebSocket as a Flow (OkHttp)
+fun OkHttpClient.messages(url: String): Flow<String> = callbackFlow {
+    val ws = newWebSocket(Request.Builder().url(url).build(), object : WebSocketListener() {
+        override fun onMessage(webSocket: WebSocket, text: String) { trySend(text) }
+        override fun onFailure(webSocket: WebSocket, t: Throwable, r: Response?) { close(t) }
+        override fun onClosed(webSocket: WebSocket, code: Int, reason: String) { close() }
+    })
+    awaitClose { ws.close(1000, null) }
+}
+
+// 3. Pipe: keep only the latest message, at most ~2 updates per second
+class GlassesBridge(
+    private val client: OkHttpClient,
+    private val display: GlassesDisplay,
+    private val scope: CoroutineScope,
+) {
+    private var job: Job? = null
+
+    fun start(url: String) {
+        job = scope.launch {
+            client.messages(url)
+                .retryWhen { _, attempt -> delay(minOf(30_000L, 1000L shl attempt.toInt().coerceAtMost(5))); true }
+                .conflate()                 // drop stale lines if we're behind
+                .onEach { delay(500) }      // cap the update rate
+                .collect { display.show(it.take(120)) }  // keep it short for the lens
+        }
+    }
+
+    fun stop() { job?.cancel(); display.close() }
+}
+
+// 4. Rokid implementation (VERIFY against CXR-M docs)
+class RokidGlassesDisplay : GlassesDisplay {
+    private val cxr = CxrApi.getInstance()   // com.rokid.cxr.client.*
+    private var opened = false
+
+    // Call after Bluetooth pairing/connection to the glasses succeeds
+    // (initBluetooth / connectBluetooth in the SDK).
+    override fun show(text: String) {
+        val json = customViewJson(text)
+        if (!opened) { cxr.openCustomView(json); opened = true }
+        else cxr.updateCustomView(json)
+    }
+
+    override fun close() {
+        if (opened) cxr.closeCustomView()
+        opened = false
+    }
+
+    private fun customViewJson(text: String) = JSONObject().apply {
+        put("type", "LinearLayout")
+        put("props", JSONObject().put("layout_width", "match_parent")
+                                  .put("layout_height", "match_parent")
+                                  .put("gravity", "center"))
+        put("children", JSONArray().put(JSONObject().apply {
+            put("type", "TextView")
+            put("props", JSONObject().put("id", "status")
+                                      .put("text", text)
+                                      .put("textSize", "20sp")
+                                      .put("textColor", "#FF00FF00"))
+        }))
+    }.toString()
+}
+```
+
+## Setup and gotchas
+
+- **Credentials and access:** CXR-M needs an app key/secret from Rokid's developer portal. You also need the Rokid SDK Maven repo and Bluetooth/Nearby-devices permissions in your manifest.
+- **Foreground service:** if updates must keep flowing while your app is backgrounded, run the bridge inside a foreground service. Android will otherwise kill the WebSocket.
+- **Connection state:** only call `show()` once the glasses are connected. Buffer the latest line and replay it on reconnect.
+- **Display design:** a green-on-black high-contrast style reads best on monochrome or waveguide displays. Keep lines to a few words, and for longer instructions split them into short sequential screens.
+- **If you need audio:** the SDK also offers TTS and AI-scene hooks. These suit spoken instructions better than long text.
+
+If you tell me your SDK version, or paste the CXR-M docs for custom views, I can tighten the Rokid class to the real signatures.

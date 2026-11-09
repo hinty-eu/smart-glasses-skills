@@ -1,0 +1,148 @@
+I couldn't look at your code, because the working directory is empty. So this is a sketch, and the SDK-specific parts are assumptions you'll need to check.
+
+## Approach
+
+A G2 app is a web app that runs in a WebView inside the Even app. It doesn't draw to the DOM. It sends containers (text, list, image) to the glasses through a bridge, and it receives touchpad events back through that bridge. So the CI test should:
+
+1. Build the app and serve it with `vite preview`.
+2. Open it in headless Chromium with Playwright.
+3. Replace the glasses bridge with a fake one before the page loads.
+4. Assert that the first screen was sent to the "glasses", which means the fake bridge recorded the right calls. Then fire a tap event and assert the screen changed.
+
+Nothing in this needs hardware or the phone app.
+
+## One small change in the app
+
+Add a seam, so tests can swap the bridge. For example, in your bridge-loading module:
+
+```ts
+// src/bridge.ts
+import { waitForEvenAppBridge } from '@evenrealities/even_hub_sdk'; // verify the package/export name
+
+export function getBridge() {
+  return (window as any).__FAKE_BRIDGE__ ?? waitForEvenAppBridge();
+}
+```
+
+Keep using the SDK's real types elsewhere. The fake only needs to cover the methods you actually call.
+
+## Test script: `e2e/smoke.spec.ts`
+
+```ts
+import { test, expect } from '@playwright/test';
+
+// Installed before any app code runs. Records every call the app makes to the
+// "glasses" and lets the test push input events back.
+const fakeBridge = () => {
+  const calls: { method: string; args: unknown[] }[] = [];
+  let handler: ((e: unknown) => void) | undefined;
+  const rec = (method: string) => async (...args: unknown[]) => {
+    calls.push({ method, args });
+    return true;
+  };
+  (window as any).__FAKE_BRIDGE__ = Promise.resolve({
+    createStartUpPageContainer: rec('createStartUpPageContainer'),
+    rebuildPageContainer: rec('rebuildPageContainer'),
+    textContainerUpgrade: rec('textContainerUpgrade'),
+    onEvenHubEvent: (cb: (e: unknown) => void) => { handler = cb; return () => { handler = undefined; }; },
+    // add any other bridge methods your app calls
+  });
+  (window as any).__calls = calls;
+  (window as any).__emit = (e: unknown) => handler?.(e);
+};
+
+test('app starts, shows first screen, reacts to tap', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+
+  await page.addInitScript(fakeBridge);
+  await page.goto('/');
+
+  // 1. Starts and shows the first screen
+  await expect.poll(() =>
+    page.evaluate(() => (window as any).__calls.map((c: any) => c.method))
+  ).toContain('createStartUpPageContainer');
+
+  const first = await page.evaluate(() => JSON.stringify((window as any).__calls[0].args));
+  expect(first).toContain('Welcome'); // <- replace with your real first-screen text
+
+  // 2. Reacts to a tap
+  const before = await page.evaluate(() => (window as any).__calls.length);
+  await page.evaluate(() =>
+    // shape is an assumption: match the SDK's click event (sysEvent / CLICK_EVENT)
+    (window as any).__emit({ sysEvent: { eventType: 0 } })
+  );
+  await expect.poll(() =>
+    page.evaluate(() => (window as any).__calls.length)
+  ).toBeGreaterThan(before);
+
+  const last = await page.evaluate(() => JSON.stringify((window as any).__calls.at(-1).args));
+  expect(last).toContain('Next screen'); // <- replace with what a tap should produce
+
+  expect(errors).toEqual([]);
+});
+```
+
+`playwright.config.ts`:
+
+```ts
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  testDir: 'e2e',
+  retries: 1,
+  use: { baseURL: 'http://localhost:4173', trace: 'retain-on-failure' },
+  webServer: {
+    command: 'npm run build && npm run preview -- --port 4173 --strictPort',
+    url: 'http://localhost:4173',
+    reuseExistingServer: false,
+    timeout: 120_000,
+  },
+});
+```
+
+## Workflow: `.github/workflows/ci.yml`
+
+```yaml
+name: CI
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-trace
+          path: test-results/
+```
+
+Add `@playwright/test` as a dev dependency.
+
+## Things to verify
+
+- **SDK names and event shapes.** I wrote `waitForEvenAppBridge`, `createStartUpPageContainer`, `onEvenHubEvent` and `{ sysEvent: { eventType: 0 } }` from memory. Check them against the SDK version you use, and mirror exactly what your app calls and listens for. If the fake and the real SDK drift apart, the test will pass while the app is broken.
+- **Official simulator.** Even Realities may ship a simulator or CLI that runs the real SDK path. If it runs headless on Linux, use it, because it tests more than a hand-written fake does. I haven't confirmed this. The fake bridge is the fallback that works either way.
+- **Scope.** This covers startup, the first screen and input handling. It can't catch how things render on the glasses, such as font fit, layout overflow or image conversion. Keep a manual check on a device or simulator for those.
+
+If you share the repo, I can fill in the real bridge calls, first-screen text and tap behavior.

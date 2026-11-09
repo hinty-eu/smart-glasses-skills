@@ -1,0 +1,154 @@
+{
+  "case": "meta-display-publish-next-month",
+  "items": 12,
+  "answers": {
+    "A": {
+      "scores": [
+        0.5,
+        0.5,
+        0,
+        0,
+        0,
+        0,
+        0.5,
+        0,
+        0.5,
+        0,
+        0,
+        0.5
+      ],
+      "reasons": [
+        "Hedged guesses at an SDK and web surface, unnamed.",
+        "\"Probably not\", blames approval; does not say publishing is closed.",
+        "No Developer Mode or Beta release channel.",
+        "No Integration Review.",
+        "No iOS MFi/App Store limit.",
+        "Web App path only \"if one exists\".",
+        "Flags limited markets; says \"initially US-only\", no list.",
+        "No 600x600 or layout model.",
+        "Backend->phone->glasses right; web path vague.",
+        "No version requirements.",
+        "No Maven artifacts or manifest.",
+        "Beta plus fallback, but hinges on unconfirmed access."
+      ],
+      "points": 2.5,
+      "percent": 20.8,
+      "critical": [],
+      "other_errors": []
+    },
+    "B": {
+      "scores": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0.5,
+        0.5,
+        1
+      ],
+      "reasons": [
+        "DAT Display adapter and HTTPS Web App on the glasses.",
+        "\"Meta doesn't allow that yet\"; quotes \"isn't open yet\".",
+        "Developer Mode, one private Beta channel, tester-limit check.",
+        "Terms require Integration Review before general release.",
+        "No App Store path; MFi IDs; TestFlight plus Beta.",
+        "Developer Mode, add URL, \"unverified\", submission \"soon\".",
+        "Lists US, Canada, UK, France, Germany, Italy.",
+        "600x600, sendContent FlexBox, each send replaces the screen.",
+        "Backend->phone->DAT and backend->Web App over WebSocket.",
+        "Android 10+/iOS 17.2+; no Meta AI or firmware versions.",
+        "mwdat-core/mwdat-display 1.0.1; no APPLICATION_ID manifest entry.",
+        "Ship fallbacks, closed beta, launch trigger when publishing opens."
+      ],
+      "points": 11,
+      "percent": 91.7,
+      "critical": [],
+      "other_errors": []
+    },
+    "C": {
+      "scores": [
+        0.5,
+        0.5,
+        0,
+        0,
+        0,
+        0,
+        0.5,
+        0,
+        0.5,
+        0,
+        0,
+        0.5
+      ],
+      "reasons": [
+        "DAT via phone only; no Web App path.",
+        "High-risk, publishing limited; not stated as closed.",
+        "No Developer Mode or Beta channel.",
+        "No Integration Review.",
+        "iOS concerns are parity/background, not MFi.",
+        "No Web Apps.",
+        "Flags limited markets; stale US-only claim.",
+        "Only \"tiny and glanceable\".",
+        "DAT flow right; denies any direct backend path.",
+        "No versions.",
+        "No Android setup.",
+        "Notification fallback, gated beta; month \"plausible\" if access open."
+      ],
+      "points": 2.5,
+      "percent": 20.8,
+      "critical": [
+        {
+          "error": "Says or implies the DAT integration can be released to all users next month without the caveats.",
+          "quote": "a staged rollout (internal, then beta, then opt-in for glasses owners) in a month is plausible for one platform.",
+          "status": "not-an-error",
+          "why": "Explicitly conditional on access being open, next to gating caveats; not a claim that a general launch works."
+        }
+      ],
+      "other_errors": [
+        {
+          "quote": "The glasses can't be reached from your backend directly. Everything goes through the phone",
+          "why": "Display Web Apps run on the glasses and fetch from the backend directly (webapps/setup)."
+        }
+      ]
+    },
+    "D": {
+      "scores": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0,
+        0.5,
+        1
+      ],
+      "reasons": [
+        "DAT Display SDK and Web App on the glasses.",
+        "\"not realistic\"; quotes \"isn't open yet\".",
+        "Invite-only Beta, Developer Mode, ~100 testers.",
+        "Cites Developer Terms section 4.1 Integration Review.",
+        "No App Store route; MFi PPID; TestFlight plus Beta.",
+        "Developer Mode, URL or QR, \"unverified\", submission \"soon\".",
+        "Lists the six countries.",
+        "600x600, sendContent FlexBox Text/Button, send replaces screen.",
+        "Backend->phone->DAT; Web App over WebSocket.",
+        "No version or OS requirements.",
+        "mwdat-core/mwdat-display 1.0.1; no manifest meta-data.",
+        "Fallbacks for all, Beta now, enable when publishing opens."
+      ],
+      "points": 10.5,
+      "percent": 87.5,
+      "critical": [],
+      "other_errors": []
+    }
+  }
+}

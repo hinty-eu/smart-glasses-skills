@@ -1,0 +1,68 @@
+{
+  "choose-glasses-teleprompter": {
+    "A": "run1/without",
+    "B": "run2/with",
+    "C": "run1/with",
+    "D": "run2/without"
+  },
+  "double-tap-every-brand": {
+    "A": "run2/with",
+    "B": "run1/with",
+    "C": "run2/without",
+    "D": "run1/without"
+  },
+  "even-g2-arabic": {
+    "A": "run2/without",
+    "B": "run2/with",
+    "C": "run1/without",
+    "D": "run1/with"
+  },
+  "even-g2-ci-without-glasses": {
+    "A": "run2/without",
+    "B": "run1/with",
+    "C": "run2/with",
+    "D": "run1/without"
+  },
+  "even-g2-live-captions": {
+    "A": "run2/without",
+    "B": "run1/with",
+    "C": "run1/without",
+    "D": "run2/with"
+  },
+  "meta-dat-no-eligible-device": {
+    "A": "run1/with",
+    "B": "run2/without",
+    "C": "run2/with",
+    "D": "run1/without"
+  },
+  "meta-display-publish-next-month": {
+    "A": "run1/without",
+    "B": "run2/with",
+    "C": "run2/without",
+    "D": "run1/with"
+  },
+  "ray-ban-meta-voice-hints": {
+    "A": "run1/without",
+    "B": "run1/with",
+    "C": "run2/without",
+    "D": "run2/with"
+  },
+  "rokid-text-from-server": {
+    "A": "run2/without",
+    "B": "run2/with",
+    "C": "run1/without",
+    "D": "run1/with"
+  },
+  "vuzix-z100-ios-captions": {
+    "A": "run2/without",
+    "B": "run1/without",
+    "C": "run2/with",
+    "D": "run1/with"
+  },
+  "xreal-subtitles-android": {
+    "A": "run2/without",
+    "B": "run2/with",
+    "C": "run1/without",
+    "D": "run1/with"
+  }
+}

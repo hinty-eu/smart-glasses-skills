@@ -1,0 +1,37 @@
+**No, not as stated.** Building it is easy, but you can't ship it to all users on both platforms next month. Meta doesn't allow that yet. This is based on Meta's docs and staff statements as of 2026-11-08. I haven't tested any of it on glasses, so recheck the sources before you commit to a date.
+
+## Why the timeline doesn't hold
+
+- **Android:** Your APK can be on Google Play, but only people you invite to your one private Beta channel can register. Everyone else gets "Error loading this integration". Meta staff said on 2026-11-05 that publishing to all users "isn't open yet", there's no public application or review process, and they gave no date.
+- **iPhone:** There's no App Store path. The SDK relies on an Apple accessory program (MFi) that Meta says it can't issue the required IDs for. You can only use TestFlight plus a Beta channel.
+- **Web App route:** It only works for wearers in Developer Mode who add your URL, and the add screen labels it "unverified". Meta says it will share how to submit an app "soon", with no date.
+- **Developer Mode:** Meta's terms require Integration Review before general release, so don't plan a launch on it.
+- **Availability:** The glasses are sold only in the US, Canada, UK, France, Germany and Italy. Even after Meta opens publishing, that caps your audience.
+
+## How to build it
+
+Your backend already makes the cards, so the work is mostly a thin delivery layer.
+
+1. **Backend:** Expose each card as short text with an ID, a type (reminder or next step) and an optional action. Keep it to about 35–40 characters per line, light text on black. The display is 600×600, and black is transparent.
+2. **Phone app:** Define one `GlassesDisplay` interface with one adapter per delivery method.
+   - **Meta DAT Display adapter** (Kotlin on Android 10+, Swift on iOS 17.2+). Use the Maven artifacts `com.meta.wearable:mwdat-core` and `mwdat-display` 1.0.1; no token is needed. The flow is register, create a session, add Display, then call `sendContent` with a FlexBox of text and a "Hide" or "Done" button.
+   - **Web App adapter:** A small HTTPS page that gets cards from your server over WebSocket. Your backend already produces the cards, so this is probably the fastest prototype. It needs no phone-side SDK, but it needs a network on the glasses.
+   - **Fallbacks:** A normal phone notification, or text-to-speech over Bluetooth audio. These work today with no approval. Meta's notification mirroring is "coming soon", and I couldn't confirm that third-party notifications reach every wearer.
+3. **Design around known limits:**
+   - Each send replaces the whole screen, and there are no partial updates.
+   - The panel dims after 20 seconds and sleeps at 25 seconds, and nothing in the API lets you control sleep. For reminders, add a short sound or spoken cue so people know to look.
+   - The Back gesture ends the session and isn't delivered to your app in 1.0.x. Put "Hide" on screen.
+   - Glyph coverage is undocumented. For non-Latin scripts, render text to a bitmap and send it as an image.
+4. **Test without glasses:** DAT has `MockDeviceKit` with a display preview, and there's a Chrome "Meta Ray-Ban Display Simulator" extension. Only real hardware shows gesture focus, sleep and wake behavior, Bluetooth latency, and glyph rendering.
+5. **Policy:** Cards that only show your own backend's text don't touch the audio and camera restrictions. SDK analytics and crash reporting are on by default, so decide whether to opt out.
+
+For SDK detail, Meta's official skills are better than my notes: `npx skills add meta/meta-wearables-dat-android` and `npx skills add meta/meta-wearables-dat-ios`.
+
+## A realistic December plan
+
+- **Ship to everyone:** The phone-notification and text-to-speech paths. They need no Meta approval and run on both Android and iPhone.
+- **Run a closed beta:** A DAT Display integration with invited testers only. That means a Play Beta channel on Android and TestFlight on iPhone. Check the tester limit in your Developer Center channel; Meta's May blog said up to 100.
+- **Prepare the Web App:** Build it and keep it ready, but don't promise it to users.
+- **Set a launch trigger, not a date:** Go to general availability when Meta opens publishing. Watch Meta's DAT discussions on GitHub, and ask your Meta developer contact directly for a timeline.
+
+Before you commit externally, I'd ask Meta three things: when DAT publishing opens, whether iOS distribution has any path, and when Web App submission starts.

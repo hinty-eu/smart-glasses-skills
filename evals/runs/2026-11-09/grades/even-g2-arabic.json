@@ -1,0 +1,166 @@
+{
+  "case": "even-g2-arabic",
+  "items": 12,
+  "answers": {
+    "A": {
+      "scores": [
+        0.5,
+        0.5,
+        0,
+        1,
+        0.5,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "Firmware font, missing chars render nothing; no single-font/size facts.",
+        "Only suspects the font lacks Arabic.",
+        "Suggests asking about font upload; never says impossible.",
+        "Explains shaping and bidi needed even with glyphs.",
+        "Bitmap idea; no WebView canvas or updateImageRawData.",
+        "No image container limits.",
+        "No image sending rules.",
+        "No accepted data format.",
+        "No event-capture text container.",
+        "No speed expectations.",
+        "No per-message text/image routing.",
+        "No real-glasses verification advice."
+      ],
+      "points": 2.5,
+      "percent": 20.8,
+      "critical": [
+        {
+          "error": "Says Arabic can be fixed by changing the text encoding",
+          "quote": "Pre-shape the text and send Presentation Forms characters (U+FB50–U+FDFF and U+FE70–U+FEFF). This only works if the firmware font includes those glyphs, which is unlikely.",
+          "status": "not-an-error",
+          "why": "Hedged as unlikely and to be tested once; not presented as a fix."
+        }
+      ],
+      "other_errors": [
+        {
+          "quote": "Size the bitmap to the display's resolution and bit depth, which are in the SDK spec.",
+          "why": "Image containers max 288x144; a 576x288 display-sized bitmap does not fit one container."
+        }
+      ]
+    },
+    "B": {
+      "scores": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "reasons": [
+        "Firmware font; 'silently dropped' quoted.",
+        "Definitive; known issue #37.",
+        "FAQ: cannot ship own font.",
+        "Text containers lack RTL ordering and shaping.",
+        "WebView canvas to updateImageRawData.",
+        "288x144, 4 per page, 4-bit greyscale.",
+        "Not in createStartUpPageContainer; await, one in flight.",
+        "PNG bytes; SDK converts to 4-bit greyscale.",
+        "Full-screen text container, content ' ', isEventCapture 1.",
+        "800 ms refresh, 100 ms spacing; fits short messages.",
+        "Per-message switch using getAdvW.",
+        "Test on real glasses; simulator not hardware emulator."
+      ],
+      "points": 12,
+      "percent": 100.0,
+      "critical": [],
+      "other_errors": []
+    },
+    "C": {
+      "scores": [
+        0.5,
+        0.5,
+        0,
+        1,
+        0.5,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "Firmware font, lacking chars dropped; hedged.",
+        "Only 'likely cause'.",
+        "Leaves custom font loading open as an option.",
+        "Explains shaping and RTL ordering needed.",
+        "Image rendering suggested; no WebView canvas/updateImageRawData.",
+        "No container limits.",
+        "No image rules.",
+        "No accepted data format.",
+        "No event-capture text container.",
+        "Only generic 'limit how often you push'.",
+        "No per-message routing.",
+        "No real-glasses verification."
+      ],
+      "points": 2.5,
+      "percent": 20.8,
+      "critical": [
+        {
+          "error": "Says Arabic can be fixed by installing or uploading a font to the glasses",
+          "quote": "Pre-shape the text and use a font that has the glyphs. This only works if the SDK lets you load a custom font, or if the firmware includes Arabic glyphs.",
+          "status": "not-an-error",
+          "why": "Conditional; does not claim a font-upload API exists."
+        }
+      ],
+      "other_errors": [
+        {
+          "quote": "The cost is more bandwidth, and you need to size the image to the display and limit how often you push updates.",
+          "why": "Image containers max 288x144, a quarter of the 576x288 display; sizing to the display fails."
+        }
+      ]
+    },
+    "D": {
+      "scores": [
+        1,
+        1,
+        0.5,
+        0.5,
+        1,
+        1,
+        1,
+        0.5,
+        0,
+        1,
+        0.5,
+        1
+      ],
+      "reasons": [
+        "One built-in firmware font; silently dropped.",
+        "Definitive; not a bug; known issue #37.",
+        "'Only way' implies no custom font; not stated.",
+        "Canvas does shaping/RTL; text-container gap not stated.",
+        "WebView canvas, then updateImageRawData.",
+        "4 per page, 288x144, 4-bit greyscale.",
+        "No sends during page creation; one at a time.",
+        "Manual 4-bit conversion; accepted formats not named.",
+        "No event-capture text container.",
+        "800 ms refresh; suits short messages.",
+        "Detects Arabic, but for fallback, not explicit routing.",
+        "Simulator lacks font rendering; check on real glasses."
+      ],
+      "points": 9.0,
+      "percent": 75.0,
+      "critical": [],
+      "other_errors": []
+    }
+  }
+}

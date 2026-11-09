@@ -1,0 +1,268 @@
+{
+  "claudeVersion": "2.1.318",
+  "startedAt": "2026-11-09T10:12:08.077Z",
+  "model": "sonnet",
+  "judgeModel": "sonnet",
+  "aggregates": {
+    "casesTotal": 11,
+    "casesPassed": 7,
+    "overallScore": 0.6363636363636364,
+    "overallPassRate": 0.6363636363636364,
+    "meanDelta": 0.6363636363636364
+  },
+  "cases": [
+    {
+      "name": "choose-glasses-teleprompter",
+      "with": [
+        {
+          "score": 0,
+          "votes": [
+            false,
+            false,
+            false
+          ]
+        }
+      ],
+      "without": [
+        {
+          "score": 0,
+          "votes": [
+            false,
+            false,
+            false
+          ]
+        }
+      ]
+    },
+    {
+      "name": "double-tap-every-brand",
+      "with": [
+        {
+          "score": 1,
+          "votes": [
+            true,
+            true,
+            true
+          ]
+        }
+      ],
+      "without": [
+        {
+          "score": 0,
+          "votes": [
+            false,
+            false,
+            false
+          ]
+        }
+      ]
+    },
+    {
+      "name": "even-g2-arabic",
+      "with": [
+        {
+          "score": 0,
+          "votes": [
+            false,
+            false,
+            false
+          ]
+        }
+      ],
+      "without": [
+        {
+          "score": 0,
+          "votes": [
+            false,
+            false,
+            false
+          ]
+        }
+      ]
+    },
+    {
+      "name": "even-g2-ci-without-glasses",
+      "with": [
+        {
+          "score": 1,
+          "votes": [
+            true,
+            true,
+            true
+          ]
+        }
+      ],
+      "without": [
+        {
+          "score": 0,
+          "votes": [
+            false,
+            false,
+            false
+          ]
+        }
+      ]
+    },
+    {
+      "name": "even-g2-live-captions",
+      "with": [
+        {
+          "score": 0,
+          "votes": [
+            false,
+            false,
+            false
+          ]
+        }
+      ],
+      "without": [
+        {
+          "score": 0,
+          "votes": [
+            false,
+            false,
+            false
+          ]
+        }
+      ]
+    },
+    {
+      "name": "meta-dat-no-eligible-device",
+      "with": [
+        {
+          "score": 1,
+          "votes": [
+            true,
+            true,
+            true
+          ]
+        }
+      ],
+      "without": [
+        {
+          "score": 0,
+          "votes": [
+            false,
+            false,
+            false
+          ]
+        }
+      ]
+    },
+    {
+      "name": "meta-display-publish-next-month",
+      "with": [
+        {
+          "score": 1,
+          "votes": [
+            false,
+            true,
+            true
+          ]
+        }
+      ],
+      "without": [
+        {
+          "score": 0,
+          "votes": [
+            false,
+            false,
+            false
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ray-ban-meta-voice-hints",
+      "with": [
+        {
+          "score": 1,
+          "votes": [
+            true,
+            true,
+            true
+          ]
+        }
+      ],
+      "without": [
+        {
+          "score": 0,
+          "votes": [
+            false,
+            false,
+            false
+          ]
+        }
+      ]
+    },
+    {
+      "name": "rokid-text-from-server",
+      "with": [
+        {
+          "score": 0,
+          "votes": [
+            false,
+            true,
+            false
+          ]
+        }
+      ],
+      "without": [
+        {
+          "score": 0,
+          "votes": [
+            false,
+            false,
+            false
+          ]
+        }
+      ]
+    },
+    {
+      "name": "vuzix-z100-ios-captions",
+      "with": [
+        {
+          "score": 1,
+          "votes": [
+            false,
+            true,
+            true
+          ]
+        }
+      ],
+      "without": [
+        {
+          "score": 0,
+          "votes": [
+            false,
+            false,
+            false
+          ]
+        }
+      ]
+    },
+    {
+      "name": "xreal-subtitles-android",
+      "with": [
+        {
+          "score": 1,
+          "votes": [
+            true,
+            true,
+            true
+          ]
+        }
+      ],
+      "without": [
+        {
+          "score": 0,
+          "votes": [
+            false,
+            false,
+            false
+          ]
+        }
+      ]
+    }
+  ]
+}

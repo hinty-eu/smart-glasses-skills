@@ -1,0 +1,202 @@
+{
+  "case": "rokid-text-from-server",
+  "items": 13,
+  "answers": {
+    "A": {
+      "scores": [
+        0,
+        0,
+        0,
+        1,
+        0.5,
+        0.5,
+        0.5,
+        0.5,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "Recommends CXR-M; no CXR-L artifact, repo or minSdk.",
+        "Direct Bluetooth pairing; no companion app in the chain.",
+        "No user authorisation in companion app; only developer credentials.",
+        "Phone keeps WebSocket; glasses only render.",
+        "JSON layout plus id update, but CXR-M calls, not CUSTOM_VIEW.",
+        "Implied by phone-side architecture, never stated explicitly.",
+        "Gates on Bluetooth connected, not session Started state.",
+        "Re-sends after reconnect; no pause/assistant or re-authorisation handling.",
+        "Conflate, distinctUntilChanged, 250 ms delay, 120-char truncation.",
+        "Touchpad events not mentioned.",
+        "No testing or simulator discussion.",
+        "No licence discussion.",
+        "No notification fallback."
+      ],
+      "percent": 30.8,
+      "critical": [
+        {
+          "error": "Recommends CXR-M as the SDK for this app",
+          "quote": "Rokid has a phone-side SDK for this, the CXR-M SDK (Client SDK for Mobile).",
+          "status": "confirmed",
+          "why": "Checklist source: CXR-M is business-only, not public; CXR-L is the public path."
+        },
+        {
+          "error": "Phone talks to glasses over raw Bluetooth without companion app",
+          "quote": "Your app pairs with the glasses over Bluetooth, and you push text to a \"custom view\" scene on the display.",
+          "status": "not-an-error",
+          "why": "Bluetooth is via the (wrong) CXR-M SDK, not raw; covered by the CXR-M error."
+        },
+        {
+          "error": "Invented API names",
+          "quote": "I'm going from memory of the SDK, so check the class and method names below against Rokid's current developer docs before you build.",
+          "status": "not-an-error",
+          "why": "CxrApi/openCustomView are CXR-M-style names, explicitly marked unverified."
+        }
+      ],
+      "other_errors": [
+        {
+          "quote": "you need to register for Rokid's developer program to get SDK access and credentials. Without that the SDK won't initialize.",
+          "why": "CXR-M is not offered through the developer site; only via Rokid's business team."
+        }
+      ]
+    },
+    "B": {
+      "scores": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0,
+        1,
+        1
+      ],
+      "reasons": [
+        "client-l 1.1.2, Rokid Maven repo, minSdk 28.",
+        "Through Hi Rokid; must be installed, signed in, glasses connected.",
+        "requestAuthorization with GlassPermission.MEDIA; token passed to connect.",
+        "OkHttp WebSocket in phone forwards text to glasses.",
+        "CUSTOM_VIEW with viewData JSON; customViewUpdate targets node ids.",
+        "States no code runs on the glasses.",
+        "Waits for onSessionStarted; checks SessionState.Started before updating.",
+        "Resumes and re-sends; clears token on NOT_AUTHENTICATED/TOKEN_EXPIRED.",
+        "Keeps latest only, 250 ms flush, green monochrome, short lines.",
+        "Taps don't reach phone app in CUSTOM_VIEW.",
+        "Only notes ARM-only natives; no simulator or fake advice.",
+        "No published licence; depend on artifact, don't copy SDK files.",
+        "Notification mirrored by Hi Rokid as no-SDK fallback."
+      ],
+      "percent": 92.3,
+      "critical": [
+        {
+          "error": "Long block said to be copied from Rokid samples/docs",
+          "quote": "Rokid's docs and community reports are the source.",
+          "status": "not-an-error",
+          "why": "Describes the information source; code is not claimed as copied."
+        }
+      ],
+      "other_errors": []
+    },
+    "C": {
+      "scores": [
+        0,
+        0,
+        0,
+        1,
+        0.5,
+        1,
+        0.5,
+        0.5,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "Recommends CXR-M; no CXR-L artifact, repo or minSdk.",
+        "Glasses pair with phone over Bluetooth; companion app absent.",
+        "Only developer app key/secret; no user authorisation step.",
+        "Keeps WebSocket in phone app, forwards text.",
+        "JSON custom view, but full re-send via CXR-M, no id update.",
+        "Says glasses APK only needed if glasses work without phone.",
+        "Only calls show() after glasses connected; no session states.",
+        "Replays latest line on reconnect; no pause or re-auth.",
+        "Conflate plus 500 ms cap; 120-char truncation.",
+        "Touchpad events not mentioned.",
+        "Interface exists but no testing or simulator discussion.",
+        "No licence discussion.",
+        "No notification fallback."
+      ],
+      "percent": 34.6,
+      "critical": [
+        {
+          "error": "Recommends CXR-M as the SDK for this app",
+          "quote": "Keep the WebSocket in your phone app and forward the text to the glasses through Rokid's **CXR-M SDK**, the phone-side SDK.",
+          "status": "confirmed",
+          "why": "Checklist source: CXR-M is business-only and not publicly available on the developer site."
+        },
+        {
+          "error": "Invented API names",
+          "quote": "I wrote the Rokid calls from memory and couldn't check them here.",
+          "status": "not-an-error",
+          "why": "CXR-M-style names, explicitly flagged as unverified."
+        }
+      ],
+      "other_errors": [
+        {
+          "quote": "CXR-M needs an app key/secret from Rokid's developer portal.",
+          "why": "CXR-M is not distributed via the developer portal; business team only."
+        }
+      ]
+    },
+    "D": {
+      "scores": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0,
+        1
+      ],
+      "reasons": [
+        "client-l 1.1.2 from Rokid Maven repo; minSdk 28 noted.",
+        "Hi Rokid owns Bluetooth link; app goes through it.",
+        "One-time consent via requestAuthorization; token used for connect.",
+        "Phone-side WebSocket forwards newest text to glasses.",
+        "CUSTOM_VIEW session, viewData JSON, customViewUpdate by id.",
+        "Says no code on the glasses is needed.",
+        "Waits for onSessionStarted; checks state before updates.",
+        "Handles AI_ASSIST pause, resume re-send, token invalidation, re-auth.",
+        "Coalesces to newest every 250 ms; trims lines.",
+        "Taps don't reach phone; use phone buttons or glasses APK.",
+        "No simulator; put RokidText behind interface with fake.",
+        "Licence not mentioned.",
+        "Notification mirrored by Hi Rokid as no-SDK fallback."
+      ],
+      "percent": 92.3,
+      "critical": [
+        {
+          "error": "Long block said to be copied from Rokid samples/docs",
+          "quote": "The skill I'm working from is based on Rokid's docs and community reports, last checked 2026-11-08.",
+          "status": "not-an-error",
+          "why": "States provenance of guidance, not that code is pasted from samples."
+        }
+      ],
+      "other_errors": []
+    }
+  }
+}

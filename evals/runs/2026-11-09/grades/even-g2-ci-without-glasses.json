@@ -1,0 +1,142 @@
+{
+  "case": "even-g2-ci-without-glasses",
+  "items": 12,
+  "answers": {
+    "A": {
+      "scores": [
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0.5,
+        0.5,
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "Simulator only an unconfirmed maybe.",
+        "Simulator not started.",
+        "No simulator endpoints.",
+        "No wait before simulator input.",
+        "Concrete assertions on recorded bridge calls.",
+        "No simulator process to kill.",
+        "No simulator display handling.",
+        "States the fake's limits, not the simulator's.",
+        "Fake bridge test, but E2E not unit.",
+        "No packaging check.",
+        "No double-tap exit test.",
+        "No version pinning."
+      ],
+      "points": 2.0,
+      "percent": 16.7,
+      "critical": [],
+      "other_errors": []
+    },
+    "B": {
+      "scores": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0.5,
+        1
+      ],
+      "reasons": [
+        "Official simulator, 0.9.5.",
+        "vite preview, then simulator --automation-port 9898.",
+        "ping, screenshot/glasses, input click, console used.",
+        "Polls ping and lit pixels before tapping.",
+        "Lit-pixel check and screenshot diff after tap.",
+        "Kills spawned processes in finally.",
+        "xvfb-run on ubuntu runner.",
+        "Not a hardware emulator; BLE, lock, iOS gaps listed.",
+        "No unit tests with mocked bridge.",
+        "No evenhub pack check.",
+        "Suggests double-tap check; not implemented.",
+        "Simulator pinned to 0.9.5 in package.json."
+      ],
+      "points": 9.5,
+      "percent": 79.2,
+      "critical": [],
+      "other_errors": []
+    },
+    "C": {
+      "scores": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        0.5,
+        1,
+        1,
+        0,
+        0,
+        0.5,
+        1
+      ],
+      "reasons": [
+        "Official simulator pinned 0.9.5.",
+        "vite preview, then simulator with --automation-port.",
+        "All four documented endpoints used.",
+        "Waits for ping and first screen before tap.",
+        "Lit pixels and hash change after tap.",
+        "Notes no shutdown endpoint; relies on job teardown.",
+        "xvfb-run on ubuntu-latest.",
+        "Not a hardware emulator; BLE, fonts, lock gaps.",
+        "No unit tests.",
+        "No packaging check.",
+        "Suggests later double-tap check; not implemented.",
+        "Global install pinned @0.9.5."
+      ],
+      "points": 9.0,
+      "percent": 75.0,
+      "critical": [],
+      "other_errors": []
+    },
+    "D": {
+      "scores": [
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0.5,
+        0.5,
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "Simulator deferred; not used.",
+        "Simulator not started.",
+        "No simulator endpoints.",
+        "No wait before simulator input.",
+        "Asserts on fake render calls and console errors.",
+        "No simulator process to kill.",
+        "No simulator display handling.",
+        "Says fake doesn't prove real glasses behaviour.",
+        "Fake SDK via Vite alias; E2E, not unit.",
+        "No packaging check.",
+        "No double-tap exit test.",
+        "No version pinning."
+      ],
+      "points": 2.0,
+      "percent": 16.7,
+      "critical": [],
+      "other_errors": []
+    }
+  }
+}

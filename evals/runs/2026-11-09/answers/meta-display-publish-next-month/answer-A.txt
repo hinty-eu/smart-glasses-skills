@@ -1,0 +1,27 @@
+I can't verify the current state of Meta's developer access from here, and it's the deciding factor, so treat the specifics below as things to confirm.
+
+**What I believe is true (check each against Meta's current docs)**
+- Meta Ray-Ban Display is a separate product from the camera/audio Ray-Ban Meta glasses. It has a small monocular display and is controlled with the Neural Band.
+- It pairs to a phone through Meta's companion app (Meta AI), on both iOS and Android.
+- Meta's Wearables Device Access Toolkit launched as a developer preview aimed at camera and audio. When I last had information, display access for third-party apps was described as "coming later", and publishing to the general public was limited.
+- Availability was initially US-only and through limited retail channels.
+
+**Possible build paths, in order of preference**
+1. **Official display API or toolkit, if it's now open to you.**
+   - Your backend pushes cards to your phone app (Android and iOS). The app uses Meta's SDK to render them on the glasses.
+   - You'd need to build both mobile integrations, plus pairing, auth and a fallback when the glasses are disconnected.
+   - The card format would be constrained by the display's layout, size and input model.
+2. **Meta's web or "app" surface for the display, if one exists.** If Meta supports a hosted or web-based card experience, your backend could serve it directly, with minimal mobile work.
+3. **Phone notification mirroring.** If the glasses mirror phone notifications, you send high-quality push notifications and they appear on the glasses. It's the cheapest option, but you get no custom layout, no checklist interaction, and little control over timing.
+
+**Is one month realistic?**
+Probably not for "all users on both platforms", for two reasons that have nothing to do with your engineering:
+- **Access.** If you're not already in Meta's developer program with display access, you may be blocked on their approval and publishing rules. Those are outside your control, and a month is short for that.
+- **Reach.** The device has been limited in market and volume. Even a perfect launch would reach only the small share of your users who own one. "All users" probably means "all users who own the glasses, in supported countries".
+
+**What I'd do this week**
+1. Confirm in Meta's developer portal whether third-party display access exists, and what the terms are for shipping to the public (not just testing).
+2. Get a device and run a spike on one platform: backend → phone → glasses for a single card.
+3. Based on that, pick one of three commitments for next month. A **notification-mirroring launch** is achievable on both platforms. A **beta of the full integration** (opt-in, one platform first, US only) is plausible. A **general launch of a native display experience on both platforms** is risky until access is confirmed.
+
+If you can tell me whether you already have developer access and which SDK or docs you have, I can turn this into a concrete architecture and task breakdown. If your repo has the backend or mobile code, point me at it and I can look at where the card generation would hook in.

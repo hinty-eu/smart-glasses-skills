@@ -1,0 +1,135 @@
+**The simplest way is to treat the XREAL One as a second monitor.** The glasses connect over USB-C DisplayPort Alt Mode, so no XREAL SDK is involved. Your app draws a `Presentation` on the external display, and the phone screen keeps running your normal UI. The XREAL SDK is only needed for head-locked or world-locked AR, not for 2D text.
+
+I haven't compiled or run this code. It comes from my skill's reference notes, which are based on the public Android and iOS APIs and haven't been tested on real glasses.
+
+## Android (Kotlin, minSdk 31, main thread)
+
+```kotlin
+class ExternalTextDisplay(context: Context) {
+    private val app = context.applicationContext
+    private val dm = app.getSystemService(DisplayManager::class.java)
+    private var presentation: TextPresentation? = null
+    private var text = ""
+
+    private val listener = object : DisplayManager.DisplayListener {
+        override fun onDisplayAdded(displayId: Int) = attach()
+        override fun onDisplayRemoved(displayId: Int) = attach()
+        override fun onDisplayChanged(displayId: Int) {}
+    }
+
+    fun start() { dm.registerDisplayListener(listener, Handler(Looper.getMainLooper())); attach() }
+    fun stop() { dm.unregisterDisplayListener(listener); presentation?.dismiss(); presentation = null }
+    fun show(t: String) { text = t; presentation?.update(t) }   // call this with each subtitle
+
+    private fun pickDisplay(): Display? =
+        dm.getDisplays(DisplayManager.DISPLAY_CATEGORY_PRESENTATION).firstOrNull { d ->
+            d.displayId != Display.DEFAULT_DISPLAY &&
+                (d.flags and Display.FLAG_PRIVATE) == 0 &&
+                d.deviceProductInfo?.connectionToSinkType != DeviceProductInfo.CONNECTION_TO_SINK_BUILT_IN
+        }
+
+    private fun attach() {
+        val d = pickDisplay()
+        val current = presentation
+        if (current != null && current.isShowing && current.display.displayId == d?.displayId) return
+        current?.dismiss(); presentation = null
+        if (d == null) return
+        val p = TextPresentation(app, d)
+        try { p.show(); p.update(text); presentation = p }
+        catch (e: WindowManager.InvalidDisplayException) { /* refused; retry later */ }
+    }
+}
+
+private class TextPresentation(outer: Context, display: Display) : Presentation(outer, display) {
+    private var label: TextView? = null
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setCancelable(false)
+        // Do NOT call window.setType(): it throws on Android 12+
+        window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
+                         WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
+        val m = context.resources.displayMetrics   // the glasses' metrics, not the phone's
+        label = TextView(context).apply {
+            setBackgroundColor(Color.BLACK)         // black looks see-through on these optics
+            setTextColor(Color.WHITE)
+            setTextSize(TypedValue.COMPLEX_UNIT_PX, m.heightPixels * 0.07f)
+            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+            maxLines = 3
+            setPadding((m.widthPixels * 0.12f).toInt(), 0,
+                       (m.widthPixels * 0.12f).toInt(), (m.heightPixels * 0.08f).toInt())
+        }
+        setContentView(label!!)
+    }
+    fun update(t: String) { label?.text = t }
+}
+```
+
+Create it with `ExternalTextDisplay(this).start()` and call `show("…")` for each caption.
+
+**Things to know on Android:**
+- **Phone support:** the phone needs DisplayPort Alt Mode video out. Pixel 8 and later and Samsung Galaxy S flagships have it, but many mid-range phones don't.
+- **Background behaviour:** on Android 12+ the text keeps showing when your app is in the background, as long as the process stays alive. Run a foreground service during a session.
+- **Lock screen:** a locked phone replaces your text with a clock on the glasses. `FLAG_KEEP_SCREEN_ON` helps with the screen timeout, but the power button still locks the phone. I haven't confirmed this on devices.
+- **Samsung DeX:** DeX may start when the display connects. I haven't tested your setup under DeX.
+- **Android 16 desktop mode:** the system can dismiss the presentation if your app's own task lands on that display. Listen for dismissal and retry.
+- **Testing without glasses:** use the emulator's Extended controls > Displays, or Developer options > "Simulate secondary displays".
+
+## Styling
+
+Use a black background, white text, and two or three lines in the lower part of the view. Set the font to about 7% of the display height, and avoid white panels.
+
+## iPhone: what changes
+
+The idea is the same, but the mechanism differs:
+
+- **Mechanism:** you use an external display scene (iOS 16+) with the role `windowExternalDisplayNonInteractive`, instead of `Presentation`. It needs the UIKit scene lifecycle.
+- **iOS 27+:** the scene connects only after a view controller registers a scene accessory (`registerSceneAccessory(.externalNonInteractive(...))`). I haven't compiled this either, because the names come from Apple's documentation.
+- **Foreground only:** content shows only while your app is in the foreground. Community reports say iOS goes back to mirroring after an app switch. This is the biggest difference from Android, and it makes background captioning weak on iPhone.
+- **Which iPhones work:** iPhone 15, 16 (not 16e), 17 (not 17e), 18 Pro and iPhone Duo. iPhone Air is excluded. Lightning iPhones need Apple's AV adapter plus the vendor's HDMI adapter.
+- **No Android-style display listing:** you hand iOS a scene configuration and it connects the scene when the display appears.
+
+The core of the iOS version is:
+
+```swift
+final class ExternalDisplaySceneDelegate: UIResponder, UIWindowSceneDelegate {
+    @MainActor static var text = "" { didSet { label?.text = text } }
+    @MainActor private static weak var label: UILabel?
+    var window: UIWindow?
+
+    func scene(_ scene: UIScene, willConnectTo session: UISceneSession,
+               options: UIScene.ConnectionOptions) {
+        guard let ws = scene as? UIWindowScene else { return }
+        let vc = UIViewController()
+        vc.view.backgroundColor = .black
+        let label = UILabel(frame: vc.view.bounds.insetBy(dx: ws.screen.bounds.width * 0.12, dy: 40))
+        label.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        label.textColor = .white; label.numberOfLines = 3; label.textAlignment = .center
+        label.font = .boldSystemFont(ofSize: max(18, ws.screen.bounds.height * 0.07))
+        vc.view.addSubview(label)
+        label.text = Self.text; Self.label = label
+        let w = UIWindow(windowScene: ws)   // attaching a window turns mirroring off
+        w.rootViewController = vc; w.isHidden = false
+        window = w
+    }
+    func sceneDidDisconnect(_ scene: UIScene) { window = nil }
+}
+
+func externalDisplayConfiguration() -> UISceneConfiguration {
+    let c = UISceneConfiguration(name: "External display",
+                                 sessionRole: .windowExternalDisplayNonInteractive)
+    c.delegateClass = ExternalDisplaySceneDelegate.self
+    return c
+}
+// iOS 16–26: return this from application(_:configurationForConnecting:options:)
+// when connectingSceneSession.role == .windowExternalDisplayNonInteractive.
+```
+
+You then set `ExternalDisplaySceneDelegate.text` for each caption. You can test it in the iOS Simulator by adding an external display from the I/O menu.
+
+## Caveats
+
+These glasses suit watching, lectures and speaker notes. For face-to-face conversations they're a poor fit, because the dark lenses hide your eyes and a cable runs to the phone. If you ever need that use case, true see-through glasses with an SDK (Even G2, Rokid, Vuzix) are a better match.
+
+Publishing is the same as any normal app, since no vendor approval is involved.
+
+If you tell me which Android phone you're targeting, I can adapt the code to your app's setup. I can also cover the speech-to-text side if you want live captions.

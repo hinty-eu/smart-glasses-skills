@@ -1,0 +1,32 @@
+**Short answer:** I can't confirm the timeline from here, and I'd treat "all users, both platforms, next month" as high-risk until you've checked three things. I have no web access in this session, and my knowledge stops at June 2026. This area was changing fast then, so verify what follows against Meta's current developer docs.
+
+## How I'd build it
+
+The glasses can't be reached from your backend directly. Everything goes through the phone:
+
+```
+Backend → your mobile app (Android/iOS) → Meta's wearables SDK → Meta AI app → glasses display
+```
+
+1. **Backend:** expose the cards as a small, versioned payload, such as `{id, title, body, action, expires_at}`. Keep text short, because the display is tiny and glanceable.
+2. **Phone app:** add a "glasses" module that fetches or receives cards by push or sync. It would render them through Meta's SDK (the Wearables Device Access Toolkit, or whatever replaced it). It also needs pairing and connection state, and it should fall back to a normal phone notification when the glasses aren't connected.
+3. **Interaction:** the Display glasses are controlled with the Neural Band wristband (gestures) and voice. Design for "next / done / dismiss", not for typing.
+4. **Cheaper fallback:** the glasses mirror some phone notifications. If your cards can ship as ordinary notifications, you get a rough version with no SDK work. Check which apps Meta currently allows, because I believe it was restricted.
+
+## Risks to the timeline
+
+Confirm these before committing:
+
+- **Display API access:** at launch, the developer toolkit covered camera and audio on the Ray-Ban Meta glasses. Third-party apps on the Display screen came later and were gated. Check whether you can build against the display today, or only through a preview or partner program.
+- **Publishing:** the toolkit was a developer preview, and general publishing to the public was limited. If you need Meta's approval or a partner agreement, a month is tight.
+- **Availability and audience:** the Display glasses were US-only and supply-limited, and international expansion was paused. Your "all users" launch only reaches the small share who own the glasses, in supported countries. In practice it's a feature flag for opted-in glasses owners.
+- **Both platforms:** Android and iOS SDK parity has lagged before. Confirm both are supported and that background delivery works. iOS especially restricts background execution, so timely cards may need push-triggered wake-ups.
+- **Hardware testing:** you'll need several devices with Neural Bands, and review cycles from Meta can be slow.
+
+## My recommendation
+
+- **This week:** a 2–3 day spike to confirm display access, publishing rules, and platform parity. This decides the timeline.
+- **If access is open:** a staged rollout (internal, then beta, then opt-in for glasses owners) in a month is plausible for one platform. Both platforms is a stretch.
+- **If access is gated or in preview:** ship the backend card format and the phone-notification fallback next month. Treat the glasses display as a beta that follows approval.
+
+If you share your mobile stack (native, React Native, Flutter), I can sketch the module and payload in more detail.

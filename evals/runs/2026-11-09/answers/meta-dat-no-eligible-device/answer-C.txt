@@ -1,0 +1,35 @@
+These are two different failures, so debug them separately. This comes from the smart-glasses skill's notes on the Meta Ray-Ban Display, which are documentation-based and haven't been tested on real glasses.
+
+## `NO_ELIGIBLE_DEVICE` (your phone)
+
+The SDK found no device that matches your selector. Check these in order:
+
+1. **Permissions.** Grant `BLUETOOTH_SCAN` ("Nearby devices") as well as `BLUETOOTH_CONNECT`. Without `BLUETOOTH_SCAN`, detection fails silently. This is the most common cause. Meta staff confirmed it in android #144.
+2. **Registration.** Wait for `RegistrationState.REGISTERED` before you call `createSession`. Call `Wearables.initialize()` only after `BLUETOOTH_CONNECT` is granted.
+3. **Selector filter.** Temporarily use `AutoDeviceSelector` without the display filter. If that finds a device, the glasses aren't being reported as display-capable. In that case check the glasses and Meta AI versions (see below).
+4. **Glasses model.** Ray-Ban Meta and Oakley Meta audio glasses are not supported for Display. They never show up as eligible.
+5. **Active connection.** Make sure the glasses are connected and awake, not just paired. Being paired and working in Meta AI doesn't guarantee the SDK sees an active device.
+
+## `DAT_APP_ON_THE_GLASSES_UPDATE_REQUIRED` (your colleague's phone)
+
+The usual cause is a version mismatch. It can also mean the glasses failed to start the DAT app. Check these in order:
+
+1. **Versions.** DAT 1.0.1 needs Meta AI app V292 or newer and glasses software V128 or newer. Compare both phones and both pairs of glasses in the Meta AI app.
+2. **Developer Mode.** Check `Wearables.isDevMode` on their phone. It resets if you call `startRegistration()` while already registered, after a reinstall, or after updates. It is also per device, and a second dev app unregisters the first.
+3. **Manifest IDs.** Use `APPLICATION_ID` and `CLIENT_TOKEN` of `0` in Developer Mode. Use the Developer Center values only for the Beta channel.
+4. **Battery.** The glasses-side install fails below 10% battery.
+5. **Recovery.** Run these once each, in this order, and never in a loop:
+   1. `startUnregistration()`, then `startRegistration()`
+   2. `Wearables.reset()`, then `initialize()`
+   3. Reboot the glasses
+6. **Server-side bug.** This error has also been a Meta server bug (android #97). If everything checks out, wait and retry before you rewrite code.
+
+Also guard against calling `startRegistration()` when you're already registered. That is the usual way Developer Mode gets reset.
+
+## Making this debuggable
+
+- Log `e.description` from both the `createSession` failure and `session.errors`.
+- Record the Meta AI app version, glasses software version, Android version and `isDevMode` with every bug report. A difference between the two phones will usually explain why they fail differently.
+- Register from a `ComponentActivity` that stays open until Meta AI returns. Otherwise registration can loop (android #223).
+
+Send me your permission list, the manifest meta-data, and the version numbers from both setups. I can narrow it down from those, or look at your session-creation code.

@@ -1,0 +1,46 @@
+**Short version:** record from the phone's built-in mic and send the hints out over Bluetooth A2DP, so the glasses are never switched into the headset (HFP) profile. Ray-Ban Meta has no text or display path, so spoken audio is the only way to reach the wearer. Nothing below has been run on real glasses. It comes from public Android APIs and Meta's docs.
+
+## Why recording breaks
+- A2DP is output-only stereo, and HFP is two-way mono voice. They are mutually exclusive.
+- If anything opens the glasses mic over HFP, all phone output drops to mono voice quality. On some glasses firmware it also ended Meta DAT sessions.
+- Another app on the phone, such as a call or assistant, can also take the mic or change the route.
+
+## Recommended design
+1. **Record from the phone mic.** It hears the other person better. The glasses mic is beamformed to the wearer's voice.
+2. **Pin the built-in mic.** Use `AudioRecord` with the `VOICE_RECOGNITION` source, 16 kHz mono. Call `setPreferredDevice` with the `TYPE_BUILTIN_MIC` device from `getDevices(GET_DEVICES_INPUTS)`.
+3. **Never call `startBluetoothSco()` or `setCommunicationDevice(...)`.** Don't set `MODE_IN_COMMUNICATION` either. Any of these pulls the glasses into HFP.
+4. **Speak hints with `TextToSpeech`.** Use speech `AudioAttributes` (usage `USAGE_ASSISTANCE_NAVIGATION_GUIDANCE`, content type `CONTENT_TYPE_SPEECH`) and `QUEUE_FLUSH`, so the newest hint replaces any stale one. Android then routes it to the glasses over A2DP. Request `AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK` per utterance and abandon it in `onDone`. Recording itself needs no audio focus.
+5. **Keep each hint to one short sentence.** The speakers are open-ear, so people nearby can hear them. Don't speak anything sensitive.
+
+```kotlin
+val r = AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION, 16_000,
+    AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufSize)
+am.getDevices(AudioManager.GET_DEVICES_INPUTS)
+  .firstOrNull { it.type == AudioDeviceInfo.TYPE_BUILTIN_MIC }
+  ?.let { r.setPreferredDevice(it) }
+
+tts.setAudioAttributes(AudioAttributes.Builder()
+    .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
+    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
+tts.speak(hint, TextToSpeech.QUEUE_FLUSH, null, "hint")
+```
+
+## Keeping the recording alive
+- **Foreground service.** Without one, Android 9+ silences the recording once the app is in the background. On Android 14+ declare `foregroundServiceType="microphone"` and the `FOREGROUND_SERVICE_MICROPHONE` permission. Start the service while your app is visible, from a user action. Starting it from the background fails.
+- **Silencing.** Register an `AudioRecordingCallback` before `startRecording()` and check `activeRecordingConfiguration.isClientSilenced`. If a call or the Meta/Google assistant takes the mic, you get silence, not an error. Show "paused" to the user instead of debugging an empty transcript.
+- **Echo.** The glasses speaker sits near the glasses mic, but you're recording on the phone, so there's less feedback. Still, drop or tag STT results while a hint plays and for about 300 ms afterward. Otherwise the transcript will contain your own hints, and the LLM will respond to them.
+- **Battery managers.** Aggressive OEM battery optimization can kill the service, so guide users to exempt the app.
+
+## What to avoid
+- **The Meta DAT SDK.** You don't need it for this. It is limited to invited Beta testers, and a DAT session takes over the touchpad tap. It also doesn't support Ray-Ban Meta Audio at all.
+- **The glasses mic.** Use it only if you want the wearer's own voice. It requires HFP, which causes the breakage above.
+
+## Test first
+- A plain Bluetooth headset reproduces both the A2DP routing and the HFP switch. Do that before blaming the glasses.
+- Listen for mono or tinny output during recording. That means something opened HFP.
+- Log `AudioManager` route changes.
+
+## Privacy
+Recording third parties needs consent in many jurisdictions, and Google Play requires prominent disclosure. Start capture only on a user action, show a visible "listening" state, and keep no audio by default.
+
+I can sketch the foreground service and the TTS focus handling if you want. If you share your current recording code, I can check it for anything that would trigger HFP.

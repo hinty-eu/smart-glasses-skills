@@ -135,7 +135,18 @@ Then open `http://localhost:8787/?room=K7MPQ4` with your code. The
 ## Evaluation
 
 <!-- results:start -->
-Results are being updated.
+We gave a coding agent 11 real developer requests ([evals/](evals/)), each twice with these skills and twice without,
+and graded all 44 answers blind against checklists built from official vendor documentation.
+
+| | With the skills | Without |
+|---|---|---|
+| Average checklist score | **87%** | 39% |
+| Answers that pass (70% or more, no critical error) | **20 of 22** | 1 of 22 |
+| Critical errors, such as building on a business-only SDK or a store that cannot distribute apps | **0** | 4 |
+
+Claude Code 2.1.318 with the `sonnet` model, no web access in either arm, graded by Claude Opus 5.5 on 2026-11-09.
+Trigger test: no false triggers on 20 near misses (Meta Quest, Vision Pro, Wear OS...), 17 of 20 hits; the 3 misses
+went to Even's own official skill. Method, per-task scores and raw answers: [evals/RESULTS.md](evals/RESULTS.md).
 <!-- results:end -->
 
 ## Install for other agents

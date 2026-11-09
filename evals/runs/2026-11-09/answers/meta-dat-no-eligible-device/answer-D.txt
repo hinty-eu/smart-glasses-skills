@@ -1,0 +1,28 @@
+There's no toolkit code in the working directory, so I can't see your integration. I also can't verify the toolkit's documented semantics for these error codes, so what follows is inference from the names. Check it against the official docs and release notes.
+
+**Likely meanings**
+- `NO_ELIGIBLE_DEVICE`: the SDK found no device that meets the session's requirements. "Paired and working in Meta AI" only proves pairing. Eligibility usually also depends on:
+  - the device type (you want Ray-Ban **Display**, not Ray-Ban Meta Gen 1/2, which may be filtered out),
+  - the glasses firmware version,
+  - the device being connected right now, not just paired,
+  - your app being registered or authorized for that device,
+  - the account, region or developer-mode state.
+- `UPDATE_REQUIRED`: some component is below the minimum version the SDK needs. That could be the glasses firmware, the Meta AI app, or the toolkit version your app bundles. Your colleague's phone probably differs from yours in one of those.
+
+**Debugging steps**
+1. **Compare the two setups side by side.** Record these for both phones:
+   - Meta AI app version,
+   - glasses firmware version (in the Meta AI app's device settings),
+   - toolkit/SDK version in the app build,
+   - Android version,
+   - the Meta account used, and whether it is enrolled as a developer or tester.
+
+   The difference between a phone that gets `NO_ELIGIBLE_DEVICE` and one that gets `UPDATE_REQUIRED` is probably one of these.
+2. **Update everything on your phone.** Update the Meta AI app and the glasses firmware, then update the toolkit dependency. `UPDATE_REQUIRED` on your colleague's phone suggests the minimum versions have moved, so your phone may be hitting a similar gap in a less obvious form.
+3. **Check what your code enumerates before creating the session.** If the SDK exposes device listing or availability APIs, log each device's type, connection state, and capabilities. Then log the exact eligibility filter you pass when you create the session. An empty list means discovery or authorization is failing. A non-empty list means your filter is rejecting the device.
+4. **Confirm connection state.** Open the glasses in Meta AI, make sure they're awake and connected over Bluetooth, and force-stop and relaunch both apps. A stale connection often shows up as "no eligible device".
+5. **Check the manifest and permissions.** Look for the required Bluetooth permissions (`BLUETOOTH_CONNECT`, `BLUETOOTH_SCAN` on Android 12+), any toolkit-specific `<queries>` or intent entries needed to talk to the Meta AI app, and any app ID or token the toolkit requires. Missing `<queries>` entries can make Meta AI invisible on Android 11+.
+6. **Capture logs.** Run `adb logcat` and filter on the toolkit's tag, or on `meta`, `wearable` and `bluetooth`. The underlying reason is often logged next to the error code.
+7. **Check developer-mode gating.** Some preview toolkits only work for registered developer accounts, or for devices with developer mode switched on in Meta AI. If your colleague isn't enrolled, that would fit their error.
+
+If you paste the session-creation code, the toolkit version, and the logcat output around the failure, I can help narrow it down. If the toolkit is vendored or in another directory, point me to it and I'll read how it decides eligibility.

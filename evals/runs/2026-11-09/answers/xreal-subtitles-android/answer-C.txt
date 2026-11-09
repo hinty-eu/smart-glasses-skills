@@ -1,0 +1,110 @@
+# Android: use a `Presentation` on the external display
+
+The XREAL One connects over USB-C DisplayPort Alt Mode, so Android sees it as a secondary `Display`. A `android.app.Presentation` draws on that display while your Activity stays on the phone. You don't need the XREAL SDK for flat 2D subtitles.
+
+```kotlin
+class SubtitlePresentation(ctx: Context, display: Display) : Presentation(ctx, display) {
+    private lateinit var tv: TextView
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        tv = TextView(context).apply {
+            setTextColor(Color.WHITE)
+            textSize = 28f
+            gravity = Gravity.CENTER
+            setPadding(48, 48, 48, 96)
+        }
+        setContentView(FrameLayout(context).apply {
+            setBackgroundColor(Color.BLACK)   // black = transparent on the glasses' optics
+            addView(tv, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
+        })
+    }
+
+    fun setSubtitle(text: String) { tv.text = text }
+}
+```
+
+```kotlin
+class MainActivity : AppCompatActivity() {
+    private var presentation: SubtitlePresentation? = null
+    private lateinit var dm: DisplayManager
+
+    private val listener = object : DisplayManager.DisplayListener {
+        override fun onDisplayAdded(id: Int) = refresh()
+        override fun onDisplayRemoved(id: Int) = refresh()
+        override fun onDisplayChanged(id: Int) {}
+    }
+
+    override fun onCreate(b: Bundle?) {
+        super.onCreate(b)
+        setContentView(R.layout.activity_main)   // normal phone UI
+        dm = getSystemService(DISPLAY_SERVICE) as DisplayManager
+        dm.registerDisplayListener(listener, null)
+        refresh()
+    }
+
+    private fun refresh() {
+        val ext = dm.getDisplays(DisplayManager.DISPLAY_CATEGORY_PRESENTATION).firstOrNull()
+        if (ext == null) { presentation?.dismiss(); presentation = null; return }
+        if (presentation?.display?.displayId != ext.displayId) {
+            presentation?.dismiss()
+            presentation = SubtitlePresentation(this, ext).also { it.show() }
+        }
+    }
+
+    fun onNewSubtitle(text: String) = presentation?.setSubtitle(text)
+
+    override fun onDestroy() {
+        dm.unregisterDisplayListener(listener)
+        presentation?.dismiss()
+        super.onDestroy()
+    }
+}
+```
+
+Notes:
+- **Black is transparent.** On the XREAL One's optical see-through display, black pixels show the real world. Use white or yellow text with no background.
+- **Mirroring.** Some phones mirror the screen by default instead of exposing a separate display. If `getDisplays(DISPLAY_CATEGORY_PRESENTATION)` comes back empty, check the phone's external display or desktop mode settings. Samsung DeX or desktop mode can also take over the display.
+- **Alternative.** For a full Activity (not just a dialog-like window), use `ActivityOptions.makeBasic().setLaunchDisplayId(id)`.
+- **Head-tracked or anchored subtitles.** The XREAL SDK is only needed for head tracking and spatial placement. For fixed subtitles, `Presentation` is enough.
+
+# iPhone: what changes
+
+- **Hardware.** Only USB-C iPhones (15 and later) can output video to the glasses. XREAL has historically supported these in mirror-style mode. I haven't verified that the XREAL One's current firmware exposes a true second screen to iOS apps, so test this on a real device first.
+- **API.** Android uses `Presentation`. iOS uses a second `UIWindowScene` with the external-display role (iOS 16 and later), and you declare it in `Info.plist`.
+- **Fallback.** If iOS only mirrors, you can't show different content on the glasses. The phone and the glasses will show the same thing.
+
+`Info.plist`: add a scene configuration for the role `UIWindowSceneSessionRoleExternalDisplayNonInteractive`, with a delegate class, such as `ExternalSceneDelegate`.
+
+```swift
+class ExternalSceneDelegate: UIResponder, UIWindowSceneDelegate {
+    var window: UIWindow?
+    static var label: UILabel?
+
+    func scene(_ scene: UIScene, willConnectTo session: UISceneSession,
+               options: UIScene.ConnectionOptions) {
+        guard let ws = scene as? UIWindowScene else { return }
+        let vc = UIViewController()
+        vc.view.backgroundColor = .black
+        let l = UILabel(frame: vc.view.bounds)
+        l.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        l.textColor = .white
+        l.textAlignment = .center
+        l.numberOfLines = 0
+        l.font = .systemFont(ofSize: 28)
+        vc.view.addSubview(l)
+        Self.label = l
+
+        window = UIWindow(windowScene: ws)
+        window?.rootViewController = vc
+        window?.isHidden = false
+    }
+}
+
+// From the phone UI:
+ExternalSceneDelegate.label?.text = "Hello subtitles"
+```
+
+You also need an `AppDelegate` method, `application(_:configurationForConnecting:options:)`, that returns this scene configuration when `connectingSceneSession.role` is the external display role. Without it, the external window won't be created.
+
+I haven't run any of this against actual XREAL hardware.

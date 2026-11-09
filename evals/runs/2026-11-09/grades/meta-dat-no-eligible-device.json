@@ -1,0 +1,134 @@
+{
+  "case": "meta-dat-no-eligible-device",
+  "items": 11,
+  "answers": {
+    "A": {
+      "scores": [
+        0.5,
+        1,
+        0.5,
+        0.5,
+        1,
+        1,
+        1,
+        0.5,
+        0.5,
+        0.5,
+        1
+      ],
+      "reasons": [
+        "Explains selector/connection; omits Display-model-only check.",
+        "BLUETOOTH_SCAN plus CONNECT, cites #144.",
+        "Exact name; fix is not the App Connections page.",
+        "Notes start-failure meaning; isDevMode and registration guard only.",
+        "DAT 1.0.1: Android 10+, Meta AI V292+, firmware V128+.",
+        "REGISTERED before session; Developer Mode vs Beta invite.",
+        "APPLICATION_ID/CLIENT_TOKEN 0 in dev mode; Dev Center IDs.",
+        "Awake, connected, battery; never says the glasses must be worn.",
+        "INSUFFICIENT_SDK_VERSION terminal; DWA_OUT_OF_STU_RANGE missing.",
+        "Compares phones, logs session errors; no full logcat for issue.",
+        "Ordered, runnable checks per error."
+      ],
+      "points": 8,
+      "percent": 72.7,
+      "critical": [],
+      "other_errors": []
+    },
+    "B": {
+      "scores": [
+        0.5,
+        0.5,
+        0.5,
+        0,
+        0.5,
+        0.5,
+        0,
+        0.5,
+        0,
+        0.5,
+        0.5
+      ],
+      "reasons": [
+        "No device meets requirements; vague on Display-only model.",
+        "Nearby-devices permissions mentioned; BLUETOOTH_SCAN not named.",
+        "Generic update advice; no exact name or App Connections.",
+        "No start-failure meaning; only the sample-app step.",
+        "Compare/update versions, no numbers.",
+        "Hedged dev mode and registration; no Beta invite.",
+        "No APPLICATION_ID/CLIENT_TOKEN values.",
+        "On and connected; not worn or charged.",
+        "No other version errors.",
+        "Comparison table, logcat, swap test; no session error stream.",
+        "Numbered, but largely hedged guesses."
+      ],
+      "points": 4,
+      "percent": 36.4,
+      "critical": [],
+      "other_errors": []
+    },
+    "C": {
+      "scores": [
+        1,
+        1,
+        0.5,
+        0.5,
+        1,
+        0.5,
+        1,
+        0.5,
+        0,
+        0.5,
+        1
+      ],
+      "reasons": [
+        "Selector mismatch, filter test, displayless models never eligible.",
+        "BLUETOOTH_SCAN plus CONNECT, cites #144.",
+        "Exact name; no App Connections update fix.",
+        "Notes start-failure meaning; isDevMode and registration guard.",
+        "V292 and V128 for DAT 1.0.1; Android 10 omitted.",
+        "REGISTERED before session, dev mode; no Beta invite.",
+        "IDs 0 in Developer Mode, Dev Center values for Beta.",
+        "Connected, awake, battery; not worn.",
+        "No INSUFFICIENT_SDK_VERSION or DWA_OUT_OF_STU_RANGE.",
+        "Logs session errors, records versions; no full logcat.",
+        "Clear ordered checklist per error."
+      ],
+      "points": 7.5,
+      "percent": 68.2,
+      "critical": [],
+      "other_errors": []
+    },
+    "D": {
+      "scores": [
+        1,
+        0.5,
+        0.5,
+        0,
+        0.5,
+        0.5,
+        0,
+        0.5,
+        0,
+        0.5,
+        0.5
+      ],
+      "reasons": [
+        "No device meets requirements; Display model; filter vs enumerated devices.",
+        "Names both, but only as a manifest check.",
+        "Generic update advice, no exact name.",
+        "No start-failure meaning; only the force-stop step.",
+        "Compare versions, no numbers.",
+        "Vague dev-mode, registration and tester enrollment.",
+        "Only \"any app ID or token\"; no values.",
+        "Awake and connected; not worn or charged.",
+        "No other version errors.",
+        "Side-by-side comparison, logcat; no session error stream.",
+        "Numbered steps, but described as inference."
+      ],
+      "points": 4.5,
+      "percent": 40.9,
+      "critical": [],
+      "other_errors": []
+    }
+  }
+}

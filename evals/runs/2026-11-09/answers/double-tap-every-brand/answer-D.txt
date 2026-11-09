@@ -1,0 +1,22 @@
+Short answer: it's probably not possible as a literal double tap on all four. Here's what I know, with the confidence level on each. I haven't checked your repo or the current SDK docs, and these SDKs change quickly, so verify each point before committing to product.
+
+| Glasses | Input hardware | Double tap feasibility | Confidence |
+|---|---|---|---|
+| **Even G2** | Temple touch, plus the optional R1 ring | Likely yes. The Even Hub SDK exposes click, double-click and scroll events to apps. | Medium |
+| **Vuzix Z100** | Temple touch/gesture sensor. Runs as a phone-tethered display through the Ultralite SDK. | Maybe. Check whether the SDK passes tap events to your phone app or the OS consumes them. | Low |
+| **Rokid Glasses** | Temple touchpad, Android-based | Likely. Touch usually arrives as key or motion events, but the system may reserve double tap. | Low–medium |
+| **Meta Ray-Ban Display** | Meta Neural Band (EMG wristband) and temple touch, with no tap gesture in the usual sense | Unlikely as stated. The band's gestures are pinches and swipes, and the system reserves some of them, such as a double-pinch to toggle the display. | Medium |
+
+**How I'd wire it:**
+
+1. **Don't hard-code "double tap" in app logic.** Define an internal action such as `REPEAT_LAST_CAPTION`. Give each device adapter a mapping from its native input to that action.
+2. **Per device:**
+   - **G2:** Subscribe to the SDK's double-click event on the app's event stream and map it to the action. Ring and temple should arrive through the same event.
+   - **Z100:** Look in the Ultralite SDK for a touch or gesture callback. If the SDK doesn't surface a double tap, build it yourself by timing two single taps, usually within 300–400 ms.
+   - **Rokid:** Handle the touchpad events in your activity (`onKeyDown` or `dispatchKeyEvent`, depending on how the SDK maps them). If the SDK delivers only single taps, do the same timing-based detection.
+   - **Meta Display:** Use whichever gesture the SDK exposes to third-party apps, probably a pinch variant. Be ready to accept a different gesture here. Also confirm that third-party display apps are supported at all. Meta's device toolkit started out limited to camera and audio.
+3. **Add a fallback on every device.** Offer an on-screen "repeat" item, a phone-app button, or a voice command. That covers any device where the gesture is reserved or unavailable.
+
+**For product:** the realistic requirement is "a single gesture to repeat the last caption on every device." It's the same gesture on some devices and the closest available one on others.
+
+If you point me at the repo, I can check which SDKs it already uses and draft the adapter layer. For the unverified rows, the quickest check is to log raw input events on a real device.

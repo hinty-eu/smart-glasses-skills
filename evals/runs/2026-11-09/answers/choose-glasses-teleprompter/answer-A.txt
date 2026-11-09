@@ -1,0 +1,26 @@
+**Recommendation: target Even Realities, with the G2 as the primary device if its developer SDK is publicly usable today, and the G1 as the fallback.** I can't browse from here, and the SDK and availability details below come from memory, so check them before you commit.
+
+**Why Even Realities**
+- **The form factor suits a teleprompter.** It's a lightweight, normal-looking pair of glasses with a small monochrome heads-up display. It gives you text you can read while facing the audience, with no camera or heavy optics.
+- **It works with iPhone and Android.** Both are supported through a phone companion app over Bluetooth LE, so iOS is first-class and Android is the bonus you wanted.
+- **It's the most open of the shipping display glasses.** The G1's BLE protocol is documented by the community, with open-source demo apps. For the G2, Even announced a developer platform (Even Hub). A third-party app can ship in weeks, not quarters.
+- **It's sold to the public and widely available**, so your users can actually buy it.
+
+**Why not the others (as I understand them)**
+- **Meta Ray-Ban Display:** Third-party app access has been limited and gated, and it was US-only at launch. Shipping publicly this month is unlikely.
+- **Android XR glasses:** They're Android-first and early, so iPhone support is weak or uncertain.
+- **Rokid, Vuzix Z100, Brilliant Labs, Halliday:** Each has a smaller or less reliable path. Typically that's an Android-leaning SDK, limited iOS support, a small user base, or an immature app ecosystem.
+
+**Risks**
+1. **Even already ships a built-in teleprompter.** You'll need to differentiate, for example with talk timing, pacing and speech-following, slide sync, rehearsal analytics, or remote control from a phone or clicker.
+2. **Check the G2 SDK status.** If the Even Hub SDK is still in beta or invite-only, build on the G1 BLE protocol now and add the G2 later.
+3. **Check store review.** Apple may need a week or more, so submit early.
+
+**Hedge worth considering:** MentraOS is an open-source layer that supports several glasses on iOS and Android. If you build on it, you aren't locked to one pair, but you take on a dependency and a second app store.
+
+**To confirm this week:**
+- G2 SDK access and terms
+- Current stock and shipping
+- Whether Even's review process allows third-party apps
+
+If you want, I can sketch the BLE architecture for an iOS app, or a validation checklist.

@@ -1,0 +1,41 @@
+You can do this with ordinary Bluetooth audio, as long as the phone's own mic does the recording and the glasses only receive playback.
+
+**How the glasses show up**
+To Android, Ray-Ban Meta glasses are a standard Bluetooth headset. Playback goes over A2DP, and their mic would go over HFP/SCO. Your app has no special glasses API for playback, so you route audio like you would for any headset. The recording breaks when something pushes Android into SCO or communication mode.
+
+**Recording (keep it on the phone mic)**
+- Run it in a foreground service with `foregroundServiceType="microphone"`. Start it while the app is visible, because Android 11+ blocks starting mic capture from the background.
+- Use `AudioSource.MIC` or `UNPROCESSED`. Avoid `VOICE_COMMUNICATION`, which can pull in the Bluetooth communication route.
+- Pin the input to the built-in mic. Pick the `TYPE_BUILTIN_MIC` device from `audioManager.getDevices(GET_DEVICES_INPUTS)` and call `audioRecord.setPreferredDevice(...)`.
+- Never call `startBluetoothSco()` or set `MODE_IN_COMMUNICATION`. Either one drops the glasses to narrowband call audio, and it can steal or alter the mic route.
+
+**Playback (hints to the glasses)**
+- Use `AudioAttributes` with `USAGE_ASSISTANCE_NAVIGATION_GUIDANCE` (or `USAGE_MEDIA`) and `CONTENT_TYPE_SPEECH`. Don't use `USAGE_VOICE_COMMUNICATION`, which routes over SCO.
+- Request `AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK` so other audio ducks instead of stopping. Focus doesn't affect your `AudioRecord`.
+- To force the route, set `setPreferredDevice` on your `AudioTrack` (or the TTS output) to the `TYPE_BLUETOOTH_A2DP` output device.
+- A2DP adds roughly 150–250 ms of latency and can clip the first word. Keep the `AudioTrack` alive, or prepend about 200 ms of silence.
+
+**Problems to handle**
+1. **Feedback loop.** The open-ear speakers leak sound, and the phone mic may pick up your own hints and send them to the LLM as conversation. Tag or suppress transcript segments during TTS playback and for a short tail after it. Keep hints short.
+2. **Route changes.** "Hey Meta", a phone call, or the Meta AI app can switch the glasses to SCO or silence your capture. Register `AudioDeviceCallback` and `AudioManager.registerAudioRecordingCallback`. Check `isClientSilenced()` and restart the recorder when needed.
+3. **Mic contention.** On Android 10+, if another app with higher priority grabs the mic, yours gets silenced rather than erroring. Surface that state to the user.
+4. **Battery optimization.** Ask for an exemption, or the service may be killed in long sessions.
+
+**Minimal sketch**
+```kotlin
+val am = getSystemService(AudioManager::class.java)
+val builtinMic = am.getDevices(AudioManager.GET_DEVICES_INPUTS)
+    .first { it.type == AudioDeviceInfo.TYPE_BUILTIN_MIC }
+recorder.setPreferredDevice(builtinMic)   // AudioRecord using AudioSource.MIC
+
+val a2dp = am.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+    .firstOrNull { it.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP }
+val attrs = AudioAttributes.Builder()
+    .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
+    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build()
+// TTS: tts.setAudioAttributes(attrs); for AudioTrack: track.setPreferredDevice(a2dp)
+```
+
+Meta has been rolling out a developer toolkit for the glasses, but I'm not sure of its current state, and I'd verify before relying on it. It isn't needed for this approach.
+
+If you share your recording service and TTS code, I can check it for anything that would trigger SCO routing.

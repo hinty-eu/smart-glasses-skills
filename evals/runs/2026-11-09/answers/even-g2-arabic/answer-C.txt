@@ -1,0 +1,20 @@
+The working directory is empty, so I can't see your code. What follows is general reasoning, and I haven't confirmed it against G2 documentation.
+
+**Likely cause: the glasses' built-in font has no Arabic glyphs.**
+- The G1 and G2 render text with a firmware font, and that font is mostly Latin.
+- A character the font lacks is dropped or drawn blank. Your English text works because those glyphs exist.
+- Even if some Arabic code points were present, Arabic needs two more things that simple text renderers skip:
+  - **Shaping.** Each letter takes an initial, medial, final or isolated form depending on its neighbors. The base code points (U+0627 to U+064A) aren't enough. You'd need the presentation forms (U+FE70 to U+FEFC), or a shaping engine.
+  - **Right-to-left ordering.** A renderer without the bidi algorithm will lay the text out left to right, so it comes out reversed.
+
+**Things to check first**
+1. Whether the SDK or docs list supported character sets or languages for the G2 text container.
+2. Whether the text is being mangled before it reaches the glasses. Look at the encoding: it should be UTF-8 end to end, including the server response charset and the BLE payload. If the packet shows `?` or empty bytes, the cause is on your side.
+3. Whether a short test string like `مرحبا` fails the same way as a longer one.
+
+**Ways to get Arabic displayed**
+- **Render it as an image (most reliable).** Draw the text on your server or phone with a proper Arabic font and a shaping engine (HarfBuzz, Pango, Skia or Canvas). Send it as a monochrome or low-bit bitmap in the image or canvas format the G2 SDK accepts. This sidesteps the font, shaping and bidi problems. The cost is more bandwidth, and you need to size the image to the display and limit how often you push updates.
+- **Pre-shape the text and use a font that has the glyphs.** This only works if the SDK lets you load a custom font, or if the firmware includes Arabic glyphs. If so, run the text through a shaper and bidi reorder on the server (for example `arabic-reshaper` plus `python-bidi` in Python) and send the result as visual-order presentation forms.
+- **Ask Even Realities.** Check their developer forum or support about Arabic and RTL support or a firmware roadmap, since it may be a known limitation.
+
+If you can share the code that sends text to the glasses, or tell me which SDK you're using (the Even Hub or companion-app SDK, or raw BLE), I can say whether it's an encoding bug or a font limitation. I can also help write the server-side image rendering.

@@ -1,0 +1,207 @@
+## The right way
+
+Use Rokid's **CXR-L SDK** (`com.rokid.cxr:client-l`). It lets an ordinary Android app put text on the glasses with no code on the glasses. It's also the only Rokid SDK that works for apps installed by ordinary owners. CXR-M is business-only.
+
+Your phone app doesn't talk to the glasses directly. The **Hi Rokid** companion app owns the Bluetooth link, and your app goes through it. The flow is:
+
+1. Request authorization from Hi Rokid (a one-time consent screen).
+2. Open a `CUSTOM_VIEW` session.
+3. Wait for `onSessionStarted`.
+4. Push text with `customViewUpdate`.
+
+A few updates per second fits the SDK's limits. I'd still coalesce them (details below).
+
+**Caveat:** I haven't compiled or run any of this on hardware. The skill I'm working from is based on Rokid's docs and community reports, last checked 2026-11-08. Treat the code as a well-grounded starting point.
+
+## Gradle
+
+```kotlin
+// settings.gradle.kts
+dependencyResolutionManagement {
+    repositories {
+        google(); mavenCentral()
+        exclusiveContent {
+            forRepository { maven { url = uri("https://maven.rokid.com/repository/maven-public/") } }
+            filter { includeGroup("com.rokid.cxr") }
+        }
+    }
+}
+// app/build.gradle.kts  (minSdk 28)
+dependencies { implementation("com.rokid.cxr:client-l:1.1.2") }  // pin it, no -SNAPSHOT
+```
+
+## Building the view JSON (`TextCard`)
+
+```kotlin
+import org.json.JSONArray
+import org.json.JSONObject
+
+object TextCard {
+    private const val BRIGHT = "#FF00FF00"
+    private const val DIM = "#FF00B000"
+
+    private fun text(id: String, value: String, size: String, color: String, bold: Boolean) = JSONObject()
+        .put("type", "TextView")
+        .put("props", JSONObject()
+            .put("id", id).put("layout_width", "match_parent").put("layout_height", "wrap_content")
+            .put("gravity", "center").put("text", value).put("textSize", size).put("textColor", color)
+            .apply { if (bold) put("textStyle", "bold") })
+
+    fun view(title: String, body: String): String = JSONObject()
+        .put("type", "LinearLayout")
+        .put("props", JSONObject()
+            .put("id", "root").put("layout_width", "match_parent").put("layout_height", "match_parent")
+            .put("orientation", "vertical").put("gravity", "center").put("padding", "16dp")
+            .put("backgroundColor", "#FF000000"))
+        .put("children", JSONArray()
+            .put(text("title", clean(title), "18sp", DIM, false))
+            .put(text("body", clean(body), "24sp", BRIGHT, true)))
+        .toString()                      // compact JSON; indented JSON fails silently
+
+    fun update(title: String, body: String): String = JSONArray()
+        .put(JSONObject().put("action", "update").put("id", "title").put("props", JSONObject().put("text", clean(title))))
+        .put(JSONObject().put("action", "update").put("id", "body").put("props", JSONObject().put("text", clean(body))))
+        .toString()
+
+    private fun clean(s: String) = s.replace(Regex("\\s+"), " ").trim().take(240)
+}
+```
+
+## Session wrapper
+
+```kotlin
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
+import com.rokid.cxr.session.*
+
+class RokidText(private val app: Context, private val onState: (String) -> Unit) {
+    private val manager = CxrSessionManager.getInstance(app.applicationContext)
+    private val main = Handler(Looper.getMainLooper())
+    private var token: String? = null
+    private var session: CxrSession? = null
+    private var title = ""
+    private var body = ""
+
+    fun companionOk() = manager.checkRokidAppCompatibility(app) is RokidAppStatus.Compatible
+
+    fun authorize(activity: Activity) {
+        manager.requestAuthorization(activity, listOf(GlassPermission.MEDIA)) { r ->
+            main.post {
+                token = r.token?.takeIf { r.isSuccess && it.isNotEmpty() }
+                onState(if (token != null) "authorized" else "auth_failed:${r.errorCode}")
+            }
+        }
+    }
+
+    /** Forward from your Activity's onActivityResult. */
+    fun onActivityResult(resultCode: Int, data: Intent?) {
+        manager.parseAuthorizationResult(resultCode, data ?: Intent())
+    }
+
+    fun start() {
+        val t = token ?: return onState("not_authorized")
+        if (session != null) return
+        val s = try {
+            manager.create(SessionConfig(
+                sessionType = SessionType.CUSTOM_VIEW,
+                aiInterceptMode = AiInterceptMode.ALLOW_WITH_PAUSE,
+                timeouts = SessionTimeouts(),
+                viewData = TextCard.view(title, body),
+            ))
+        } catch (e: Throwable) {      // x86 emulator (ARM-only natives) or a session already open
+            Log.i("RokidText", "create failed: $e"); onState("create_failed"); return
+        }
+        session = s
+        s.addLifecycleCallback(lifecycle)   // before connect
+        s.connect(t)
+    }
+
+    fun show(newTitle: String, newBody: String) {
+        title = newTitle; body = newBody
+        val s = session ?: return
+        if (s.state != SessionState.Started) return   // re-sent on start/resume
+        val r = s.customViewUpdate(TextCard.update(title, body))
+        if (!r.isSuccess) Log.i("RokidText", "update ${r.code} ${r.message}")
+    }
+
+    fun stop() {
+        session?.let { it.removeLifecycleCallback(lifecycle); it.close() }
+        session = null
+    }
+
+    private val lifecycle = object : ISessionLifecycleCbk {
+        override fun onConnectResult(success: Boolean, errorCode: SessionErrorCode?) {
+            if (success) return
+            if (errorCode == SessionErrorCode.NOT_AUTHENTICATED || errorCode == SessionErrorCode.TOKEN_EXPIRED) token = null
+            session = null; onState("connect_failed:$errorCode")
+        }
+        override fun onSessionStarted() { onState("started"); show(title, body) }
+        override fun onSessionPaused(reason: PausedReason) = onState("paused:$reason")
+        override fun onSessionResumed() { onState("started"); show(title, body) }
+        override fun onSessionTerminating(reason: TerminatingReason, gracePeriodMs: Long) = onState("terminating:$reason")
+        override fun onSessionClosed(reason: CloseReason) {
+            session = null
+            if (reason == CloseReason.LINK_LOST || reason == CloseReason.CHAIN_TORN) token = null
+            onState("closed:$reason")
+        }
+    }
+}
+```
+
+## Wiring the WebSocket (OkHttp) with coalescing
+
+Keep only the newest message and send at most once per 250 ms. This stays well under the update rate the SDK's community tests handled smoothly.
+
+```kotlin
+import android.os.Handler
+import android.os.Looper
+import okhttp3.*
+
+class GlassesFeed(private val glasses: RokidText, private val client: OkHttpClient) {
+    private val main = Handler(Looper.getMainLooper())
+    private var pending: String? = null
+    private var scheduled = false
+
+    private val flush = Runnable {
+        scheduled = false
+        pending?.let { glasses.show("", it) }
+        pending = null
+    }
+
+    fun connect(url: String) {
+        client.newWebSocket(Request.Builder().url(url).build(), object : WebSocketListener() {
+            override fun onMessage(ws: WebSocket, text: String) {
+                main.post {                       // lifecycle callbacks and show() live on the main thread
+                    pending = text
+                    if (!scheduled) { scheduled = true; main.postDelayed(flush, 250) }
+                }
+            }
+        })
+    }
+}
+```
+
+Call `authorize(activity)` on each process start, and `start()` once it reports `"authorized"`.
+
+## Things that will bite you
+
+- **Hi Rokid must be installed, signed in, and the glasses connected inside Hi Rokid.** Pairing in Android Bluetooth settings isn't enough. It needs version 1.11.0 or newer.
+- **Re-authorize after every process start**, even if you stored a token.
+- **Release builds:** the SDK's R8 rules strip your `Log.d` and `Log.v` calls, so use `Log.i`.
+- **Redraw:** `customViewUpdate` success means "sent", not "drawn". Some Global Hi Rokid builds reportedly return success without redrawing. Keep a fallback that closes the session and recreates it with the new text in `viewData`.
+- **Text length:** about 22 characters per line at 24sp, in a 480 px wide area. That's an estimate, not measured on glasses. Trim or truncate long status lines, and avoid emoji.
+- **Pause and exit:**
+  - `onSessionPaused(AI_ASSIST)` means the wearer started the Rokid assistant. Keep the latest text and wait for `onSessionResumed`.
+  - `GLASSES_EXIT` means the wearer closed your view. Don't reopen it until there is new content or a user action.
+- **Taps on the view don't reach your phone.** If the instructions need wearer input, either add buttons in the phone app or ship a companion APK on the glasses (`CUSTOM_APP`).
+- **Testing:** there's no simulator, and the native libraries are ARM-only. Put `RokidText` behind an interface so the rest of the app can run against a fake on an emulator.
+
+## No-SDK fallback
+
+If you want zero SDK work, or need iPhone support, post a normal phone notification. Hi Rokid mirrors it to the glasses. It's less controllable, because you can't update text in place, but it needs no integration.
+
+I can also add reconnect and backoff for the WebSocket, or the session-recreate fallback for the redraw problem.

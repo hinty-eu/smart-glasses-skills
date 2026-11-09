@@ -1,0 +1,148 @@
+The skill's reference docs gave me the key facts. One thing changes the design: **the Even Hub plugin can capture the phone microphone itself**, with `audioControl(true, AudioInputSource.Phone)`. You don't need a second capture app.
+
+## Structure
+
+```
+phone mic ─► [Even Hub plugin on phone WebView] ─PCM 16k─► WSS ─► your relay ─► streaming STT (Deepgram etc.)
+                     ▲                                              │
+                     └────── {seq, text, final} captions ◄──────────┘
+        plugin: state ─► wrap ─► latest-only queue (120 ms) ─► textContainerUpgrade ─► G2
+```
+
+- **Capture:** the plugin uses `AudioInputSource.Phone`, which hears the other person better than the glasses mic. Don't use `getUserMedia`, because it fails in the iOS plugin WebView.
+- **Relay:** a small server that holds the STT key and forwards PCM to a streaming STT with partial results. It sends back `{seq, text, final}`, where `text` is the whole sentence so far. If the provider splits a sentence into several segments, join them there. Never put the key in the `.ehpk`.
+- **Plugin rules:**
+  - A partial replaces the previous one.
+  - A final commits, and committed lines never re-wrap.
+  - Writes go through one queue, because parallel BLE writes can break the link.
+  - Writes are debounced to 120 ms.
+- **Permissions in `app.json`:** `phone-microphone`, plus `network` with a whitelist of `https://captions.example.com` and `wss://captions.example.com`. The relay must also send CORS headers.
+- **Latency:** the target is first words under 1 s and finals under 2 s. The STT partial delay and endpointing dominate. The simulator doesn't model BLE timing, so measure on real glasses before you promise "about a second".
+
+## Glasses-side code (TypeScript)
+
+I wrote the SDK calls from the documented API shape, not from the package's type definitions. Check names like the import path, `TextContainerProperty` and `TextContainerUpgrade` against the SDK types. The `measure` function below is a rough character-width estimate.
+
+```ts
+import {
+  waitForEvenAppBridge, CreateStartUpPageContainer, TextContainerProperty,
+  TextContainerUpgrade, AudioInputSource,
+} from '@evenrealities/even_hub_sdk'
+
+const RELAY = 'wss://captions.example.com/ws?room=' // room code typed on the phone
+const HISTORY_LINES = 5, LIVE_LINES = 3
+const LINE_PX = 576 - 24
+const measure = (s: string) => [...s].length * 9.5   // swap for @evenrealities/pretext getTextWidth
+
+type Caption = { seq: number; text: string; final: boolean }
+const st = { finals: [] as string[][], partial: '', seq: -1 }   // finals stored pre-wrapped
+
+// ---- wrapping (greedy, handles CJK/Thai via Intl.Segmenter) ----
+const seg = new Intl.Segmenter(undefined, { granularity: 'word' })
+function wrap(text: string, maxW: number): string[] {
+  const out: string[] = []; let line = ''
+  const push = () => { if (line.trim()) out.push(line.trim()); line = '' }
+  for (const { segment: p } of seg.segment(text.replace(/\s+/g, ' ').trim())) {
+    if (!line && !p.trim()) continue
+    if (measure((line + p).trimEnd()) <= maxW) { line += p; continue }
+    if (!p.trim()) { push(); continue }
+    push()
+    if (measure(p) <= maxW) { line = p; continue }
+    for (const ch of p) { if (line && measure(line + ch) > maxW) push(); line += ch }
+  }
+  push(); return out
+}
+
+// ---- keep containers under 999 UTF-8 bytes ----
+const enc = new TextEncoder()
+function clampBytes(lines: string[]): string {
+  let s = lines.join('\n')
+  while (enc.encode(s).length > 999 && lines.length > 1) { lines = lines.slice(1); s = lines.join('\n') }
+  return s
+}
+
+// ---- latest-only write queue: one BLE write at a time ----
+function latestOnly<T>(write: (f: T) => Promise<unknown>, debounceMs = 120) {
+  let want: T | null = null, busy = false, timer: ReturnType<typeof setTimeout> | undefined
+  const run = async () => {
+    if (busy) return; busy = true
+    while (want !== null) { const f = want; want = null; try { await write(f) } catch {} }
+    busy = false
+  }
+  return (f: T) => { want = f; clearTimeout(timer); timer = setTimeout(run, debounceMs) }
+}
+
+function apply(m: Caption): boolean {
+  if (m.seq <= st.seq) return false        // replay after reconnect
+  st.seq = m.seq
+  if (!m.final) { st.partial = m.text; return true }
+  st.partial = ''
+  if (m.text) st.finals = [...st.finals.slice(-29), wrap(m.text, LINE_PX)]
+  return true
+}
+
+async function main() {
+  const bridge = await waitForEvenAppBridge()
+
+  // Three containers: dim history, bright live partial, one-line status (event capture).
+  await bridge.createStartUpPageContainer(new CreateStartUpPageContainer({
+    containerTotalNum: 3,
+    textObject: [
+      new TextContainerProperty({ containerID: 1, containerName: 'hist', xPosition: 0, yPosition: 0,
+        width: 576, height: 27 * HISTORY_LINES, content: '', isEventCapture: 0 }),
+      new TextContainerProperty({ containerID: 2, containerName: 'live', xPosition: 0, yPosition: 27 * HISTORY_LINES,
+        width: 576, height: 27 * LIVE_LINES, content: '', isEventCapture: 0 }),
+      new TextContainerProperty({ containerID: 3, containerName: 'status', xPosition: 0, yPosition: 27 * 9,
+        width: 576, height: 27, content: 'Listening…', isEventCapture: 1 }),
+    ],
+  }))
+
+  const upgrade = (id: number, name: string, content: string) =>
+    bridge.textContainerUpgrade(new TextContainerUpgrade({ containerID: id, containerName: name, content }))
+
+  let lastHist = '', lastLive = ''
+  const render = latestOnly(async (_: number) => {
+    const live = wrap(st.partial, LINE_PX).slice(-LIVE_LINES)       // tail if too long
+    const hist = st.finals.flat().slice(-HISTORY_LINES)
+    const h = clampBytes(hist), l = clampBytes(live)
+    if (h !== lastHist) { lastHist = h; await upgrade(1, 'hist', h) }  // only changed containers
+    if (l !== lastLive) { lastLive = l; await upgrade(2, 'live', l) }
+  })
+
+  // ---- relay socket with reconnect ----
+  const room = new URLSearchParams(location.search).get('room') ?? ''
+  let ws: WebSocket | undefined
+  const connect = () => {
+    ws = new WebSocket(RELAY + room); ws.binaryType = 'arraybuffer'
+    ws.onmessage = e => {
+      const m = JSON.parse(e.data as string)
+      if (m.type === 'clear') { st.finals = []; st.partial = ''; render(0) }
+      else if (apply(m as Caption)) render(0)
+    }
+    ws.onclose = () => setTimeout(connect, 1000)
+  }
+  connect()
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && ws?.readyState !== WebSocket.OPEN) connect()
+  })
+
+  // ---- phone mic -> relay ----
+  await bridge.audioControl(true, AudioInputSource.Phone)
+  bridge.onEvenHubEvent(event => {
+    const pcm = event.audioEvent?.audioPcm as Uint8Array | undefined
+    if (pcm && ws?.readyState === WebSocket.OPEN) ws.send(pcm)   // 16 kHz s16le mono
+    // double tap on root page -> bridge.shutDownPageContainer(1)
+  })
+}
+main()
+```
+
+## Things to watch
+
+- **Missing glyphs:** the G2 font silently drops Arabic, Hebrew, Thai and Indic scripts. Strip those characters and warn the wearer.
+- **Overflow:** keep the status container to one line. If it overflows, the firmware scrolls it and swallows swipes.
+- **WebSocket on iOS:** some Even iOS WebViews fail the WebSocket handshake while `fetch` works. Add a `/latest` polling fallback (every 0.5 to 1 s) after two failed attempts.
+- **Deepgram `smart_format`:** it can turn "four o'clock" into "04:00", so decide how numbers should look on the display.
+- **Consent:** you're transcribing people who didn't install the app. Show an indicator, don't store audio, and check recording-consent law where you'll use it.
+
+I couldn't open the example plugin in `examples/live-captions/even-hub/` because that search was denied in this session. If you give me access to it, I can check my SDK calls against it. I can also write the relay (Node + Deepgram) next.

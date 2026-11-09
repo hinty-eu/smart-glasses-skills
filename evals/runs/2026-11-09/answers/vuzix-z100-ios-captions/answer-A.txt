@@ -1,0 +1,276 @@
+# Live captions on Vuzix Z100: architecture and Swift code
+
+## Architecture
+
+```
+Mic ─► AVAudioEngine ─► SFSpeechRecognizer ─► CaptionFormatter ─► GlassesDisplay ─► BLE ─► Z100
+        (tap buffers)    (partial + final)     (wrap, last N       (Vuzix SDK
+                                                lines, throttle)    adapter)
+```
+
+| Layer | Responsibility |
+|---|---|
+| `SpeechCaptioner` | Audio capture, streaming recognition, automatic restart of recognition tasks, and an `AsyncStream<Transcript>` of partial and final results. |
+| `CaptionFormatter` | Turns a growing transcript into what fits the display: a few short lines, always the most recent words. |
+| `GlassesDisplay` (protocol) | The only code that knows about Vuzix. This keeps the speech pipeline testable, and you can show captions on the phone screen when the glasses are disconnected. |
+| `CaptionPipeline` | Wires the layers together and throttles BLE writes. |
+
+Design decisions:
+- **Prefer on-device recognition** (`requiresOnDeviceRecognition`). It cuts latency and keeps conversations off Apple's servers. It also avoids the server-side time limit, but you should still restart tasks defensively.
+- **Show partial results immediately.** Captions need low latency more than accuracy. Corrections are acceptable, but keep the layout stable so the text doesn't jump.
+- **Throttle glasses updates** to about 4–5 per second. BLE is slow, and flicker is tiring to read.
+- **Background operation.** Enable the `audio` and `bluetooth-central` background modes, or captions stop when the screen locks.
+- **Accessibility and UX.** Add a font-size setting and a "clear" gesture. Also show an indicator when the mic or glasses are disconnected, because a silent failure is worst for this user.
+- **iOS 26+:** Apple's newer `SpeechAnalyzer`/`SpeechTranscriber` APIs are built for long-form on-device transcription. They are worth evaluating as a drop-in replacement for `SpeechCaptioner`. The code below uses `SFSpeechRecognizer`, which works on older OS versions.
+
+## Info.plist
+
+- `NSMicrophoneUsageDescription`
+- `NSSpeechRecognitionUsageDescription`
+- `NSBluetoothAlwaysUsageDescription`
+- `UIBackgroundModes`: `audio`, `bluetooth-central`
+
+## Speech recognition
+
+```swift
+import Speech
+import AVFoundation
+
+struct Transcript {
+    let text: String
+    let isFinal: Bool
+}
+
+final class SpeechCaptioner {
+    private let recognizer: SFSpeechRecognizer
+    private let engine = AVAudioEngine()
+    private var request: SFSpeechAudioBufferRecognitionRequest?
+    private var task: SFSpeechRecognitionTask?
+    private var continuation: AsyncStream<Transcript>.Continuation?
+    private var running = false
+
+    init(locale: Locale = .current) throws {
+        guard let r = SFSpeechRecognizer(locale: locale) else {
+            throw CaptionError.unsupportedLocale
+        }
+        recognizer = r
+    }
+
+    enum CaptionError: Error { case unsupportedLocale, notAuthorized }
+
+    static func requestPermissions() async -> Bool {
+        let speech = await withCheckedContinuation { c in
+            SFSpeechRecognizer.requestAuthorization { c.resume(returning: $0 == .authorized) }
+        }
+        let mic = await AVAudioApplication.requestRecordPermission()
+        return speech && mic
+    }
+
+    /// Starts listening and returns a stream of partial/final transcripts.
+    func start() throws -> AsyncStream<Transcript> {
+        let session = AVAudioSession.sharedInstance()
+        try session.setCategory(.record, mode: .measurement, options: [.allowBluetooth])
+        try session.setActive(true, options: .notifyOthersOnDeactivation)
+
+        let input = engine.inputNode
+        let format = input.outputFormat(forBus: 0)
+        input.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
+            self?.request?.append(buffer)
+        }
+        engine.prepare()
+        try engine.start()
+        running = true
+
+        return AsyncStream { continuation in
+            self.continuation = continuation
+            continuation.onTermination = { [weak self] _ in self?.stop() }
+            self.beginTask()
+        }
+    }
+
+    func stop() {
+        running = false
+        engine.stop()
+        engine.inputNode.removeTap(onBus: 0)
+        request?.endAudio()
+        task?.cancel()
+        continuation?.finish()
+        try? AVAudioSession.sharedInstance().setActive(false)
+    }
+
+    // One recognition task at a time; a new one is started whenever one ends.
+    private func beginTask() {
+        guard running else { return }
+        let req = SFSpeechAudioBufferRecognitionRequest()
+        req.shouldReportPartialResults = true
+        if recognizer.supportsOnDeviceRecognition {
+            req.requiresOnDeviceRecognition = true
+        }
+        request = req
+
+        task = recognizer.recognitionTask(with: req) { [weak self] result, error in
+            guard let self else { return }
+            if let result {
+                self.continuation?.yield(
+                    Transcript(text: result.bestTranscription.formattedString,
+                               isFinal: result.isFinal))
+            }
+            if error != nil || result?.isFinal == true {
+                // Task ended (silence timeout, duration limit, error): roll over.
+                self.request?.endAudio()
+                self.task = nil
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { self.beginTask() }
+            }
+        }
+    }
+}
+```
+
+If you need a hard restart for long sessions, call `req.endAudio()` and begin a new task about every 50 seconds. Do this at a pause, not mid-sentence.
+
+## Caption formatting
+
+```swift
+struct CaptionFormatter {
+    var maxCharsPerLine = 28   // tune on a real Z100 for your font size
+    var maxLines = 3
+
+    /// Returns the most recent text that fits in `maxLines` lines.
+    func lines(from text: String) -> [String] {
+        var lines: [String] = []
+        var current = ""
+        for word in text.split(separator: " ") {
+            if current.isEmpty {
+                current = String(word)
+            } else if current.count + 1 + word.count <= maxCharsPerLine {
+                current += " " + word
+            } else {
+                lines.append(current)
+                current = String(word)
+            }
+        }
+        if !current.isEmpty { lines.append(current) }
+        return Array(lines.suffix(maxLines))
+    }
+}
+```
+
+## Glasses part
+
+I can't verify the exact iOS API of the Vuzix Ultralite SDK from here, and I don't want to invent method names. Vendor SDK calls are therefore isolated behind a protocol. The `UltraliteDisplay` class marks where they go.
+
+```swift
+import Foundation
+
+protocol GlassesDisplay: AnyObject {
+    var isConnected: Bool { get }
+    func connect() async throws
+    func show(lines: [String]) async
+    func clear() async
+}
+
+/// Adapter for the Vuzix Ultralite SDK (Z100).
+/// Fill in the marked spots from the SDK's docs/sample app: pairing/connection,
+/// taking control of the display, and sending text.
+final class UltraliteDisplay: GlassesDisplay {
+    private(set) var isConnected = false
+
+    func connect() async throws {
+        // TODO(Vuzix SDK): discover/pair the paired Z100, request display control
+        // (the SDK has you acquire control of the screen so notifications don't overwrite you),
+        // then set isConnected = true. Observe disconnects and set it back to false.
+        isConnected = true
+    }
+
+    func show(lines: [String]) async {
+        guard isConnected else { return }
+        let text = lines.joined(separator: "\n")
+        // TODO(Vuzix SDK): send `text` to the display (text API, or a canvas/layout if
+        // you want to control font size and position). Z100 is a small monochrome green
+        // display, so keep it to high-contrast text.
+        _ = text
+    }
+
+    func clear() async {
+        // TODO(Vuzix SDK): clear the display / release control.
+    }
+}
+
+/// Handy for development and as a fallback when the glasses are disconnected.
+final class ConsoleDisplay: GlassesDisplay {
+    var isConnected = true
+    func connect() async throws {}
+    func show(lines: [String]) async { print("— CAPTION —\n" + lines.joined(separator: "\n")) }
+    func clear() async {}
+}
+```
+
+## Pipeline
+
+```swift
+@MainActor
+final class CaptionPipeline: ObservableObject {
+    @Published var lines: [String] = []     // also render this on the phone UI
+
+    private let captioner: SpeechCaptioner
+    private let display: GlassesDisplay
+    private let formatter = CaptionFormatter()
+    private var job: Task<Void, Never>?
+    private var lastSent = Date.distantPast
+    private let minInterval: TimeInterval = 0.2
+
+    init(captioner: SpeechCaptioner, display: GlassesDisplay) {
+        self.captioner = captioner
+        self.display = display
+    }
+
+    func start() async throws {
+        guard await SpeechCaptioner.requestPermissions() else {
+            throw SpeechCaptioner.CaptionError.notAuthorized
+        }
+        try await display.connect()
+        let stream = try captioner.start()
+
+        job = Task { [weak self] in
+            var committed = ""      // finalized text from earlier tasks
+            for await t in stream {
+                guard let self else { return }
+                let full = (committed + " " + t.text).trimmingCharacters(in: .whitespaces)
+                if t.isFinal { committed = String(full.suffix(300)) }
+
+                let newLines = self.formatter.lines(from: full)
+                self.lines = newLines
+
+                // Throttle BLE writes, but never drop a final result.
+                if t.isFinal || Date().timeIntervalSince(self.lastSent) >= self.minInterval {
+                    self.lastSent = Date()
+                    await self.display.show(lines: newLines)
+                }
+            }
+        }
+    }
+
+    func stop() {
+        job?.cancel()
+        captioner.stop()
+        Task { await display.clear() }
+    }
+}
+```
+
+Usage:
+
+```swift
+let pipeline = CaptionPipeline(captioner: try SpeechCaptioner(),
+                               display: UltraliteDisplay())
+try await pipeline.start()
+```
+
+## Things to check next
+1. **Real-device font and line limits.** Adjust `maxCharsPerLine` and `maxLines` after testing on a Z100.
+2. **Trailing throttled update.** As written, a partial result that arrives inside the 200 ms window is dropped. If no later result arrives, the glasses can lag behind. Add a short trailing timer to send the latest lines.
+3. **Fade-out.** Clear the display after a few seconds of silence so stale text doesn't linger.
+4. **Speaker attribution.** Apple's APIs don't do diarization. If it matters for this user, you'd need a separate model or a cloud service.
+5. **Audio route.** The phone mic works best when it's pointed at the speaker. For group settings, consider an external mic.
+
+I can flesh out the Ultralite adapter if you share the SDK's headers or docs. I can also write the `SpeechAnalyzer` variant for iOS 26.

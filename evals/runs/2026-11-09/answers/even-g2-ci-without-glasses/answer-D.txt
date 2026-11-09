@@ -1,0 +1,167 @@
+Your repo looks empty from where I'm running, so I couldn't see the app. I'm assuming the usual G2 shape: a web app that talks to the glasses through the Even Hub SDK bridge. The SDK names below (`waitForEvenAppBridge`, `createStartUpPageContainer`, `onEvenHubEvent`, `eventType`) come from memory, so check them against your SDK version.
+
+## Approach
+
+With no glasses and no Even app host, the bridge doesn't exist. I'd swap it for a fake in a dedicated Vite mode:
+
+- **Fake bridge:** a Vite alias replaces the SDK module with a fake that records what the app renders and lets the test fire tap events. This stays stable across SDK internals, unlike faking the native host object.
+- **Test runner:** Playwright drives the real built app in headless Chromium. It checks three things: the app boots with no console errors, the first screen is rendered, and a tap changes what is rendered.
+- **Simulator option:** Even Realities ships a simulator. If it runs headless and exposes a scriptable interface, it would test the real SDK path. I haven't verified that, so I'd start with the fake and add the simulator later.
+
+## Files
+
+**`vite.config.ts`** (add the alias)
+```ts
+import { defineConfig } from 'vite';
+import { fileURLToPath } from 'node:url';
+
+export default defineConfig(({ mode }) => ({
+  resolve: {
+    alias:
+      mode === 'e2e'
+        ? {
+            '@evenrealities/even_hub_sdk': fileURLToPath(
+              new URL('./e2e/fakeSdk.ts', import.meta.url),
+            ),
+          }
+        : {},
+  },
+}));
+```
+
+**`e2e/fakeSdk.ts`** (the fake bridge; adapt the exports to what your app imports)
+```ts
+type Listener = (e: unknown) => void;
+
+const listeners: Listener[] = [];
+const rendered: { call: string; payload: unknown }[] = [];
+
+const bridge = {
+  async createStartUpPageContainer(payload: unknown) {
+    rendered.push({ call: 'createStartUpPageContainer', payload });
+    return 0; // success
+  },
+  async rebuildPageContainer(payload: unknown) {
+    rendered.push({ call: 'rebuildPageContainer', payload });
+    return true;
+  },
+  async textContainerUpgrade(payload: unknown) {
+    rendered.push({ call: 'textContainerUpgrade', payload });
+    return true;
+  },
+  onEvenHubEvent(cb: Listener) {
+    listeners.push(cb);
+    return () => listeners.splice(listeners.indexOf(cb), 1);
+  },
+};
+
+// Test hooks, used from Playwright via page.evaluate
+(window as any).__g2 = {
+  rendered,
+  tap: () =>
+    listeners.forEach((l) => l({ sysEvent: { eventType: 0 /* CLICK_EVENT */ } })),
+};
+
+export async function waitForEvenAppBridge() {
+  return bridge;
+}
+// Re-export enums/constants your app imports from the real SDK here.
+```
+
+**`playwright.config.ts`**
+```ts
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  testDir: './e2e',
+  retries: 1,
+  reporter: [['list'], ['html', { open: 'never' }]],
+  use: { baseURL: 'http://localhost:4173', trace: 'retain-on-failure' },
+  webServer: {
+    command: 'npx vite build --mode e2e && npx vite preview --port 4173',
+    url: 'http://localhost:4173',
+    reuseExistingServer: !process.env.CI,
+    timeout: 120_000,
+  },
+});
+```
+
+**`e2e/smoke.spec.ts`**
+```ts
+import { test, expect } from '@playwright/test';
+
+test('app starts, shows first screen, reacts to tap', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+
+  await page.goto('/');
+
+  // 1. Starts and renders the first screen
+  await expect
+    .poll(() => page.evaluate(() => (window as any).__g2.rendered.length))
+    .toBeGreaterThan(0);
+  const first = await page.evaluate(() => (window as any).__g2.rendered[0]);
+  expect(first.call).toBe('createStartUpPageContainer');
+  // Tighten this to your real first screen, e.g.:
+  // expect(JSON.stringify(first.payload)).toContain('Welcome');
+
+  // 2. Reacts to a tap
+  const before = await page.evaluate(() => (window as any).__g2.rendered.length);
+  await page.evaluate(() => (window as any).__g2.tap());
+  await expect
+    .poll(() => page.evaluate(() => (window as any).__g2.rendered.length))
+    .toBeGreaterThan(before);
+
+  // 3. No runtime errors
+  expect(errors).toEqual([]);
+});
+```
+
+**`.github/workflows/pr-smoke.yml`**
+```yaml
+name: PR smoke test
+on:
+  pull_request:
+
+concurrency:
+  group: smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+```
+
+Add `@playwright/test` as a devDependency (`npm i -D @playwright/test`).
+
+## Caveats
+
+- **What it proves:** the app boots and its logic responds to a tap. It doesn't prove the real SDK or glasses behave the same way. Keep the fake as thin as you can, and update it when you upgrade the SDK.
+- **Fake fidelity:** if your app uses other bridge calls (storage, device info, image updates), add them to the fake. A missing method will show up as a failed test, which is usually what you want.
+- **Fragile assertions:** the first-screen check is loose on purpose. Asserting on a stable string or container id gives much better signal than "something rendered".
+- **Branch protection:** to make this block merges, mark the `smoke` job as a required check in your branch protection rules.
+
+If you share the repo, or tell me which SDK calls your app makes, I can adapt the fake and the assertions to it.

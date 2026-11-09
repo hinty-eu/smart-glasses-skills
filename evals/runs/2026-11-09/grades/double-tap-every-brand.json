@@ -1,0 +1,148 @@
+{
+  "case": "double-tap-every-brand",
+  "items": 11,
+  "answers": {
+    "A": {
+      "scores": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        0.5,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "reasons": [
+        "onEvenHubEvent with DOUBLE_CLICK_EVENT from temples or ring.",
+        "Root double tap must call shutDownPageContainer(1); suggests tap.",
+        "Notes sysEvent and missing eventType on single tap.",
+        "Tap count 2; no left/right distinction.",
+        "Hold control; maxNumTaps via setLayout/requestControl; default 0.",
+        "CUSTOM_VIEW gets no taps; CUSTOM_APP named, no forwarding.",
+        "Focus buttons fire onClick; Back ends session; no double tap.",
+        "Raw Inputs beta and kept out of production.",
+        "Web App: real button with click handler.",
+        "One repeat action, per-device mapping, visible alternatives.",
+        "Says directly which work and why."
+      ],
+      "points": 10.5,
+      "percent": 95.5,
+      "critical": [],
+      "other_errors": []
+    },
+    "B": {
+      "scores": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "reasons": [
+        "sysEvent DOUBLE_CLICK_EVENT via onEvenHubEvent; eventSource values correct.",
+        "Root-page exit-dialog rule; single tap alternative.",
+        "Single tap without eventType handled.",
+        "Any frame tap counts; no left/right.",
+        "Control plus maxNumTaps 2 on Android and iOS.",
+        "CUSTOM_VIEW gets nothing; CXR-S APK sends custom command back.",
+        "onClick buttons, Back ends session, no double tap.",
+        "Raw Inputs beta, not for production.",
+        "Web App gets arrow/Enter keydown only, no double tap.",
+        "Shared repeat action with per-device mapping table.",
+        "Clear verdict per device with reasons."
+      ],
+      "points": 11,
+      "percent": 100.0,
+      "critical": [],
+      "other_errors": []
+    },
+    "C": {
+      "scores": [
+        0.5,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0.5,
+        0,
+        0,
+        0.5,
+        0.5
+      ],
+      "reasons": [
+        "Says G2 delivers double-click; no API names.",
+        "Misses root-page exit rule; calls G2 realistic.",
+        "No event-envelope handling.",
+        "Unsure whether Z100 reports double taps.",
+        "No control or maxNumTaps setting.",
+        "Says Rokid touchpad probably arrives as key events.",
+        "Says Meta least likely; no onClick or Back.",
+        "No Inputs beta caveat.",
+        "Web Apps absent and item 7 not right.",
+        "Shared event and adapters; fallback only for Meta.",
+        "Says not on all four, but wrongly clears G2, Rokid."
+      ],
+      "points": 2.0,
+      "percent": 18.2,
+      "critical": [
+        {
+          "error": "Says a Rokid phone app with a custom view receives taps",
+          "quote": "Probably. It's Android-based, so the touchpad arrives as key or motion events. You may have to detect double tap yourself, for example with a timing window or `GestureDetector`. The phone-companion SDK path may expose less.",
+          "status": "not-an-error",
+          "why": "Hedged; says the phone-companion path may expose less; makes no CUSTOM_VIEW claim."
+        }
+      ],
+      "other_errors": []
+    },
+    "D": {
+      "scores": [
+        0.5,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0.5,
+        0,
+        0,
+        1,
+        0.5
+      ],
+      "reasons": [
+        "Says G2 has a double-click event; no API names.",
+        "Misses root-page exit rule.",
+        "No event-envelope handling.",
+        "Unsure whether Z100 passes taps at all.",
+        "No control or maxNumTaps setting.",
+        "Suggests onKeyDown in activity; misses phone-side limit.",
+        "Says unlikely; suggests a pinch gesture, no onClick/Back.",
+        "No Inputs beta caveat.",
+        "Web Apps absent and item 7 not right.",
+        "Internal action, per-device mapping, fallback on every device.",
+        "Says probably not on all four; wrong on G2, Rokid."
+      ],
+      "points": 2.5,
+      "percent": 22.7,
+      "critical": [
+        {
+          "error": "Says a Rokid phone app with a custom view receives taps",
+          "quote": "Rokid: Handle the touchpad events in your activity (`onKeyDown` or `dispatchKeyEvent`, depending on how the SDK maps them).",
+          "status": "not-an-error",
+          "why": "Does not say phone app or CUSTOM_VIEW; misleading, but scored under item 6."
+        }
+      ],
+      "other_errors": []
+    }
+  }
+}

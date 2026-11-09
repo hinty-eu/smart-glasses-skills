@@ -1,0 +1,137 @@
+# Subtitles on XREAL One (Android)
+
+## How it works
+
+The XREAL One connects over USB-C DisplayPort Alt Mode, so Android sees it as an external display. You don't need the XREAL SDK for 2D text. Use the standard `Presentation` API, which draws its own UI on a secondary display while your Activity stays on the phone.
+
+Two things to know first:
+- The glasses must be in **extended/secondary-display mode**. If the phone or Nebula is set to mirror, Android may not expose a separate `Display`, and the glasses will just show the phone UI.
+- On an optical see-through display, black renders as transparent. Use a black background with white or yellow text.
+
+## Code (Kotlin)
+
+```kotlin
+class SubtitlePresentation(ctx: Context, display: Display) : Presentation(ctx, display) {
+    private lateinit var tv: TextView
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        tv = TextView(context).apply {
+            setTextColor(Color.WHITE)
+            textSize = 28f
+            gravity = Gravity.CENTER
+            setPadding(48, 0, 48, 96)
+        }
+        setContentView(FrameLayout(context).apply {
+            setBackgroundColor(Color.BLACK)
+            addView(tv, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
+        })
+    }
+
+    fun setText(s: String) { tv.text = s }
+}
+```
+
+```kotlin
+class MainActivity : AppCompatActivity() {
+    private var subtitles: SubtitlePresentation? = null
+    private lateinit var dm: DisplayManager
+
+    private val listener = object : DisplayManager.DisplayListener {
+        override fun onDisplayAdded(id: Int) = attach()
+        override fun onDisplayRemoved(id: Int) = attach()
+        override fun onDisplayChanged(id: Int) {}
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)   // normal phone UI
+        dm = getSystemService(DISPLAY_SERVICE) as DisplayManager
+        dm.registerDisplayListener(listener, null)
+        attach()
+    }
+
+    private fun attach() {
+        subtitles?.dismiss(); subtitles = null
+        val ext = dm.getDisplays(DisplayManager.DISPLAY_CATEGORY_PRESENTATION).firstOrNull()
+            ?: return
+        subtitles = SubtitlePresentation(this, ext).also { it.show() }
+    }
+
+    // call this from your speech-to-text / caption source
+    fun showSubtitle(text: String) = runOnUiThread { subtitles?.setText(text) }
+
+    override fun onDestroy() {
+        dm.unregisterDisplayListener(listener)
+        subtitles?.dismiss()
+        super.onDestroy()
+    }
+}
+```
+
+No extra permissions are needed. If `getDisplays(...)` returns empty with the glasses plugged in, the phone is mirroring. Switch the glasses or phone to extended mode. Some phones, mostly non-Samsung and non-Pixel, don't support external displays well.
+
+# On iPhone
+
+The idea is the same, but the API is different:
+
+- **Hardware:** You need an iPhone 15 or later (USB-C with DisplayPort). Older Lightning iPhones can only mirror through adapters.
+- **API:** iOS exposes the glasses as an external-display scene (iOS 16+), not a `Presentation`. Without your own UI for it, iOS just mirrors the phone.
+- **Setup:** Declare a scene configuration for the role `UIWindowSceneSessionRoleExternalDisplayNonInteractive` in Info.plist, or return one from the app delegate, as below.
+
+```swift
+// AppDelegate
+func application(_ app: UIApplication,
+                 configurationForConnecting session: UISceneSession,
+                 options: UIScene.ConnectionOptions) -> UISceneConfiguration {
+    let cfg = UISceneConfiguration(name: nil, sessionRole: session.role)
+    if session.role == .windowExternalDisplayNonInteractive {
+        cfg.delegateClass = ExternalSceneDelegate.self
+    } else {
+        cfg.delegateClass = PhoneSceneDelegate.self   // your normal one
+    }
+    return cfg
+}
+
+// Subtitle scene
+final class ExternalSceneDelegate: NSObject, UIWindowSceneDelegate {
+    var window: UIWindow?
+    static let label = UILabel()
+
+    func scene(_ scene: UIScene, willConnectTo session: UISceneSession,
+               options: UIScene.ConnectionOptions) {
+        guard let ws = scene as? UIWindowScene else { return }
+        let vc = UIViewController()
+        vc.view.backgroundColor = .black
+        let l = Self.label
+        l.textColor = .white
+        l.font = .systemFont(ofSize: 28, weight: .semibold)
+        l.textAlignment = .center
+        l.numberOfLines = 0
+        l.translatesAutoresizingMaskIntoConstraints = false
+        vc.view.addSubview(l)
+        NSLayoutConstraint.activate([
+            l.leadingAnchor.constraint(equalTo: vc.view.leadingAnchor, constant: 48),
+            l.trailingAnchor.constraint(equalTo: vc.view.trailingAnchor, constant: -48),
+            l.bottomAnchor.constraint(equalTo: vc.view.bottomAnchor, constant: -96),
+        ])
+        window = UIWindow(windowScene: ws)
+        window?.rootViewController = vc
+        window?.isHidden = false
+    }
+}
+
+// Update from anywhere:
+DispatchQueue.main.async { ExternalSceneDelegate.label.text = "Hello" }
+```
+
+## Differences in practice
+
+| | Android | iPhone |
+|---|---|---|
+| API | `DisplayManager` + `Presentation` | External-display `UIWindowScene` (iOS 16+) |
+| Detection | `DisplayListener` | Scene connect and disconnect callbacks |
+| Hardware | Many USB-C phones, but support varies | iPhone 15 or later |
+| Extra setup | Phone must be in extended mode | App must adopt the scene lifecycle (Info.plist manifest) |
+
+If you later want head-locked or world-anchored text, 3DoF tracking, or the glasses' sensors, you'll need XREAL's SDK (Android/Unity). Plain subtitles don't.

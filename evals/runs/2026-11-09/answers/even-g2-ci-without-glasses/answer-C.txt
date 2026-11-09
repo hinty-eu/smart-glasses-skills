@@ -1,0 +1,145 @@
+I'd test with Even's official simulator and its HTTP automation API. The workflow builds the app, serves the production build, starts the simulator under a virtual display, and runs a Node script that drives it. I haven't run any of this on a CI runner, so the sketch has gaps, listed at the end.
+
+## Approach
+
+- **Serve the build, not the dev server.** `vite preview` avoids the hot-reload bug where `createStartUpPageContainer` returns 1 and the display goes dead.
+- **Use `xvfb-run`.** GitHub's Linux runners have no display, and running the simulator headless is unverified. Xvfb is my hedge for that.
+- **Check the pixels.** "Shows its first screen" means the 576x288 glasses screenshot has lit pixels (alpha > 0). "Reacts to taps" means `POST /api/input {"action":"click"}` changes that screenshot.
+- **Wait before tapping.** The simulator ignores input until a capture container exists, so the script waits for the first screen before it taps.
+
+## `.github/workflows/glasses-smoke.yml`
+
+```yaml
+name: glasses-smoke
+on: pull_request
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npm run build
+      - run: npm i -g @evenrealities/evenhub-simulator@0.9.5   # pin; the tool is pre-1.0
+
+      - name: Start app + simulator
+        run: |
+          npx vite preview --port 4173 --strictPort > preview.log 2>&1 &
+          npx wait-on http://127.0.0.1:4173
+          xvfb-run -a evenhub-simulator http://127.0.0.1:4173 --automation-port 9898 > sim.log 2>&1 &
+
+      - name: Smoke test
+        run: node tests/e2e/smoke.mjs
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-evidence
+          path: |
+            artifacts/
+            preview.log
+            sim.log
+```
+
+Background processes die with the job, because the simulator has no shutdown endpoint. Install `pngjs` as a dev dependency: `npm i -D pngjs wait-on`.
+
+## `tests/e2e/smoke.mjs`
+
+```js
+// Node 20+. Drives the Even Hub simulator over its automation API.
+import { mkdir, writeFile } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
+import { PNG } from 'pngjs'
+
+const SIM = 'http://127.0.0.1:9898'
+const sleep = ms => new Promise(r => setTimeout(r, ms))
+
+async function waitFor(label, fn, timeoutMs = 30_000) {
+  const end = Date.now() + timeoutMs
+  let last
+  while (Date.now() < end) {
+    try { const v = await fn(); if (v) return v } catch (e) { last = e }
+    await sleep(300)
+  }
+  throw new Error(`timeout waiting for ${label}${last ? `: ${last.message}` : ''}`)
+}
+
+async function screenshot() {
+  const r = await fetch(`${SIM}/api/screenshot/glasses`)
+  if (!r.ok) throw new Error(`screenshot -> ${r.status}`)
+  return Buffer.from(await r.arrayBuffer())
+}
+
+// Docs say "576x288 RGBA, lit pixels have alpha > 0". Whether the body is PNG or raw RGBA is unverified, so handle both.
+function litPixels(buf) {
+  const isPng = buf.subarray(0, 4).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47]))
+  const rgba = isPng ? PNG.sync.read(buf).data : buf
+  let n = 0
+  for (let i = 3; i < rgba.length; i += 4) if (rgba[i] > 0) n++
+  return n
+}
+const hash = b => createHash('sha256').update(b).digest('hex')
+
+async function consoleText() {
+  return await (await fetch(`${SIM}/api/console`)).text() // JSON shape unverified; match on text
+}
+
+async function save(name, buf) {
+  await mkdir('artifacts', { recursive: true })
+  await writeFile(`artifacts/${name}.png`, buf)
+}
+
+try {
+  await waitFor('simulator ping', async () => (await fetch(`${SIM}/api/ping`)).ok)
+
+  // 1. App starts and shows its first screen
+  const first = await waitFor('first screen (lit pixels)', async () => {
+    const s = await screenshot()
+    return litPixels(s) > 0 ? s : null
+  })
+  await save('01-first-screen', first)
+  const log = await consoleText()
+  if (/startup page failed/i.test(log)) throw new Error('app reported startup page failure') // marker from our own app code
+  console.log(`first screen OK (${litPixels(first)} lit pixels)`)
+
+  // 2. Reacts to a tap
+  await sleep(500) // let the page settle
+  const before = hash(await screenshot())
+  const r = await fetch(`${SIM}/api/input`, {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ action: 'click' }),
+  })
+  if (!r.ok) throw new Error(`input click -> ${r.status}`)
+
+  const after = await waitFor('display change after tap', async () => {
+    const s = await screenshot()
+    return hash(s) !== before ? s : null
+  }, 5_000)
+  await save('02-after-tap', after)
+  console.log('tap OK (display changed)')
+} catch (e) {
+  try { await save('failure', await screenshot()) } catch {}
+  try { await writeFile('artifacts/console.txt', await consoleText()) } catch {}
+  console.error('SMOKE FAILED:', e.message)
+  process.exit(1)
+}
+```
+
+## What to adapt in your app
+
+- **A tap must change the glasses display.** If it only changes app state, have the app write a marker with `console.log('[tap] ...')` and assert on that through `/api/console` instead.
+- **Taps don't arrive on `textEvent`.** A single tap comes in as `sysEvent` with no `eventType`. If your handler only reads `textEvent`, this test will fail. That's a real bug it would catch, but it isn't a test problem.
+- **Add a double-tap check later.** It should close the page, which the simulator does immediately without an exit dialog.
+
+## What I haven't verified
+
+- **Headless simulator.** I don't know whether the Linux binary runs under Xvfb on `ubuntu-latest`. You may need to `apt-get install` GTK/WebKit libraries first, so run it once on a throwaway branch.
+- **Screenshot format.** I don't know whether the screenshot is PNG or raw RGBA. The script handles both, but check which one it is.
+- **Console JSON shape.** I don't know the shape of `/api/console` either, which is why the script does a plain text match.
+- **Hardware behaviour.** The simulator isn't a hardware emulator. It doesn't cover Bluetooth timing, real fonts and brightness, or phone lock and background behaviour. CI will catch crashes, blank screens and broken input handling, but not hardware issues. The Even Hub review tests those on a device.
+
+I can also wire this into your repo if you point me at the project. I'd need your `package.json` and the entry file to match the build and preview commands.

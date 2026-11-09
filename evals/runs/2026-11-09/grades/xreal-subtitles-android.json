@@ -1,0 +1,180 @@
+{
+  "case": "xreal-subtitles-android",
+  "items": 13,
+  "answers": {
+    "A": {
+      "scores": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        0.5,
+        0,
+        0,
+        0.5,
+        0.5,
+        1,
+        0,
+        0.5
+      ],
+      "reasons": [
+        "USB-C DisplayPort Alt Mode, seen as external display.",
+        "Presentation on DISPLAY_CATEGORY_PRESENTATION display; activity stays on phone.",
+        "DisplayListener added/removed/changed re-attaches the Presentation.",
+        "Never calls setType.",
+        "No XREAL SDK for 2D; SDK for anchoring/3DoF.",
+        "Black transparent, white text; but centred text.",
+        "X1 chip stabilisation not mentioned.",
+        "No testing-without-glasses advice.",
+        "Vague 'some phones don't support external displays well'.",
+        "iPhone 15 or later, no 16e/17e/Air exceptions.",
+        "windowExternalDisplayNonInteractive scene with delegate code.",
+        "iOS 27 scene accessory registration missing.",
+        "Says adopt scene lifecycle; no requirement or UIScreen note."
+      ],
+      "percent": 61.5,
+      "critical": [
+        {
+          "error": "Says any iPhone including 16e can drive the glasses",
+          "quote": "You need an iPhone 15 or later (USB-C with DisplayPort).",
+          "status": "not-an-error",
+          "why": "Checklist treats this as half credit, not a critical claim."
+        }
+      ],
+      "other_errors": []
+    },
+    "B": {
+      "scores": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "reasons": [
+        "Plain external monitor over USB-C DP Alt Mode.",
+        "Presentation on DISPLAY_CATEGORY_PRESENTATION display; phone UI unchanged.",
+        "DisplayListener with isShowing check handles connect/disconnect.",
+        "Explicitly warns not to call window.setType().",
+        "States no XREAL SDK needed.",
+        "Black background, white text, lower part, 2-3 lines.",
+        "X1 chip stabilisation not mentioned.",
+        "Emulator Displays or Simulate secondary displays.",
+        "Needs DP Alt Mode; many mid-range phones lack it.",
+        "15, 16 not 16e, 17 not 17e, 18 Pro; Air absent.",
+        "Scene role windowExternalDisplayNonInteractive.",
+        "iOS 27 registerSceneAccessory(.externalNonInteractive(...)) named.",
+        "Scene life cycle required; UIScreen.screens deprecated."
+      ],
+      "percent": 92.3,
+      "critical": [
+        {
+          "error": "Says Lightning iPhones can drive the glasses as external display",
+          "quote": "Lightning iPhones need Apple's Lightning Digital AV Adapter and a vendor HDMI adapter.",
+          "status": "not-an-error",
+          "why": "Qualified adapter path, not 'any iPhone'; XREAL sells an HDMI adapter."
+        }
+      ],
+      "other_errors": []
+    },
+    "C": {
+      "scores": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        0.5,
+        0,
+        0,
+        0,
+        0.5,
+        1,
+        0,
+        0
+      ],
+      "reasons": [
+        "USB-C DP Alt Mode, seen as secondary Display.",
+        "Presentation on DISPLAY_CATEGORY_PRESENTATION display; activity stays on phone.",
+        "DisplayListener refreshes Presentation on add/remove.",
+        "Never calls setType.",
+        "No XREAL SDK for flat subtitles; SDK for spatial.",
+        "Black transparent, white text; but centred text.",
+        "X1 chip stabilisation not mentioned.",
+        "No testing-without-glasses advice.",
+        "Only mirroring settings; no DP-output phone compatibility.",
+        "USB-C iPhones 15+, no 16e/17e/Air exceptions.",
+        "External display scene role plus delegate code.",
+        "iOS 27 scene accessory registration missing.",
+        "Scene life cycle requirement not mentioned."
+      ],
+      "percent": 53.8,
+      "critical": [
+        {
+          "error": "Proposes only screen mirroring on iPhone",
+          "quote": "XREAL has historically supported these in mirror-style mode. I haven't verified that the XREAL One's current firmware exposes a true second screen to iOS apps, so test this on a real device first.",
+          "status": "not-an-error",
+          "why": "Still proposes a separate external-display scene; mirroring is only a caveat."
+        },
+        {
+          "error": "Says any iPhone including 16e can drive the glasses",
+          "quote": "Only USB-C iPhones (15 and later) can output video to the glasses.",
+          "status": "not-an-error",
+          "why": "Missing exceptions earns half credit per checklist; not critical."
+        }
+      ],
+      "other_errors": []
+    },
+    "D": {
+      "scores": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0.5
+      ],
+      "reasons": [
+        "Second monitor over USB-C DisplayPort Alt Mode.",
+        "Presentation on DISPLAY_CATEGORY_PRESENTATION display; phone UI unchanged.",
+        "DisplayListener with isShowing check handles connect/disconnect.",
+        "Code comment: do not call window.setType().",
+        "XREAL SDK only for head/world-locked AR.",
+        "Black background, white text, lower part, 2-3 lines.",
+        "X1 chip stabilisation not mentioned.",
+        "Emulator Displays or Simulate secondary displays.",
+        "Needs DP Alt Mode; many mid-range phones lack it.",
+        "Correct list incl. Duo, 16e/17e excluded, Air excluded.",
+        "Scene role windowExternalDisplayNonInteractive with delegate code.",
+        "iOS 27 registerSceneAccessory(.externalNonInteractive(...)) named.",
+        "Says scene lifecycle needed; no requirement or UIScreen note."
+      ],
+      "percent": 88.5,
+      "critical": [
+        {
+          "error": "Says Lightning iPhones can drive the glasses as external display",
+          "quote": "Lightning iPhones need Apple's AV adapter plus the vendor's HDMI adapter.",
+          "status": "not-an-error",
+          "why": "Qualified adapter path, not 'any iPhone'; not the critical claim."
+        }
+      ],
+      "other_errors": []
+    }
+  }
+}

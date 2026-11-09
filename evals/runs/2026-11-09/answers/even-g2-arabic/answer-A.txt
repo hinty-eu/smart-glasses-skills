@@ -1,0 +1,20 @@
+I can't confirm the cause without your code or the SDK docs, but this is the most likely explanation.
+
+**Likely cause: the glasses' built-in font has no Arabic glyphs.**
+- Text on the G1 and G2 is drawn by the firmware's own font, not by your phone. Characters missing from that font usually render as nothing, not as boxes. That fits English working and Arabic showing nothing.
+- Even if a font did have Arabic, the text renderer would also need to do two things Arabic requires:
+  - **Shaping:** letters change form depending on position (initial, medial, final or isolated). Embedded renderers usually don't do this.
+  - **Bidi/RTL:** the text has to be laid out right to left, with any embedded numbers or Latin text ordered correctly.
+- So sending Unicode Arabic as text will probably never work, whatever the encoding.
+
+**First, rule out the simple causes.** Check that the payload is UTF-8 end to end and isn't being stripped, for example by an ASCII-only filter or a length limit counted in bytes. Then send a few mixed strings, such as `"Hi مرحبا"`. If the English part shows and the Arabic part doesn't, it's the font. If the whole message disappears, look for an encoding or length problem first.
+
+**Ways to get Arabic onto the display:**
+1. **Render the text as an image (most reliable).** Shape and lay out the Arabic on your server or phone, draw it to a bitmap, and send that. This needs an SDK feature for image or bitmap containers, which I believe exists but you should check in the current SDK docs. A rough pipeline:
+   - Use Pillow with libraqm, or HarfBuzz, plus `python-bidi`. Pick a font such as Noto Naskh Arabic or Noto Sans Arabic.
+   - Size the bitmap to the display's resolution and bit depth, which are in the SDK spec. Use a high-contrast, thick-stroked font, because thin Arabic strokes break up on a small monochrome or green display.
+   - Cache rendered images by message hash, so repeated messages aren't re-rendered.
+2. **Pre-shape the text and send Presentation Forms characters (U+FB50–U+FDFF and U+FE70–U+FEFF).** This only works if the firmware font includes those glyphs, which is unlikely. Test it with one string before spending time on it.
+3. **Ask Even Realities** whether the firmware or the Even Hub SDK plans Arabic or RTL support, or has a custom-font upload API. If you have a developer contact or forum, that's the quickest way to get a definitive answer.
+
+If you share the code that sends messages, or tell me which SDK or language you're using, I can help build the image-rendering path or write the mixed-string test.

@@ -1,0 +1,532 @@
+{
+  "summary": {
+    "model": "sonnet",
+    "runs": 1,
+    "date": "2026-11-09",
+    "should_trigger_hit_percent": 65,
+    "should_not_trigger_clean_percent": 100,
+    "overall_percent": 82.5
+  },
+  "rows": [
+    {
+      "id": "t01",
+      "should_trigger": true,
+      "expected": "smart-glasses",
+      "passed": 0,
+      "runs": 1,
+      "results": [
+        {
+          "fired": "even-glasses-ui",
+          "verdict": "other-skill"
+        }
+      ]
+    },
+    {
+      "id": "t02",
+      "should_trigger": true,
+      "expected": "smart-glasses-vuzix",
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": "smart-glasses-vuzix",
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "t03",
+      "should_trigger": true,
+      "expected": "smart-glasses",
+      "passed": 0,
+      "runs": 1,
+      "results": [
+        {
+          "fired": "even-handle-input",
+          "verdict": "other-skill"
+        }
+      ]
+    },
+    {
+      "id": "t04",
+      "should_trigger": true,
+      "expected": "smart-glasses",
+      "passed": 0,
+      "runs": 1,
+      "results": [
+        {
+          "fired": null,
+          "verdict": "miss"
+        }
+      ]
+    },
+    {
+      "id": "t05",
+      "should_trigger": true,
+      "expected": "smart-glasses-live-captions",
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": "smart-glasses-live-captions",
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "t06",
+      "should_trigger": true,
+      "expected": "smart-glasses-rokid",
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": "smart-glasses-rokid",
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "t07",
+      "should_trigger": true,
+      "expected": "smart-glasses-rokid",
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": "smart-glasses-rokid",
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "t08",
+      "should_trigger": true,
+      "expected": "smart-glasses-vuzix",
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": "smart-glasses-vuzix",
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "t09",
+      "should_trigger": true,
+      "expected": "smart-glasses-live-captions",
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": "smart-glasses-live-captions",
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "t10",
+      "should_trigger": true,
+      "expected": "smart-glasses",
+      "passed": 0,
+      "runs": 1,
+      "results": [
+        {
+          "fired": null,
+          "verdict": "miss"
+        }
+      ]
+    },
+    {
+      "id": "t11",
+      "should_trigger": true,
+      "expected": "smart-glasses",
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": "smart-glasses",
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "t12",
+      "should_trigger": true,
+      "expected": "smart-glasses",
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": "smart-glasses",
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "t13",
+      "should_trigger": true,
+      "expected": "smart-glasses-live-captions",
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": "smart-glasses-live-captions",
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "t14",
+      "should_trigger": true,
+      "expected": "smart-glasses",
+      "passed": 0,
+      "runs": 1,
+      "results": [
+        {
+          "fired": null,
+          "verdict": "miss"
+        }
+      ]
+    },
+    {
+      "id": "t15",
+      "should_trigger": true,
+      "expected": "smart-glasses-vuzix",
+      "passed": 0,
+      "runs": 1,
+      "results": [
+        {
+          "fired": null,
+          "verdict": "miss"
+        }
+      ]
+    },
+    {
+      "id": "t16",
+      "should_trigger": true,
+      "expected": "smart-glasses-rokid",
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": "smart-glasses-rokid",
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "t17",
+      "should_trigger": true,
+      "expected": "smart-glasses-live-captions",
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": "smart-glasses-live-captions",
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "t18",
+      "should_trigger": true,
+      "expected": "smart-glasses",
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": "smart-glasses",
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "t19",
+      "should_trigger": true,
+      "expected": "smart-glasses-vuzix",
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": "smart-glasses-vuzix",
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "t20",
+      "should_trigger": true,
+      "expected": "smart-glasses",
+      "passed": 0,
+      "runs": 1,
+      "results": [
+        {
+          "fired": "even-design-guidelines",
+          "verdict": "other-skill"
+        }
+      ]
+    },
+    {
+      "id": "n01",
+      "should_trigger": false,
+      "expected": null,
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": null,
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "n02",
+      "should_trigger": false,
+      "expected": null,
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": null,
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "n03",
+      "should_trigger": false,
+      "expected": null,
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": null,
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "n04",
+      "should_trigger": false,
+      "expected": null,
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": null,
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "n05",
+      "should_trigger": false,
+      "expected": null,
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": null,
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "n06",
+      "should_trigger": false,
+      "expected": null,
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": null,
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "n07",
+      "should_trigger": false,
+      "expected": null,
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": null,
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "n08",
+      "should_trigger": false,
+      "expected": null,
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": null,
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "n09",
+      "should_trigger": false,
+      "expected": null,
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": null,
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "n10",
+      "should_trigger": false,
+      "expected": null,
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": null,
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "n11",
+      "should_trigger": false,
+      "expected": null,
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": null,
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "n12",
+      "should_trigger": false,
+      "expected": null,
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": null,
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "n13",
+      "should_trigger": false,
+      "expected": null,
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": null,
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "n14",
+      "should_trigger": false,
+      "expected": null,
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": null,
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "n15",
+      "should_trigger": false,
+      "expected": null,
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": null,
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "n16",
+      "should_trigger": false,
+      "expected": null,
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": null,
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "n17",
+      "should_trigger": false,
+      "expected": null,
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": null,
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "n18",
+      "should_trigger": false,
+      "expected": null,
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": null,
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "n19",
+      "should_trigger": false,
+      "expected": null,
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": null,
+          "verdict": "ok"
+        }
+      ]
+    },
+    {
+      "id": "n20",
+      "should_trigger": false,
+      "expected": null,
+      "passed": 1,
+      "runs": 1,
+      "results": [
+        {
+          "fired": null,
+          "verdict": "ok"
+        }
+      ]
+    }
+  ]
+}

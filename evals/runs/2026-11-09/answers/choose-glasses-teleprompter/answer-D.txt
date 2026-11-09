@@ -1,0 +1,23 @@
+**Recommendation: Even Realities (G1, or G2 if you can get one), with MentraOS as the fallback distribution path.** I have no web access here and my knowledge stops in mid-2026, so check the points flagged below before you commit.
+
+**Why Even Realities**
+- **It fits the use case.** The display is a monochrome text HUD, and a teleprompter is almost entirely scrolling text. Even already ships a basic teleprompter, so speakers use these glasses for this and you aren't pioneering anything.
+- **It's iPhone-first.** Even's own companion app is iOS-first, and the Android app exists too. That matches your hard iPhone requirement with Android as a bonus.
+- **No platform gatekeeper.** The glasses talk to the phone over BLE. The G1 protocol is well documented by the community, and there are open-source Flutter and Swift reference apps. You can ship your own phone app to the App Store without waiting for a third-party-app program to approve you.
+- **Speakers will wear them.** They look like ordinary glasses and have prescription support. The display is also less obtrusive than a camera-style device on stage.
+
+**Why not the others, given a release this month**
+- **Meta Ray-Ban Display:** It has the biggest audience, but third-party access to the display has been gated and in preview. Getting through review and publishing this month is a real risk. Check Meta's current Wearable Device Access Toolkit terms. If display apps are open to the public by now, this becomes the strongest contender.
+- **Brilliant Labs Frame/Halo:** It's very hackable, but the audience is tiny.
+- **Vuzix Z100, Rokid and similar:** These have weaker iOS support or are less available to consumers.
+- **Display-less glasses (Ray-Ban Meta Gen 2, etc.):** They can't show text, so they're not an option.
+
+**Things to verify before committing (this week)**
+1. Whether Even has an official G2 SDK or developer program by now, and its terms. If it doesn't, you'd be building on the reverse-engineered G1 protocol, which can break with a firmware update.
+2. Whether Even's own teleprompter has gained features that would make yours redundant, such as voice-following or remote control.
+3. Whether the App Store allows your use of background BLE. Declare the `bluetooth-central` background mode, and keep it working with the screen locked.
+4. Whether Meta's display toolkit is open for public release.
+
+If you want a hedge, build the teleprompter engine (script, pacing, voice-following) separately from a thin glasses-transport layer. Ship Even first, and a second device then only needs a new transport layer.
+
+I can sketch that architecture, or help scope the BLE integration, if you'd like.

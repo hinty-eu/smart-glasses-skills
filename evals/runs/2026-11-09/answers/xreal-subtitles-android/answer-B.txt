@@ -1,0 +1,101 @@
+**Simplest way:** the XREAL One is a plain external monitor over USB-C (DisplayPort Alt Mode). You don't need an XREAL SDK. Use Android's `Presentation` API to draw a second window on that display. Your normal UI stays on the phone.
+
+The code below comes from the skill's reference notes. It follows the public Android and UIKit APIs, but it hasn't been compiled or tested on real glasses.
+
+## Android (Kotlin, minSdk 31, main thread)
+
+```kotlin
+class ExternalTextDisplay(context: Context) {
+    private val app = context.applicationContext
+    private val dm = app.getSystemService(DisplayManager::class.java)
+    private var presentation: TextPresentation? = null
+    private var text = ""
+
+    private val listener = object : DisplayManager.DisplayListener {
+        override fun onDisplayAdded(displayId: Int) = attach()
+        override fun onDisplayRemoved(displayId: Int) = attach()
+        override fun onDisplayChanged(displayId: Int) {}
+    }
+
+    fun start() { dm.registerDisplayListener(listener, Handler(Looper.getMainLooper())); attach() }
+    fun stop() { dm.unregisterDisplayListener(listener); presentation?.dismiss(); presentation = null }
+    fun show(t: String) { text = t; presentation?.update(t) }
+
+    private fun pickDisplay(): Display? =
+        dm.getDisplays(DisplayManager.DISPLAY_CATEGORY_PRESENTATION).firstOrNull { d ->
+            d.displayId != Display.DEFAULT_DISPLAY &&
+                (d.flags and Display.FLAG_PRIVATE) == 0 &&
+                d.deviceProductInfo?.connectionToSinkType != DeviceProductInfo.CONNECTION_TO_SINK_BUILT_IN
+        }
+
+    private fun attach() {
+        val d = pickDisplay()
+        val current = presentation
+        if (current != null && current.isShowing && current.display.displayId == d?.displayId) return
+        current?.dismiss(); presentation = null
+        if (d == null) return
+        val p = TextPresentation(app, d)
+        try { p.show(); p.update(text); presentation = p }
+        catch (e: WindowManager.InvalidDisplayException) { /* refused; retry later */ }
+    }
+}
+
+private class TextPresentation(outer: Context, display: Display) : Presentation(outer, display) {
+    private var label: TextView? = null
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setCancelable(false)
+        window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
+                         WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
+        val m = context.resources.displayMetrics   // glasses' metrics, not the phone's
+        label = TextView(context).apply {
+            setBackgroundColor(Color.BLACK)         // black looks see-through on these optics
+            setTextColor(Color.WHITE)
+            setTextSize(TypedValue.COMPLEX_UNIT_PX, m.heightPixels * 0.07f)
+            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+            maxLines = 3
+            val side = (m.widthPixels * 0.12f).toInt()
+            setPadding(side, 0, side, (m.heightPixels * 0.08f).toInt())
+        }
+        setContentView(label!!)
+    }
+    fun update(t: String) { label?.text = t }
+}
+```
+
+**Usage:** create one `ExternalTextDisplay`, call `start()` when a session begins, call `show("your subtitle")` for each caption, and call `stop()` at the end.
+
+- **No permission or manifest entry** is needed.
+- **Don't call `window.setType()`.** It throws `InvalidDisplayException` on Android 12 and later.
+- **Run a foreground service during a session.** On Android 12+ the text keeps showing while your app is in the background, but only as long as your process stays alive.
+- **Phone support:** the phone needs DP Alt Mode video out. Pixel 8 and later and Samsung Galaxy S flagships have it. Many mid-range phones don't.
+- **Lock screen:** if the phone locks, the system replaces your text with a clock. `FLAG_KEEP_SCREEN_ON` should prevent the screen timeout from locking it, but that is untested on devices. The power button still locks the phone.
+- **Samsung DeX:** it may start when the glasses connect.
+- **Testing without glasses:** use the emulator's Extended controls > Displays, or Developer options > "Simulate secondary displays".
+- **Publishing:** nothing extra is needed. It ships as a normal app.
+
+**Design tips:**
+- Use a black background with white text.
+- Show two or three lines in the lower part of the screen.
+- Use a font of about 7% of the display height.
+- Avoid white panels, which glare.
+
+## What changes on iPhone
+
+The idea is the same, but the API and some rules differ.
+
+- **Which iPhones:** these need USB-C video out. That means iPhone 15, 16 (not 16e), 17 (not 17e) and 18 Pro. The iPhone Air isn't on Apple's list. Lightning iPhones need Apple's Lightning Digital AV Adapter and a vendor HDMI adapter.
+- **API:** you use a UIKit scene with the role `windowExternalDisplayNonInteractive` (iOS 16 and later). The scene delegate creates a black `UIViewController` with a white `UILabel`. Attaching a `UIWindow` to that scene turns off mirroring.
+- **iOS 16–26:** return the scene configuration from `application(_:configurationForConnecting:options:)`.
+- **iOS 27 and later:** the system connects the scene only after a view controller registers a scene accessory with `registerSceneAccessory(.externalNonInteractive(...))`. I took those API names from Apple's documentation and haven't compiled them.
+- **Scene life cycle:** apps built with the SDK after iOS 26 must adopt the scene-based life cycle. The old `UIScreen.screens` approach is deprecated.
+- **Background behaviour:** there's no equivalent of Android's foreground service. Content shows only while your app is in the foreground. After an app switch, iOS goes back to mirroring. This comes from community reports and isn't verified.
+- **Battery:** the glasses drain the phone's battery.
+
+The iOS scene-delegate code is in `references/brands/usb-c-displays.md` in the skill folder. I can paste it here if you want it.
+
+## Captions from speech
+
+If the captions come from speech-to-text, there's a separate skill for streaming partial results, fitting lines to the display, and keeping latency low. It also covers the microphone. Pin the phone's mic with `AudioRecord.setPreferredDevice()`, because Android may route capture to the glasses' USB audio device.
+
+Because the glasses have dark lenses and a cable, they suit lectures, video and speaker notes better than face-to-face conversation.

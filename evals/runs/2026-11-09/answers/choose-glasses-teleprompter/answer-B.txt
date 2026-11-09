@@ -1,0 +1,33 @@
+**Recommendation: target the Even Realities G2 and ship an Even Hub plugin.** Everything below comes from the skill's reference files, last checked 2026-11-08/09. None of it has been tested on real glasses.
+
+**Why the G2**
+- **iPhone works.** The plugin is a web app that runs inside the Even app on iPhone and Android, so Android comes with the same build.
+- **You can publish to the public.** The Even Hub store is open worldwide, with a manual review of every build.
+- **Input suits a teleprompter.** Taps, swipes and long press work on the temples and on the optional R1 ring, so the speaker can page without touching the phone.
+- **It has a microphone API.** If you want the script to follow the speaker, the plugin can read the phone or glasses mic as 16 kHz PCM. You supply your own speech-to-text.
+- **You can test without the glasses.** There is an official simulator, but it is not a hardware emulator.
+
+**Risks to plan for**
+- **Review timing.** Even doesn't publish a review time, and there is no rollback. Submit in the first days of the month and expect a second round. Free apps only.
+- **Built-in competition.** The Even app already has a Teleprompt feature, with speech-paced or manual paging. Your plugin needs a concrete edge, such as your own script source, slide sync or a language it handles better.
+- **Display limits.** There is one fixed font and size, about 10 lines of roughly 60 Latin characters on a 576x288 canvas. Arabic, Hebrew, Thai and Devanagari glyphs are silently dropped.
+- **Foreground only.** The WebView can be suspended in the background on iOS. Save state often and repaint when the app comes back.
+
+**Runner-up if the date is fixed: USB-C display glasses** (XREAL, VITURE, RayNeo Air). This is an ordinary App Store app with no vendor review, and the phone draws any font or script. It needs an iPhone 15 or newer with video out (not the 16e, 17e or Air). The glasses send no input, so you page from the phone or a Bluetooth remote. The tinted lenses and cable suit a stage better than a face-to-face talk. If the date matters more than the form factor, swap it with the G2.
+
+**Why the others are out**
+
+| Option | Verdict | Reason |
+|---|---|---|
+| Vuzix Z100 | Third choice | The iOS SDK exists and there is no review, but retail availability has been unclear since July 2026. It also has no microphone. |
+| Rokid Glasses | Out for "iPhone this month" | The iOS path needs a registered Rokid developer account and private CocoaPods access. Taps on custom views don't reach your app. It's a fair Android-first pick. |
+| Meta Ray-Ban Display | Out | Publishing to all users isn't open (Meta, 2026-11-05). On iOS, DAT apps can't pass App Store review because Meta can't issue the MFi PPID. Web Apps have no public submission. |
+| Ray-Ban Meta, Oakley Meta | Out | They have no display, so there is nothing to read. |
+| MentraOS | Out | Miniapps can't be distributed yet. |
+| Android XR display glasses | Out | Not on sale. |
+| Snap Specs | Out | Not shipping. |
+| RayNeo X3 Pro | Out | Sideload only. |
+
+Before you commit, re-check three things that change month to month: the Even review queue, Vuzix stock, and Meta's publishing status. Keep a brand-independent core with one adapter per brand. Then adding USB-C or Vuzix later is cheap.
+
+I can scaffold the Even Hub plugin (script paging, tap/swipe controls, simulator setup) if you'd like.

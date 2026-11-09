@@ -1,0 +1,318 @@
+# Live captions on Vuzix Z100: architecture and Swift code
+
+I haven't compiled any of this, and none of it has run on glasses. The Vuzix SDK calls come from its public docs, so test on a real Z100 first.
+
+## Architecture
+
+```
+iPhone mic ─► AVAudioEngine ─► SFSpeechRecognizer ─► caption (text, final)
+                                   (partial results)        │
+                                                            ▼
+                                             CaptionPresenter (wrap + coalesce)
+                                                            ▼
+                                       Z100Display ─► UltraliteSDK (BLE) ─► Z100
+```
+
+- **Everything runs in one iPhone app.** That gives the lowest latency and needs no server.
+- **The Z100 has no microphone, speaker or camera.** It's a display only (640×480, monochrome green), so audio capture has to happen on the phone. Put the phone on the table or in a hand, not in a pocket. It hears the other speaker better than glasses mics would.
+- **On iOS your app owns the Bluetooth link.** The user must link the glasses once inside your app, or `isConnected` never becomes true. Vuzix Connect isn't required.
+- **Partial results replace the previous text and never append.** The presenter keeps only the newest ~3 lines, wrapped by character budget and sent at most about every 150 ms.
+- **Control of the display goes to the last app that asks for it.** Request it in the foreground, set up the canvas after the grant, and release it when the session ends. iOS gives no "control lost" callback, so re-request when the app becomes active again.
+- **Speech limits:** `SFSpeechRecognizer` plans for about 1 minute of audio per request. The code below rotates the request every 50 s.
+
+Info.plist needs these keys:
+- `NSMicrophoneUsageDescription`
+- `NSSpeechRecognitionUsageDescription`
+- `NSBluetoothAlwaysUsageDescription`
+- `UIBackgroundModes`: `bluetooth-central`
+- `LSApplicationQueriesSchemes`: `vuzixconnect`
+
+Add the SPM package `https://github.com/Vuzix/UltraliteSDK-releases-iOS`, pinned to 1.9.0.
+
+## 1. Glasses part
+
+```swift
+import UIKit
+import UltraliteSDK
+
+/// Z100 text display on the canvas layout. Main thread only.
+final class Z100Display {
+    private var connectedListener: BondListener<Bool>?    // keep a strong reference
+    private var activeObserver: NSObjectProtocol?
+    private var textId: Int?
+    private var pending = ""
+    private var running = false
+
+    var isLinked: Bool { UltraliteManager.shared.currentDevice != nil }
+
+    /// First run only: the user links the glasses inside this app.
+    @MainActor func link(from presenter: UIViewController, done: @escaping () -> Void) {
+        presenter.present(UltralitePickerController { done() }, animated: true)
+    }
+
+    func start() {
+        guard !running, let device = UltraliteManager.shared.currentDevice else { return }
+        running = true
+        let listener = BondListener<Bool>(listener: { [weak self] connected in
+            DispatchQueue.main.async {
+                if connected { self?.takeControl() } else { self?.textId = nil }
+            }
+        })
+        connectedListener = listener
+        device.isConnected.bind(listener: listener, shouldFire: true)
+
+        // iOS has no "control lost" signal: re-take the display when the user returns to the app.
+        activeObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            guard let self, self.running,
+                  UltraliteManager.shared.currentDevice?.isConnected.value == true else { return }
+            self.takeControl()
+        }
+    }
+
+    private func takeControl() {
+        guard let device = UltraliteManager.shared.currentDevice else { return }
+        // timeout 0 = keep the display on while captions run; no taps needed here
+        let granted = device.requestControl(layout: .canvas, timeout: 0, hideStatusBar: true,
+                                            showTapAnimation: false, maxNumTaps: 0,
+                                            autoReleaseControlOnDisplayTimeout: false)
+        guard granted else { return }
+        device.canvas.clear(shouldClearBackground: true)   // old text ids are invalid after a new grant
+        textId = device.canvas.createText(text: " ", textAlignment: .left, textColor: .white,
+                                          anchor: .topLeft, xOffset: 0, yOffset: 0, isVisible: true,
+                                          width: Ultralite.DISPLAY_WIDTH, height: Ultralite.DISPLAY_HEIGHT,
+                                          wrapMode: .wrap)
+        device.canvas.commit()
+        if !pending.isEmpty { show(pending) }
+    }
+
+    func show(_ text: String) {
+        pending = text                                      // redrawn after the next grant
+        guard let device = UltraliteManager.shared.currentDevice, let id = textId else { return }
+        device.canvas.updateText(text: text, id: id)
+        device.canvas.commit()                              // nothing appears without commit()
+    }
+
+    func stop() {
+        running = false
+        if let device = UltraliteManager.shared.currentDevice {
+            if let l = connectedListener { device.isConnected.unbind(listener: l) }
+            device.releaseControl()                         // otherwise the last frame can stay on
+        }
+        if let o = activeObserver { NotificationCenter.default.removeObserver(o) }
+        connectedListener = nil; activeObserver = nil; textId = nil; pending = ""
+    }
+}
+
+/// Turns streaming captions into a few stable lines and sends them at a limited rate.
+final class CaptionPresenter {
+    private let display: Z100Display
+    private let maxChars: Int
+    private let maxLines: Int
+    private var finals = ""           // committed text (bounded)
+    private var partial = ""
+    private var lastSend = Date.distantPast
+    private var scheduled = false
+    private let minInterval: TimeInterval = 0.15
+
+    init(display: Z100Display, maxChars: Int = 36, maxLines: Int = 3) {
+        self.display = display; self.maxChars = maxChars; self.maxLines = maxLines
+    }
+
+    /// `text` is the whole current segment, not a delta.
+    func update(text: String, final: Bool) {
+        if final {
+            finals = String((finals + " " + text).suffix(400))
+            partial = ""
+        } else {
+            partial = text
+        }
+        flush()
+    }
+
+    func clear() { finals = ""; partial = ""; display.show(" ") }
+
+    private func flush() {
+        let wait = minInterval - Date().timeIntervalSince(lastSend)
+        if wait > 0 {
+            guard !scheduled else { return }                // newest state is read at send time
+            scheduled = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + wait) { [weak self] in
+                self?.scheduled = false; self?.flush()
+            }
+            return
+        }
+        lastSend = Date()
+        let all = (finals + " " + partial).trimmingCharacters(in: .whitespaces)
+        display.show(all.isEmpty ? " " : Self.fit(all, maxChars: maxChars, maxLines: maxLines))
+    }
+
+    /// Word-wrap by character budget, keep the newest lines (captions grow at the bottom).
+    static func fit(_ text: String, maxChars: Int, maxLines: Int) -> String {
+        var lines: [String] = []
+        var line = ""
+        for word in text.split(whereSeparator: \.isWhitespace) {
+            var w = Substring(word)
+            while !w.isEmpty {
+                let chunk = w.prefix(maxChars); w = w.dropFirst(chunk.count)
+                let needed = line.isEmpty ? chunk.count : line.count + 1 + chunk.count
+                if needed > maxChars, !line.isEmpty { lines.append(line); line = "" }
+                line += (line.isEmpty ? "" : " ") + chunk
+            }
+        }
+        if !line.isEmpty { lines.append(line) }
+        return lines.suffix(maxLines).joined(separator: "\n")
+    }
+}
+```
+
+The 36-characters-per-line budget is a community measurement for the glasses' text layout. Canvas text size may differ, so tune `maxChars` and `maxLines` on the device.
+
+**Upgrade path:** the SDK's `ScrollLayout.LiveText` on the `.scroll` layout gives TV-style scrolling captions. It also renders any script your phone font supports, which matters for Arabic, Thai and similar. I left it out because its iOS setup isn't documented. Try it once the basic path works on hardware.
+
+## 2. Speech recognition part
+
+```swift
+import Speech
+import AVFoundation
+
+/// Continuous on-device-preferred recognition with automatic request rotation.
+final class SpeechCaptioner {
+    /// (whole current segment, isFinal). Always delivered on the main thread.
+    var onCaption: ((String, Bool) -> Void)?
+    var onError: ((Error) -> Void)?
+
+    private let recognizer: SFSpeechRecognizer
+    private let engine = AVAudioEngine()
+    private let lock = NSLock()
+    private var request: SFSpeechAudioBufferRecognitionRequest?   // guarded by lock
+    private var task: SFSpeechRecognitionTask?
+    private var rotateTimer: Timer?
+    private var running = false
+    private var lastText = ""
+    private let rotateAfter: TimeInterval = 50      // stay under the ~1 min per-request plan
+
+    init?(locale: Locale = .current) {
+        guard let r = SFSpeechRecognizer(locale: locale) else { return nil }
+        recognizer = r
+    }
+
+    static func requestPermissions(_ done: @escaping (Bool) -> Void) {
+        SFSpeechRecognizer.requestAuthorization { status in
+            guard status == .authorized else { return DispatchQueue.main.async { done(false) } }
+            AVAudioApplication.requestRecordPermission { granted in
+                DispatchQueue.main.async { done(granted) }
+            }
+        }
+    }
+
+    func start() throws {
+        guard !running else { return }
+        let session = AVAudioSession.sharedInstance()
+        try session.setCategory(.record, mode: .measurement, options: [.duckOthers])
+        try session.setActive(true, options: .notifyOthersOnDeactivation)
+
+        let input = engine.inputNode
+        let format = input.outputFormat(forBus: 0)
+        input.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
+            guard let self else { return }
+            self.lock.lock(); let req = self.request; self.lock.unlock()
+            req?.append(buffer)
+        }
+        engine.prepare()
+        try engine.start()
+        running = true
+        beginTask()
+    }
+
+    func stop() {
+        running = false
+        rotateTimer?.invalidate(); rotateTimer = nil
+        engine.stop()
+        engine.inputNode.removeTap(onBus: 0)
+        lock.lock(); request?.endAudio(); request = nil; lock.unlock()
+        task?.cancel(); task = nil
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    }
+
+    private func beginTask() {
+        guard running else { return }
+        let req = SFSpeechAudioBufferRecognitionRequest()
+        req.shouldReportPartialResults = true
+        req.taskHint = .dictation
+        if recognizer.supportsOnDeviceRecognition { req.requiresOnDeviceRecognition = true }
+        lock.lock(); request = req; lock.unlock()
+        lastText = ""
+
+        task = recognizer.recognitionTask(with: req) { [weak self] result, error in
+            guard let self else { return }
+            DispatchQueue.main.async {
+                if let result {
+                    let text = result.bestTranscription.formattedString
+                    self.lastText = text
+                    self.onCaption?(text, result.isFinal)
+                    if result.isFinal { self.restart() }
+                } else if let error {
+                    // On error or cancellation, commit what we had, then start a fresh request.
+                    if !self.lastText.isEmpty { self.onCaption?(self.lastText, true) }
+                    if self.running { self.onError?(error); self.restart(after: 0.3) }
+                }
+            }
+        }
+        rotateTimer?.invalidate()
+        rotateTimer = Timer.scheduledTimer(withTimeInterval: rotateAfter, repeats: false) { [weak self] _ in
+            // endAudio() makes the recognizer return a final result, which triggers restart().
+            self?.lock.lock(); self?.request?.endAudio(); self?.lock.unlock()
+        }
+    }
+
+    private func restart(after delay: TimeInterval = 0) {
+        guard running else { return }
+        task?.cancel(); task = nil
+        lock.lock(); request = nil; lock.unlock()
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in self?.beginTask() }
+    }
+}
+```
+
+## 3. Wiring it together
+
+```swift
+import UIKit
+
+final class CaptionSession {
+    private let display = Z100Display()
+    private lazy var presenter = CaptionPresenter(display: display)
+    private let captioner = SpeechCaptioner()
+
+    func begin(from vc: UIViewController) {
+        SpeechCaptioner.requestPermissions { [weak self, weak vc] ok in
+            guard ok, let self, let vc else { return }
+            if self.display.isLinked { self.run() }
+            else { self.display.link(from: vc) { self.run() } }
+        }
+    }
+
+    private func run() {
+        display.start()
+        captioner?.onCaption = { [weak self] text, final in self?.presenter.update(text: text, final: final) }
+        do { try captioner?.start() } catch { print("mic/speech failed: \(error)") }
+    }
+
+    func end() { captioner?.stop(); display.stop() }
+}
+```
+
+## Caveats for a hard-of-hearing user
+
+- **Keep the app in the foreground at first.** Whether the display keeps working with the phone locked is undocumented, so test it on hardware. Keeping the mic alive in the background would need the `audio` background mode. Plan a fallback, such as phone notifications mirrored by Vuzix Connect.
+- **Control can be taken at any time** by another Z100 app. Because iOS gives no signal, add a visible "re-sync" action or phone-side indicator.
+- **Accuracy and speed:**
+  - On-device `SFSpeechRecognizer` is private and works offline, but it's less accurate.
+  - On iOS 26+, `SpeechAnalyzer`/`SpeechTranscriber` is the newer on-device option and may suit long sessions better.
+  - If accuracy matters most, a cloud streaming STT (Deepgram, AssemblyAI and so on) is better. Keep the API key on your server, since a key shipped in the app can be extracted. Only `SpeechCaptioner` would change.
+- **Consent and privacy:** captions transcribe people who didn't install your app. Don't store audio, and delete transcripts after the session.
+- **Testing without glasses:** the SDK has no simulator. Put `Z100Display` behind a small protocol (`start`, `show`, `stop`) and use a fake in unit tests and on the iOS Simulator.
+
+I can add the protocol and a fake display, a `SpeechAnalyzer` variant for iOS 26, or a cloud STT adapter if you want any of those.

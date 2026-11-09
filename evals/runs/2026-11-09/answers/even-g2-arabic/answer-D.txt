@@ -1,0 +1,25 @@
+**Why it's blank:** the G2's firmware has one built-in font, and it has no Arabic glyphs. Arabic, Hebrew, Thai and Devanagari are silently dropped, with no placeholder box or error. Latin (including Latin Extended-A), Cyrillic, Greek, Chinese, Japanese and Korean do render. This is a known issue, [#37](https://github.com/even-realities/everything-evenhub/issues/37) in Even's tracker. It isn't a bug in your server or encoding. I got this from the skill's notes on Even's font tables (`@evenrealities/pretext` 0.1.4, checked 2026-11-08). I haven't tested it on hardware.
+
+**Options, best first:**
+
+1. **Render the Arabic as an image.** This is the only way to get Arabic glyphs on the display. Text containers can't show them, but image containers can show anything you draw.
+   - Draw the text in the plugin's WebView with a `<canvas>`, or render it server-side. The browser's text engine handles Arabic joining and right-to-left ordering. Server-side, you'd need a shaping library such as HarfBuzz. Use a font that includes Arabic, such as Noto Naskh Arabic.
+   - Draw light text on a black background. Black is transparent on the display.
+   - Convert the result to 4-bit greyscale and send it with `updateImageRawData`.
+   - The limits are 4 image containers per page, each up to 288×144. Never send images while the page is being created, and send only one at a time.
+   - The cost is speed. A full-screen refresh takes about 800 ms and draws in quarters.
+   - Make the text large, because only about 2 to 4 short lines fit per image.
+   - There's a known bug. After `shutDownPageContainer(1)`, image updates fail until the app relaunches, even if the user cancels the exit dialog. Store review requires that call on the root page. So keep the root page text-only, and put images on a sub-page.
+
+2. **Use a different channel for Arabic users.**
+   - **Phone notification:** the Even app forwards these, but it likely uses the same font. Test it before relying on it. The skill's notes don't say.
+   - **Voice:** the glasses have no speaker, so this only works through the user's own earbuds.
+
+3. **Fall back deliberately.**
+   - Detect Arabic characters (`/[\u0600-\u06FF]/`) on your server.
+   - If a message can't be rendered, show a short Latin or English notice instead of a blank screen. Store review also requires an on-glasses message rather than a black screen when something is missing.
+   - Filter any text to glyphs you've verified before sending.
+
+Also, `supported_languages` in `app.json` only accepts `en de fr es it zh ja ko`. Arabic isn't on the list, so the store listing can't declare it.
+
+For short messages with moderate update rates, I'd go with option 1 plus option 3 as a fallback. If you share your plugin code, I can sketch the canvas-to-4-bit-greyscale path. I'd test it in the simulator first. It doesn't emulate font rendering or Bluetooth timing, so you'd still need to check on real glasses.

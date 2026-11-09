@@ -1,0 +1,40 @@
+**Short answer: building it is easy. Launching to all users on Meta Ray-Ban Display next month is not realistic.** The blocker is Meta's distribution rules, not engineering. This is based on the reference docs only, last checked 2026-11-08, and I haven't tested any of it on hardware.
+
+## Why the launch date doesn't work
+
+| Path | Can all your users get it today? |
+|---|---|
+| DAT Display SDK, Android | **No.** Only people in your invite-only Beta channel can register. Everyone else sees "Error loading this integration". |
+| DAT Display SDK, iOS | **No.** There is no App Store route. The SDK needs an Apple MFi accessory ID (PPID) that Meta says it can't issue. Only TestFlight plus the Beta channel works. |
+| Web App on the glasses | **No.** Users must turn on Developer Mode, add your URL by hand or by QR, and the add screen labels it "unverified". Meta's submission process is described only as "soon". |
+
+Meta staff said on 2026-11-05 that "Publishing DAT integrations to all users isn't open yet". They gave no date and no public application process. Developer Terms §4.1 also require Integration Review before general release. Developer Mode lets any wearer register an unpublished app, but only one app at a time. Both reasons make it unsuitable as a launch plan.
+
+The glasses are also sold only in the US, Canada, UK, France, Germany and Italy. So "all our users" is capped by geography anyway.
+
+## How to build it
+
+Your backend already produces the text, so keep the work on the phone and treat the glasses as a thin display.
+
+1. **Core and adapters.** Keep a brand-independent core that takes a card (title, body, optional next-step action) and renders through one small interface. Write one adapter per output.
+2. **Meta Display adapter, behind a tester flag.**
+   - **Android:** use DAT Display (`mwdat-core` and `mwdat-display` 1.0.1 from Maven Central). Start the session from a user action, then add Display and call `sendContent` with a FlexBox of Text and a "Hide" Button.
+   - **iOS:** the same API in Swift.
+   - **Constraints that matter for cards:**
+     - Each send replaces the whole 600×600 screen, and black is transparent.
+     - The panel dims after 20 s and sleeps at 25 s. It's unconfirmed whether a new send wakes it, so pair urgent reminders with a short tone or speech.
+     - The Back gesture ends the session and isn't delivered on real hardware yet, so put "Hide" on screen.
+   - **Quick alternative:** a Web App can be a page that gets cards from your backend over WebSocket. It's the fastest prototype, but the same distribution limit applies.
+3. **Fallbacks that can ship now.**
+   - **Phone notification.** Meta announced per-app phone notification mirroring on 2026-09-23, but it's unverified whether third-party notifications reach every wearer today. Don't build the plan on it.
+   - **Voice.** Text-to-speech over normal Bluetooth audio works on any glasses, and that's a normal app with no Meta approval.
+4. **Test without hardware.** Use `MockDeviceKit` with the display preview, or the "Meta Ray-Ban Display Simulator" Chrome extension. Real gestures, focus, sleep and wake and Bluetooth latency only show up on actual glasses.
+5. **Store compliance for the phone app.** Android targetSdk 36 and 16 KB page alignment. On iOS, drop the External Accessory entries unless you have a PPID, and provide a demo mode for App Review that works without glasses.
+
+## A realistic plan for next month
+
+- **Launch to everyone:** the phone app with card delivery via notification and/or voice. Add other glasses that do allow public release, such as Even G2, Rokid, Vuzix Z100 or USB-C display glasses, if your users have them.
+- **Meta Display:** ship the adapter to a Beta group (Android up to roughly 100 testers; iOS via TestFlight). Use it to find the display-sleep and Back-gesture problems before the gate opens.
+- **Watch Meta's discussions and the Explore submission page.** Enable the adapter for everyone only once Meta opens publishing. I can't predict when that will be.
+
+It would help to know which glasses your users actually own. If most have Ray-Ban Meta or Oakley Meta (no display), voice is the main path. I can also scaffold the adapter interface and the Android DAT adapter in this repo if you want.

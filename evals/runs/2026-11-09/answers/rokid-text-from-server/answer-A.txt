@@ -1,0 +1,100 @@
+Rokid has a phone-side SDK for this, the CXR-M SDK (Client SDK for Mobile). Your app pairs with the glasses over Bluetooth, and you push text to a "custom view" scene on the display. Your phone keeps the WebSocket and the glasses only render. I'm going from memory of the SDK, so check the class and method names below against Rokid's current developer docs before you build. Treat the shape as reliable and the exact signatures as approximate.
+
+## Architecture
+
+```
+Server ──WebSocket──▶ Phone app ──Bluetooth (CXR-M)──▶ Rokid Glasses display
+```
+
+- **Don't connect the glasses to your server directly.** The phone app is the supported path.
+- **Throttle on the phone.** A few messages per second is fine for the socket but too much for a small HUD display. Show the latest message and rate-limit updates (about 4 per second or less) so the Bluetooth link doesn't back up.
+- **Open the custom view once, then update it.** Updating a single text node is much cheaper than re-sending the layout.
+
+## Kotlin sketch
+
+```kotlin
+// build.gradle: Rokid's CXR-M client dependency (see their docs for the
+// current Maven repo and coordinates), plus OkHttp and coroutines.
+
+class GlassesDisplay(private val context: Context) {
+    private val cxr = CxrApi.getInstance()
+    private var viewOpen = false
+
+    // Call after BLUETOOTH_CONNECT/SCAN permissions are granted and the device is paired.
+    fun connect(device: BluetoothDevice, onReady: () -> Unit) {
+        cxr.initBluetooth(context, device, object : BluetoothStatusCallback {
+            override fun onConnected() { onReady() }
+            override fun onDisconnected() { viewOpen = false }
+            override fun onFailed(code: ValueUtil.CxrBluetoothErrorCode?) { /* log/retry */ }
+            // other callback methods per SDK
+        })
+    }
+
+    private val layoutJson = """
+    {
+      "type": "LinearLayout",
+      "props": { "layout_width": "match_parent", "layout_height": "match_parent",
+                 "orientation": "vertical", "gravity": "center", "paddingStart": "24dp" },
+      "children": [
+        { "type": "TextView",
+          "props": { "id": "tv_status", "layout_width": "wrap_content",
+                     "layout_height": "wrap_content", "text": "Ready",
+                     "textSize": "20sp", "textColor": "#FF00FF00" } }
+      ]
+    }""".trimIndent()
+
+    fun show(text: String) {
+        if (!viewOpen) {
+            cxr.openCustomView(layoutJson)
+            viewOpen = true
+        }
+        val update = """[{"action":"update","id":"tv_status","props":{"text":${JSONObject.quote(text)}}}]"""
+        cxr.updateCustomView(update)
+    }
+
+    fun close() { cxr.closeCustomView(); viewOpen = false }
+}
+```
+
+```kotlin
+class StatusRepository(
+    private val glasses: GlassesDisplay,
+    private val scope: CoroutineScope,
+    private val client: OkHttpClient = OkHttpClient()
+) {
+    private val messages = MutableSharedFlow<String>(
+        extraBufferCapacity = 64,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+
+    fun start(url: String) {
+        client.newWebSocket(Request.Builder().url(url).build(), object : WebSocketListener() {
+            override fun onMessage(ws: WebSocket, text: String) { messages.tryEmit(text) }
+            override fun onFailure(ws: WebSocket, t: Throwable, r: Response?) {
+                // reconnect with backoff
+            }
+        })
+
+        scope.launch {
+            messages
+                .conflate()                 // keep only the newest if we're behind
+                .distinctUntilChanged()
+                .collect { msg ->
+                    glasses.show(msg.take(120))   // keep it short for the HUD
+                    delay(250)                    // ~4 updates/sec max
+                }
+        }
+    }
+}
+```
+
+## Practical notes
+
+- **Run it in a foreground service.** If the user locks the phone or backgrounds the app, the WebSocket and Bluetooth link need a foreground service (`connectedDevice` type on Android 14+) to survive.
+- **Permissions:** `BLUETOOTH_SCAN` and `BLUETOOTH_CONNECT` at runtime on Android 12+, plus whatever the SDK's manifest asks for.
+- **Design for the display.** It's small and monochrome-ish, so use large text and short lines, and truncate or paginate long instructions. Don't scroll text automatically.
+- **For longer instructions,** the SDK also has other scenes, such as a teleprompter-style text scene and TTS. These may suit multi-line instructions better than a single TextView.
+- **Reconnects:** handle disconnect and reconnect on both links (socket and Bluetooth). After a glasses reconnect, reopen the view and re-send the last message.
+- **Access:** you need to register for Rokid's developer program to get SDK access and credentials. Without that the SDK won't initialize.
+
+If you tell me which glasses model and SDK version you have, I can adjust the code. If you paste the SDK's sample or docs for the custom view API, I can match the exact JSON schema and callbacks.

@@ -1,0 +1,169 @@
+{
+  "case": "even-g2-live-captions",
+  "items": 13,
+  "answers": {
+    "A": {
+      "scores": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        0.5,
+        1,
+        0.5,
+        0,
+        1,
+        1,
+        0,
+        0
+      ],
+      "reasons": [
+        "Web app inside Even app WebView; glasses only mic and display.",
+        "Imports even_hub_sdk, awaits waitForEvenAppBridge before calls.",
+        "Creates page once in init, updates via textContainerUpgrade.",
+        "One 576x288 text container with isEventCapture: 1.",
+        "audioControl(true), reads audioEvent.audioPcm, 16 kHz mono PCM16.",
+        "Sends PCM to external STT; never states SDK lacks STT.",
+        "Short-lived tokens from backend, key not in bundle.",
+        "Deliberately picks glasses mic; no source enum or permission.",
+        "No app.json network whitelist or CORS note.",
+        "CaptionBuffer keeps only the last maxLines lines.",
+        "Coalesces to newest text, interim replaced, duplicates skipped.",
+        "No simulator mention.",
+        "No double-tap shutDownPageContainer(1) mention."
+      ],
+      "points": 9,
+      "percent": 69.2,
+      "critical": [],
+      "other_errors": []
+    },
+    "B": {
+      "scores": [
+        1,
+        1,
+        1,
+        1,
+        0,
+        0.5,
+        1,
+        0.5,
+        0,
+        1,
+        1,
+        0.5,
+        0
+      ],
+      "reasons": [
+        "Plugin is WebView in Even app, drives display via SDK.",
+        "Uses even_hub_sdk and waitForEvenAppBridge before creating page.",
+        "createStartUpPageContainer once (latched), then textContainerUpgrade.",
+        "Three absolute containers fill 576x288; only status captures events.",
+        "Plugin never captures audio; no audioControl or audioPcm.",
+        "STT on server; no explicit statement that SDK lacks STT.",
+        "Keys stay on the relay server.",
+        "Deliberate phone-mic choice, but outside SDK, no permission.",
+        "No network whitelist or CORS in app.json.",
+        "History/live line limits, slices to 999/1999 chars.",
+        "Newest frame wins, debounce, single in-flight loop, seq guard.",
+        "Mentions simulator and real-glasses check; not its BLE limits.",
+        "No double-tap exit handling."
+      ],
+      "points": 8.5,
+      "percent": 65.4,
+      "critical": [
+        {
+          "error": "Pastes a long block that it says is copied from a vendor sample or template.",
+          "quote": "I read the Even Hub example plugin in the smart-glasses-skills repo and adapted it below.",
+          "status": "not-an-error",
+          "why": "Source is a third-party skills-repo example, not an Even Realities sample; code is adapted and trimmed."
+        }
+      ],
+      "other_errors": []
+    },
+    "C": {
+      "scores": [
+        0.5,
+        0,
+        0,
+        0,
+        0,
+        0.5,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0,
+        0
+      ],
+      "reasons": [
+        "Logic on phone as Even Hub web app; no WebView/bridge; offers native.",
+        "No SDK package or waitForEvenAppBridge.",
+        "Display call left as an unimplemented stub.",
+        "No container model, canvas size, or isEventCapture.",
+        "No audioControl or audioPcm; audio source left open.",
+        "External streaming STT, but no statement that SDK lacks STT.",
+        "Backend mints short-lived tokens; key not shipped.",
+        "Discusses both mics but chooses none; no permission.",
+        "No network whitelist or CORS.",
+        "Keeps last maxLines wrapped lines, caps history chars.",
+        "Coalescing renderer, one write in flight, latest state only.",
+        "No simulator mention.",
+        "No double-tap exit."
+      ],
+      "points": 4,
+      "percent": 30.8,
+      "critical": [
+        {
+          "error": "Connects to the G2 directly over Web Bluetooth or raw BLE instead of the Even Hub bridge.",
+          "quote": "the G2 is driven over BLE from the phone, so the app logic lives on the phone, either as an Even Hub web app or a native app.",
+          "status": "not-an-error",
+          "why": "Mentions a native option but never proposes a direct BLE connection; the display code is an SDK stub."
+        }
+      ],
+      "other_errors": [
+        {
+          "quote": "either as an Even Hub web app or a native app",
+          "why": "The official third-party path for G2 is an Even Hub plugin; Even documents no native-app option."
+        }
+      ]
+    },
+    "D": {
+      "scores": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        0.5,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0.5
+      ],
+      "reasons": [
+        "Plugin in phone WebView drives G2 through the bridge.",
+        "Imports even_hub_sdk, awaits waitForEvenAppBridge first.",
+        "Creates page once, updates via textContainerUpgrade.",
+        "Absolute containers on 576 width; exactly one isEventCapture.",
+        "audioControl(true, Phone); audioPcm as 16 kHz s16le mono.",
+        "Relays to STT; never says SDK lacks STT.",
+        "\"Never put the key in the .ehpk\".",
+        "Phone mic via AudioInputSource.Phone plus phone-microphone permission.",
+        "network whitelist with https and wss origins; CORS noted.",
+        "Shows last lines, clamps to 999 UTF-8 bytes.",
+        "Latest-only queue, debounce, one BLE write at a time.",
+        "Simulator does not model BLE timing; measure on real glasses.",
+        "Comment notes double tap -> shutDownPageContainer(1); no review context."
+      ],
+      "points": 12,
+      "percent": 92.3,
+      "critical": [],
+      "other_errors": []
+    }
+  }
+}

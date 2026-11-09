@@ -1,0 +1,165 @@
+{
+  "case": "vuzix-z100-ios-captions",
+  "items": 13,
+  "answers": {
+    "A": {
+      "scores": [
+        0.5,
+        0.5,
+        0,
+        0.5,
+        0.5,
+        0.5,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0.5,
+        0
+      ],
+      "reasons": [
+        "Names Ultralite SDK only; no SPM, version or iOS minimum.",
+        "Uses phone mic but never says Z100 lacks one.",
+        "Linking left as TODO; in-app link requirement absent.",
+        "Mentions acquiring/releasing control conceptually; no API or last-requester rule.",
+        "Vague 'text API or canvas'; no LiveText.",
+        "Small monochrome green, few lines; no 640x480 or right eye.",
+        "SFSpeechRecognizer, buffer request, partial results, AVAudioEngine tap.",
+        "All three plist keys plus requestAuthorization.",
+        "Restarts tasks, on-device recognition, mentions SpeechAnalyzer.",
+        "Committed finals plus live partial; 200 ms throttle.",
+        "audio and bluetooth-central background modes.",
+        "Protocol plus console fake; no simulator or hardware note.",
+        "No distribution or licence discussion."
+      ],
+      "percent": 61.5,
+      "critical": [
+        {
+          "error": "Invented Vuzix API names",
+          "quote": "I can't verify the exact iOS API of the Vuzix Ultralite SDK from here, and I don't want to invent method names.",
+          "status": "not-an-error",
+          "why": "No Vuzix calls written; only TODO placeholders."
+        }
+      ],
+      "other_errors": []
+    },
+    "B": {
+      "scores": [
+        0.5,
+        0.5,
+        0,
+        0.5,
+        0.5,
+        0.5,
+        1,
+        0.5,
+        1,
+        1,
+        1,
+        0.5,
+        0
+      ],
+      "reasons": [
+        "Mentions Ultralite SDK import; no SPM, version, iOS minimum.",
+        "Phone mic used; no statement Z100 lacks microphone.",
+        "Claims pairing happens in Vuzix flow; contradicts per-app link.",
+        "Request control with canvas, release at end; no names.",
+        "Canvas text sketch only; no LiveText.",
+        "Small monochrome, 3x28 lines, width 640; no green/right eye.",
+        "SFSpeechRecognizer with buffer request, partials, engine tap.",
+        "Mic and speech keys named; Bluetooth key unnamed.",
+        "Restarts on ~1 min limit, on-device, SpeechAnalyzer.",
+        "Partial replaces text, finals always sent, 150 ms throttle.",
+        "Suggests audio and bluetooth-central background modes.",
+        "Mock display for testing without hardware; no simulator note.",
+        "No distribution or licence discussion."
+      ],
+      "percent": 57.7,
+      "critical": [
+        {
+          "error": "Invented Vuzix API names",
+          "quote": "The Vuzix adapter is a sketch. The structure is right, but the names in `// SDK:` comments need to be matched to the real iOS Ultralite SDK.",
+          "status": "not-an-error",
+          "why": "UltraliteDevice/UltraliteCanvas are commented out and explicitly marked unverified."
+        }
+      ],
+      "other_errors": [
+        {
+          "quote": "SDK: wait for a linked/paired Z100 (pairing is done in the Vuzix",
+          "why": "Vuzix display-process: on iOS each app must link once itself, via picker."
+        }
+      ]
+    },
+    "C": {
+      "scores": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        0.5,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0.5,
+        0
+      ],
+      "reasons": [
+        "SPM from UltraliteSDK-releases-iOS, v1.9.0, iOS 14+.",
+        "States Z100 has no mic/speaker; phone captures audio.",
+        "Link once in-app via UltralitePickerController; isConnected stays false otherwise.",
+        "requestControl before canvas, releaseControl on stop; control can be stolen.",
+        "Canvas text with own trimming; ScrollLayout.LiveText mentioned.",
+        "2-3 short lines; no 640x480, green or right eye.",
+        "SFSpeechRecognizer, buffer request, partials, AVAudioEngine tap.",
+        "All three plist keys plus requestAuthorization.",
+        "Rotates request every 50 s; on-device when supported.",
+        "Partials replace, finals frozen, 150 ms coalescing.",
+        "audio and bluetooth-central background modes listed.",
+        "Hardware checks noted; fake protocol only offered, no simulator note.",
+        "No distribution or licence discussion."
+      ],
+      "percent": 84.6,
+      "critical": [],
+      "other_errors": []
+    },
+    "D": {
+      "scores": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0
+      ],
+      "reasons": [
+        "SPM UltraliteSDK-releases-iOS pinned to 1.9.0.",
+        "Z100 has no mic, speaker, camera; phone captures audio.",
+        "Must link once in app or isConnected never true.",
+        "Control goes to last requester; request, then release at end.",
+        "Canvas text with own wrapping; LiveText as upgrade path.",
+        "640x480 monochrome green, ~3 lines; right eye omitted.",
+        "SFSpeechRecognizer, buffer request, partials, engine tap; SpeechAnalyzer noted.",
+        "All three plist keys plus requestAuthorization.",
+        "Rotates request every 50 s; on-device preferred.",
+        "Partial replaces, finals committed, 150 ms coalescing.",
+        "bluetooth-central added; says audio mode needed for background mic.",
+        "No simulator; protocol with fake; test on real Z100.",
+        "No distribution or licence discussion."
+      ],
+      "percent": 92.3,
+      "critical": [],
+      "other_errors": []
+    }
+  }
+}

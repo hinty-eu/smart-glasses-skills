@@ -1,0 +1,165 @@
+I'd run the official Even Hub simulator against a production build in the CI job, and drive it through its HTTP automation API. It isn't a hardware emulator, but it covers start-up, the first screen and input events, which is what you asked for. I haven't run any of this on a CI runner, and I haven't looked at your repo. The sketch is based on the simulator docs and a local simulator run of a sample plugin.
+
+## How it works
+
+1. `vite build`, then `vite preview` serves the build on a fixed port.
+2. `evenhub-simulator http://127.0.0.1:4173 --automation-port 9898` loads the app as if the glasses were connected.
+3. The test script does three things:
+   - **Starts:** `GET /api/ping` answers, and the console shows no startup error.
+   - **Shows the first screen:** `GET /api/screenshot/glasses` returns a 576x288 image with lit pixels (alpha > 0).
+   - **Reacts to taps:** `POST /api/input {"action":"click"}`, then the glasses screenshot must differ from the first one.
+
+Comparing screenshots means the app needs no test hooks. The catch is that your tap handler must change something visible. If it doesn't, have the app log a marker and assert on `/api/console` instead.
+
+## Workflow: `.github/workflows/pr-smoke.yml`
+
+```yaml
+name: G2 smoke test
+on:
+  pull_request:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      # The simulator is a desktop app, so give it a virtual display.
+      - run: xvfb-run -a --server-args="-screen 0 1280x800x24" npm run test:smoke
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: smoke-artifacts
+          path: smoke-out/
+```
+
+`package.json`:
+
+```json
+{
+  "scripts": {
+    "test:smoke": "tsx scripts/smoke.ts"
+  },
+  "devDependencies": {
+    "@evenrealities/evenhub-simulator": "0.9.5",
+    "pngjs": "^7.0.0",
+    "@types/pngjs": "^6.0.5",
+    "tsx": "^4.19.0"
+  }
+}
+```
+
+I pinned the simulator to the version I know works. Only bump it deliberately.
+
+## Test script: `scripts/smoke.ts`
+
+```ts
+import { spawn, type ChildProcess } from 'node:child_process'
+import { mkdirSync, writeFileSync } from 'node:fs'
+import { PNG } from 'pngjs'
+
+const APP = 'http://127.0.0.1:4173'
+const SIM = 'http://127.0.0.1:9898'
+const OUT = 'smoke-out'
+mkdirSync(OUT, { recursive: true })
+
+const procs: ChildProcess[] = []
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
+
+function start(cmd: string, args: string[], logName: string) {
+  const p = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'] })
+  const chunks: string[] = []
+  p.stdout?.on('data', d => chunks.push(String(d)))
+  p.stderr?.on('data', d => chunks.push(String(d)))
+  p.on('exit', () => writeFileSync(`${OUT}/${logName}.log`, chunks.join('')))
+  procs.push(p)
+  return p
+}
+
+async function waitFor(url: string, what: string, timeoutMs = 30_000) {
+  const end = Date.now() + timeoutMs
+  while (Date.now() < end) {
+    try { if ((await fetch(url)).ok) return } catch { /* not up yet */ }
+    await sleep(300)
+  }
+  throw new Error(`${what} did not come up at ${url}`)
+}
+
+// Returns raw RGBA. Handles both a PNG response and raw 576x288 RGBA bytes.
+async function glassesShot(name: string): Promise<{ rgba: Buffer }> {
+  const res = await fetch(`${SIM}/api/screenshot/glasses`)
+  if (!res.ok) throw new Error(`screenshot -> ${res.status}`)
+  const buf = Buffer.from(await res.arrayBuffer())
+  writeFileSync(`${OUT}/${name}.bin`, buf)
+  const isPng = buf.subarray(1, 4).toString() === 'PNG'
+  return { rgba: isPng ? PNG.sync.read(buf).data : buf }
+}
+
+const litPixels = (rgba: Buffer) => {
+  let n = 0
+  for (let i = 3; i < rgba.length; i += 4) if (rgba[i] > 0) n++
+  return n
+}
+
+async function main() {
+  start('npx', ['vite', 'preview', '--port', '4173', '--strictPort', '--host', '127.0.0.1'], 'vite')
+  await waitFor(APP, 'vite preview')
+
+  start('npx', ['evenhub-simulator', APP, '--automation-port', '9898'], 'simulator')
+  await waitFor(`${SIM}/api/ping`, 'simulator automation API')
+
+  // 1. First screen: poll until something is lit, since the app starts asynchronously.
+  let first: Buffer | undefined
+  const end = Date.now() + 15_000
+  while (Date.now() < end) {
+    const { rgba } = await glassesShot('first-screen')
+    if (litPixels(rgba) > 0) { first = rgba; break }
+    await sleep(500)
+  }
+  if (!first) throw new Error('glasses display stayed blank: the app did not draw a first screen')
+
+  // 2. Startup errors. Have the app console.warn/error on a failed createStartUpPageContainer.
+  const consoleText = await (await fetch(`${SIM}/api/console`)).text()
+  if (/startup page failed/i.test(consoleText)) throw new Error(`startup failed:\n${consoleText}`)
+
+  // 3. Tap: the screen must change.
+  const tap = await fetch(`${SIM}/api/input`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ action: 'click' }),
+  })
+  if (!tap.ok) throw new Error(`click -> ${tap.status}`)
+
+  let changed = false
+  const end2 = Date.now() + 5_000
+  while (Date.now() < end2 && !changed) {
+    await sleep(300)
+    const { rgba } = await glassesShot('after-tap')
+    changed = !rgba.equals(first)
+  }
+  if (!changed) throw new Error('tap did not change the glasses display')
+
+  console.log('OK: started, drew a first screen, reacted to a tap')
+}
+
+main()
+  .catch(e => { console.error(e); process.exitCode = 1 })
+  .finally(() => { for (const p of procs) p.kill() })
+```
+
+## Caveats
+
+- **Headless Linux is unverified.** The simulator docs list Linux binaries, but I haven't confirmed they run under `xvfb-run` on `ubuntu-latest`. They may need extra system libraries, such as GTK or WebKit packages. Try this first on a throwaway branch. If it fails, the simulator's stderr is in `smoke-out/simulator.log`.
+- **Screenshot format is an assumption.** The docs say "576x288 RGBA". The script accepts either PNG or raw bytes, but check the saved `smoke-out/*.bin` once to confirm.
+- **Clock-driven screens break the tap check.** If your first screen has a timestamp or an animation, the "changed after tap" check can pass for the wrong reason. In that case, assert on a console marker instead.
+- **Taps only register once a capture container exists.** The simulator ignores input until then, so a failed `createStartUpPageContainer` shows up as a blank screen, then as a failed tap check.
+- **Never hot-reload.** After a code edit, `createStartUpPageContainer` returns 1 and the display goes dead. This setup is fine because it launches fresh from a production build every time.
+- **The simulator can't check these.** It doesn't cover BLE timing, exact fonts or brightness, background or lock behavior, or iOS WebView quirks. Store review tests some of those on a real device, so keep a manual hardware pass before releases.
+
+If you want, I can adapt this to your repo, once I can see your `package.json` and entry file. It would also be worth adding a double-tap check that expects the page to close.

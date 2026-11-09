@@ -1,0 +1,317 @@
+{
+  "rows": [
+    {
+      "case": "choose-glasses-teleprompter",
+      "with": [
+        {
+          "rn": "run1",
+          "p": 75,
+          "cc": 0
+        },
+        {
+          "rn": "run2",
+          "p": 91.7,
+          "cc": 0
+        }
+      ],
+      "without": [
+        {
+          "rn": "run1",
+          "p": 37.5,
+          "cc": 1
+        },
+        {
+          "rn": "run2",
+          "p": 33.3,
+          "cc": 1
+        }
+      ]
+    },
+    {
+      "case": "double-tap-every-brand",
+      "with": [
+        {
+          "rn": "run1",
+          "p": 100,
+          "cc": 0
+        },
+        {
+          "rn": "run2",
+          "p": 95.5,
+          "cc": 0
+        }
+      ],
+      "without": [
+        {
+          "rn": "run1",
+          "p": 22.7,
+          "cc": 0
+        },
+        {
+          "rn": "run2",
+          "p": 18.2,
+          "cc": 0
+        }
+      ]
+    },
+    {
+      "case": "even-g2-arabic",
+      "with": [
+        {
+          "rn": "run1",
+          "p": 75,
+          "cc": 0
+        },
+        {
+          "rn": "run2",
+          "p": 100,
+          "cc": 0
+        }
+      ],
+      "without": [
+        {
+          "rn": "run1",
+          "p": 20.8,
+          "cc": 0
+        },
+        {
+          "rn": "run2",
+          "p": 20.8,
+          "cc": 0
+        }
+      ]
+    },
+    {
+      "case": "even-g2-ci-without-glasses",
+      "with": [
+        {
+          "rn": "run1",
+          "p": 79.2,
+          "cc": 0
+        },
+        {
+          "rn": "run2",
+          "p": 75,
+          "cc": 0
+        }
+      ],
+      "without": [
+        {
+          "rn": "run1",
+          "p": 16.7,
+          "cc": 0
+        },
+        {
+          "rn": "run2",
+          "p": 16.7,
+          "cc": 0
+        }
+      ]
+    },
+    {
+      "case": "even-g2-live-captions",
+      "with": [
+        {
+          "rn": "run1",
+          "p": 65.4,
+          "cc": 0
+        },
+        {
+          "rn": "run2",
+          "p": 92.3,
+          "cc": 0
+        }
+      ],
+      "without": [
+        {
+          "rn": "run1",
+          "p": 30.8,
+          "cc": 0
+        },
+        {
+          "rn": "run2",
+          "p": 69.2,
+          "cc": 0
+        }
+      ]
+    },
+    {
+      "case": "meta-dat-no-eligible-device",
+      "with": [
+        {
+          "rn": "run1",
+          "p": 72.7,
+          "cc": 0
+        },
+        {
+          "rn": "run2",
+          "p": 68.2,
+          "cc": 0
+        }
+      ],
+      "without": [
+        {
+          "rn": "run1",
+          "p": 40.9,
+          "cc": 0
+        },
+        {
+          "rn": "run2",
+          "p": 36.4,
+          "cc": 0
+        }
+      ]
+    },
+    {
+      "case": "meta-display-publish-next-month",
+      "with": [
+        {
+          "rn": "run1",
+          "p": 87.5,
+          "cc": 0
+        },
+        {
+          "rn": "run2",
+          "p": 91.7,
+          "cc": 0
+        }
+      ],
+      "without": [
+        {
+          "rn": "run1",
+          "p": 20.8,
+          "cc": 0
+        },
+        {
+          "rn": "run2",
+          "p": 20.8,
+          "cc": 0
+        }
+      ]
+    },
+    {
+      "case": "ray-ban-meta-voice-hints",
+      "with": [
+        {
+          "rn": "run1",
+          "p": 100,
+          "cc": 0
+        },
+        {
+          "rn": "run2",
+          "p": 100,
+          "cc": 0
+        }
+      ],
+      "without": [
+        {
+          "rn": "run1",
+          "p": 79.2,
+          "cc": 0
+        },
+        {
+          "rn": "run2",
+          "p": 62.5,
+          "cc": 0
+        }
+      ]
+    },
+    {
+      "case": "rokid-text-from-server",
+      "with": [
+        {
+          "rn": "run1",
+          "p": 92.3,
+          "cc": 0
+        },
+        {
+          "rn": "run2",
+          "p": 92.3,
+          "cc": 0
+        }
+      ],
+      "without": [
+        {
+          "rn": "run1",
+          "p": 34.6,
+          "cc": 1
+        },
+        {
+          "rn": "run2",
+          "p": 30.8,
+          "cc": 1
+        }
+      ]
+    },
+    {
+      "case": "vuzix-z100-ios-captions",
+      "with": [
+        {
+          "rn": "run1",
+          "p": 92.3,
+          "cc": 0
+        },
+        {
+          "rn": "run2",
+          "p": 84.6,
+          "cc": 0
+        }
+      ],
+      "without": [
+        {
+          "rn": "run1",
+          "p": 57.7,
+          "cc": 0
+        },
+        {
+          "rn": "run2",
+          "p": 61.5,
+          "cc": 0
+        }
+      ]
+    },
+    {
+      "case": "xreal-subtitles-android",
+      "with": [
+        {
+          "rn": "run1",
+          "p": 88.5,
+          "cc": 0
+        },
+        {
+          "rn": "run2",
+          "p": 92.3,
+          "cc": 0
+        }
+      ],
+      "without": [
+        {
+          "rn": "run1",
+          "p": 53.8,
+          "cc": 0
+        },
+        {
+          "rn": "run2",
+          "p": 61.5,
+          "cc": 0
+        }
+      ]
+    }
+  ],
+  "meanWith": 86.88636363636363,
+  "meanWithout": 38.50909090909091,
+  "pass": {
+    "with": 20,
+    "without": 1
+  },
+  "crit": {
+    "with": 0,
+    "without": 4
+  },
+  "runAgg": {
+    "run1/without": 37.77272727272728,
+    "run2/with": 89.41818181818182,
+    "run1/with": 84.35454545454544,
+    "run2/without": 39.24545454545454
+  }
+}

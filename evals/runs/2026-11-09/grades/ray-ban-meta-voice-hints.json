@@ -1,0 +1,152 @@
+{
+  "case": "ray-ban-meta-voice-hints",
+  "items": 12,
+  "answers": {
+    "A": {
+      "scores": [
+        0.5,
+        1,
+        1,
+        1,
+        1,
+        0.5,
+        1,
+        1,
+        1,
+        1,
+        0.5,
+        0
+      ],
+      "reasons": [
+        "Treats glasses as a headset; never says no display.",
+        "Plain TTS/AudioTrack over A2DP; no glasses API needed.",
+        "SCO/communication mode drops glasses to narrowband call audio.",
+        "setPreferredDevice TYPE_BUILTIN_MIC with AudioSource.MIC.",
+        "Never startBluetoothSco or MODE_IN_COMMUNICATION, with reason.",
+        "Keeps hints short; no QUEUE_FLUSH or stopping the stale hint.",
+        "Speech attributes, navigation usage, TRANSIENT_MAY_DUCK.",
+        "Tags/suppresses transcript during TTS plus a tail.",
+        "FGS type microphone, started while visible.",
+        "Silencing via isClientSilenced, recording callback, restart.",
+        "Says toolkit not needed; no publishing caveat.",
+        "No overheard-privacy point."
+      ],
+      "points": 9.5,
+      "percent": 79.2,
+      "critical": [],
+      "other_errors": [
+        {
+          "quote": "To force the route, set `setPreferredDevice` on your `AudioTrack` (or the TTS output) to the `TYPE_BLUETOOTH_A2DP` output device.",
+          "why": "TextToSpeech has no setPreferredDevice; TTS routing is set only through its audio attributes."
+        }
+      ]
+    },
+    "B": {
+      "scores": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "reasons": [
+        "\"no text or display path\", so audio only.",
+        "TextToSpeech.speak over A2DP; DAT not needed.",
+        "A2DP/HFP mutually exclusive; HFP drops output to mono.",
+        "VOICE_RECOGNITION plus setPreferredDevice TYPE_BUILTIN_MIC.",
+        "Never startBluetoothSco, setCommunicationDevice, MODE_IN_COMMUNICATION.",
+        "QUEUE_FLUSH and one short sentence.",
+        "Speech attributes plus TRANSIENT_MAY_DUCK per utterance.",
+        "Drop/tag STT during hint plus 300 ms.",
+        "Android 14+ FGS microphone type, permission, start while visible.",
+        "isClientSilenced; a call or assistant takes the mic.",
+        "DAT not needed; limited to invited Beta testers.",
+        "Open-ear speakers are overheard; nothing sensitive."
+      ],
+      "points": 12,
+      "percent": 100,
+      "critical": [],
+      "other_errors": []
+    },
+    "C": {
+      "scores": [
+        0,
+        1,
+        0.5,
+        1,
+        1,
+        0.5,
+        1,
+        1,
+        1,
+        0.5,
+        0,
+        0
+      ],
+      "reasons": [
+        "Never states the glasses lack a display.",
+        "TTS with media attributes over A2DP, no SDK.",
+        "SCO reroutes the mic; no mono-output drop explained.",
+        "VOICE_RECOGNITION plus setPreferredDevice built-in mic.",
+        "Avoids startBluetoothSco, setCommunicationDevice, setMode.",
+        "Short hints; no QUEUE_FLUSH.",
+        "Speech content type plus TRANSIENT_MAY_DUCK.",
+        "Drops TTS time ranges, matches against hint text.",
+        "FGS microphone type and permission, start while visible.",
+        "Routing-change recovery; no silencing or one-app rule.",
+        "Points to DAT for mics; no not-needed or publishing note.",
+        "Quiet hints for echo, not for privacy."
+      ],
+      "points": 7.5,
+      "percent": 62.5,
+      "critical": [],
+      "other_errors": []
+    },
+    "D": {
+      "scores": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "reasons": [
+        "\"no text or display path\", voice only.",
+        "Plain TTS over A2DP; no Meta SDK needed.",
+        "Mutually exclusive; HFP drops output to mono.",
+        "VOICE_RECOGNITION plus setPreferredDevice TYPE_BUILTIN_MIC.",
+        "Avoids startBluetoothSco, setCommunicationDevice, MODE_IN_COMMUNICATION.",
+        "QUEUE_FLUSH, a few words per hint.",
+        "Speech attributes plus TRANSIENT_MAY_DUCK.",
+        "Drop/tag transcript during TTS plus 300 ms.",
+        "FGS microphone type, permission, start while visible.",
+        "Two ordinary apps never capture at once; isClientSilenced.",
+        "DAT not needed; invited Beta testers only.",
+        "Nearby people can hear; no secrets."
+      ],
+      "points": 12,
+      "percent": 100,
+      "critical": [],
+      "other_errors": [
+        {
+          "quote": "Use `VOICE_RECOGNITION`, not `VOICE_COMMUNICATION` or `CAMCORDER`. Those privacy-sensitive sources lose to other apps.",
+          "why": "Android sharing-audio-input: privacy-sensitive sources have HIGHER priority and win over other apps."
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,45 @@
+There's no Android project in the working directory, so I can't see your code. I also don't have verified documentation for this toolkit's error codes. What follows is a debugging plan based on what the two errors most likely mean, so check it against Meta's docs and your SDK version.
+
+**What the two errors suggest**
+
+- `NO_ELIGIBLE_DEVICE` means the SDK found no device that meets the session's requirements. A device can be paired and still fail that check.
+- `UPDATE_REQUIRED` on your colleague's phone suggests something is too old for the SDK version you built against. That could be the glasses firmware, the Meta AI app, or the SDK itself.
+
+Both errors are probably the same kind of problem: a version or eligibility mismatch that differs between the two setups.
+
+**Steps for `NO_ELIGIBLE_DEVICE` on your phone**
+
+1. **Compare the session's requirements with the device.**
+   - Check which device type, capabilities or permissions your session request asks for.
+   - Make sure it asks for Display capabilities, not only camera or audio.
+   - Look for a mismatch between the Ray-Ban Display and an option that targets other glasses.
+2. **Check the developer and registration setup.**
+   - Developer or preview mode may need to be enabled in the Meta AI app.
+   - Your app may need to be registered with a matching package name and signing key.
+   - Your Meta account may need to be on the allowlist.
+   - Preview toolkits are often gated this way, and the pairing working in Meta AI says nothing about these.
+3. **Check that the glasses are connected now.** Paired is not the same as connected. Confirm that they're on, in range, Bluetooth is on, and the Meta AI app isn't the only thing holding the connection.
+4. **Check runtime permissions and bindings.**
+   - Confirm Bluetooth and nearby-devices permissions are granted at runtime on Android 12 and later.
+   - Confirm the toolkit's manifest entries and any `<queries>` declaration for the Meta AI app are present. Without the `<queries>` entry, Android's package visibility rules can hide the Meta AI app from your app.
+5. **Turn on SDK debug logging.** Filter logcat by the SDK tag, and log the device list the SDK returns along with each device's reported state. An empty list and a non-empty list that fails a filter are different problems.
+
+**Steps for `UPDATE_REQUIRED` on your colleague's phone**
+
+Compare these between the two phones:
+
+| Item | Where to check |
+|---|---|
+| Meta AI app version | Play Store or app info |
+| Glasses firmware | Meta AI app, device settings |
+| Toolkit/SDK version in your build | Gradle dependencies |
+| Android version and phone model | Phone settings |
+
+The first two are the most likely cause. Update the Meta AI app and the glasses firmware on your colleague's phone, then retry. If your phone still fails after matching versions, version drift isn't the cause of your error.
+
+**Narrowing it down**
+
+- Swap the pairing. Have your colleague's phone connect to your glasses, or your phone to their glasses. If the error follows the phone, the cause is the app, account or version setup. If it follows the glasses, the cause is firmware or eligibility.
+- Run Meta's sample app from the toolkit repo on your phone. If the sample works and your app doesn't, diff your session request and manifest against the sample.
+
+If you share the session-creation code, the manifest, the Gradle dependency line and the logcat output around the failure, I can narrow it down further. If you tell me where the project lives, I can read it directly.

@@ -1,0 +1,340 @@
+# Live captions on Vuzix Z100: architecture and Swift code
+
+I haven't compiled this, and nothing has run on a real Z100. The Vuzix calls follow the public UltraliteSDK 1.9 docs. Anything marked `unverified` needs checking on hardware.
+
+## Architecture
+
+```
+iPhone mic ─► AVAudioEngine ─► SFSpeechRecognizer ─► CaptionFitter ─► Z100Text ─► UltraliteSDK ─BLE─► Z100
+ (other person)  (buffers)     (partial + final)     (wrap to ~36 cols,   (canvas text,
+                                                      keep last 3 lines)   commit())
+```
+
+- **The Z100 has no microphone, speaker or camera**, so the phone captures the audio. Put it on the table or in your hand, not in a pocket.
+- **On iOS your app owns the Bluetooth link to the glasses.** The user must link the Z100 once inside your app, through `UltralitePickerController`. There is no Vuzix Connect app in the loop as on Android.
+- **Control model:** the glasses show one app at a time. Call `requestControl` when a session starts and `releaseControl` when it ends. Layout, font and canvas texts only work after control is granted, and they are lost when control is lost.
+- **Partial results replace the current line.** Finals are committed and never re-wrap, so the text doesn't jump.
+- **Display writes are coalesced.** Only the newest frame is sent, at most about every 150 ms, so BLE isn't flooded.
+- **Speech recognizer sessions are short.** `SFSpeechRecognizer` plans for about a minute per request, so the code restarts the request on each final result and on a timer.
+
+Required Info.plist entries:
+- `NSMicrophoneUsageDescription`
+- `NSSpeechRecognitionUsageDescription`
+- `NSBluetoothAlwaysUsageDescription`
+- Background modes: `bluetooth-central` and `audio`
+
+Add the SDK with Swift Package Manager from `Vuzix/UltraliteSDK-releases-iOS` (v1.9.0, iOS 14 or later).
+
+## 1. Speech recognition
+
+```swift
+import Speech
+import AVFoundation
+
+/// Streams the phone microphone into SFSpeechRecognizer and reports whole-sentence text.
+/// `text` is the full sentence so far, not a delta. A partial replaces the previous partial.
+final class SpeechCaptioner {
+    var onCaption: ((_ text: String, _ isFinal: Bool) -> Void)?
+    var onError: ((Error) -> Void)?
+
+    private let recognizer: SFSpeechRecognizer
+    private let engine = AVAudioEngine()
+    private let lock = NSLock()
+    private var request: SFSpeechAudioBufferRecognitionRequest?
+    private var task: SFSpeechRecognitionTask?
+    private var rotateTimer: Timer?
+    private var running = false
+
+    init(locale: Locale = .current) throws {
+        guard let r = SFSpeechRecognizer(locale: locale) else {
+            throw NSError(domain: "Captions", code: 1,
+                          userInfo: [NSLocalizedDescriptionKey: "Locale not supported"])
+        }
+        recognizer = r
+    }
+
+    static func requestPermissions() async -> Bool {
+        let speech = await withCheckedContinuation { c in
+            SFSpeechRecognizer.requestAuthorization { c.resume(returning: $0 == .authorized) }
+        }
+        let mic = await AVAudioApplication.requestRecordPermission()
+        return speech && mic
+    }
+
+    func start() throws {
+        guard !running else { return }
+        let session = AVAudioSession.sharedInstance()
+        try session.setCategory(.record, mode: .measurement, options: [])
+        try session.setActive(true, options: .notifyOthersOnDeactivation)
+
+        let input = engine.inputNode
+        let format = input.outputFormat(forBus: 0)
+        input.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
+            guard let self else { return }
+            self.lock.lock(); let req = self.request; self.lock.unlock()
+            req?.append(buffer)
+        }
+        engine.prepare()
+        try engine.start()
+        running = true
+        beginRequest()
+    }
+
+    func stop() {
+        running = false
+        rotateTimer?.invalidate(); rotateTimer = nil
+        engine.stop()
+        engine.inputNode.removeTap(onBus: 0)
+        endRequest()
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    }
+
+    // MARK: - one recognition request at a time
+
+    private func beginRequest() {
+        guard running else { return }
+        let req = SFSpeechAudioBufferRecognitionRequest()
+        req.shouldReportPartialResults = true
+        req.taskHint = .dictation
+        if recognizer.supportsOnDeviceRecognition { req.requiresOnDeviceRecognition = true } // private, no network
+
+        lock.lock(); request = req; lock.unlock()
+
+        task = recognizer.recognitionTask(with: req) { [weak self] result, error in
+            guard let self else { return }
+            if let result {
+                let text = result.bestTranscription.formattedString
+                DispatchQueue.main.async { self.onCaption?(text, result.isFinal) }
+                if result.isFinal { DispatchQueue.main.async { self.restart() } }
+            } else if let error {
+                // Errors such as "no speech detected" are routine: just start a new request
+                DispatchQueue.main.async {
+                    if self.running { self.restart() } else { self.onError?(error) }
+                }
+            }
+        }
+
+        // Stay under the roughly one-minute request limit
+        rotateTimer?.invalidate()
+        rotateTimer = Timer.scheduledTimer(withTimeInterval: 50, repeats: false) { [weak self] _ in
+            self?.task?.finish()   // delivers a final result, which triggers restart()
+        }
+    }
+
+    private func endRequest() {
+        lock.lock(); let req = request; request = nil; lock.unlock()
+        req?.endAudio()
+        task?.cancel()
+        task = nil
+    }
+
+    private func restart() {
+        guard running else { return }
+        endRequest()
+        beginRequest()
+    }
+}
+```
+
+## 2. Line fitting
+
+Finals are wrapped once and then frozen. Only the current partial is re-wrapped.
+
+```swift
+/// Keeps the newest `maxLines` lines of `columns` characters each, newest at the bottom.
+struct CaptionFitter {
+    var columns = 36          // Z100 text wraps near 42; 36 leaves margin (community figure, unverified)
+    var maxLines = 3
+    private var committed: [String] = []
+    private var partial = ""
+
+    mutating func update(text: String, isFinal: Bool) -> String {
+        if isFinal {
+            committed.append(contentsOf: wrap(text))
+            committed = Array(committed.suffix(30))
+            partial = ""
+        } else {
+            partial = text
+        }
+        let lines = committed + wrap(partial)
+        return lines.suffix(maxLines).joined(separator: "\n")
+    }
+
+    mutating func clear() { committed = []; partial = "" }
+
+    private func wrap(_ text: String) -> [String] {
+        var lines: [String] = [], line = ""
+        for word in text.split(separator: " ", omittingEmptySubsequences: true) {
+            var w = String(word)
+            while w.count > columns {                  // very long word: hard split
+                if !line.isEmpty { lines.append(line); line = "" }
+                lines.append(String(w.prefix(columns))); w = String(w.dropFirst(columns))
+            }
+            if line.isEmpty { line = w }
+            else if line.count + 1 + w.count <= columns { line += " " + w }
+            else { lines.append(line); line = w }
+        }
+        if !line.isEmpty { lines.append(line) }
+        return lines
+    }
+}
+```
+
+This wraps by character count, which is fine for Latin text. CJK and other scripts need real font metrics.
+
+## 3. Glasses (Vuzix UltraliteSDK)
+
+```swift
+import UIKit
+import UltraliteSDK
+
+/// One text block on the Z100. Call everything on the main thread.
+final class Z100Text {
+    var onAction: ((String) -> Void)?
+    private var connectedListener: BondListener<Bool>?   // keep a strong reference
+    private var tapObserver: NSObjectProtocol?
+    private var textId: Int?
+    private var pending: String?
+
+    /// First run: the user links the glasses inside your app (required once per app on iOS).
+    @MainActor func linkIfNeeded(from presenter: UIViewController) {
+        if UltraliteManager.shared.currentDevice != nil { start(); return }
+        // unverified: whether the callback fires on link success or on picker dismissal
+        presenter.present(UltralitePickerController { [weak self] in self?.start() }, animated: true)
+    }
+
+    func start() {
+        guard connectedListener == nil, let device = UltraliteManager.shared.currentDevice else { return }
+        let listener = BondListener<Bool>(listener: { [weak self] connected in
+            DispatchQueue.main.async {
+                if connected { self?.takeControl() } else { self?.textId = nil }
+            }
+        })
+        connectedListener = listener
+        device.isConnected.bind(listener: listener, shouldFire: true)
+        tapObserver = NotificationCenter.default.addObserver(forName: .tap, object: nil, queue: .main) { [weak self] note in
+            switch Z100Text.tapCount(note) {
+            case 1: self?.onAction?("clear")
+            case 2: self?.onAction?("pause")
+            default: break
+            }
+        }
+    }
+
+    /// Call while the app is in the foreground. There is no public "control lost" event on iOS,
+    /// so call this again when the app returns to the foreground during a session.
+    func takeControl() {
+        guard let device = UltraliteManager.shared.currentDevice else { return }
+        let granted = device.requestControl(layout: .canvas, timeout: 0, hideStatusBar: true,
+                                            showTapAnimation: false, maxNumTaps: 2,
+                                            autoReleaseControlOnDisplayTimeout: false)
+        guard granted else { return }
+        device.canvas.clear(shouldClearBackground: true)  // old text ids are invalid after a new grant
+        textId = device.canvas.createText(text: " ", textAlignment: .left, textColor: .white,
+                                          anchor: .topLeft, xOffset: 0, yOffset: 0, isVisible: true,
+                                          width: Ultralite.DISPLAY_WIDTH, height: Ultralite.DISPLAY_HEIGHT,
+                                          wrapMode: .wrap)
+        device.canvas.commit()                            // nothing shows until commit()
+        if let text = pending { show(text) }
+    }
+
+    func show(_ text: String) {
+        pending = text                                    // redrawn after the next grant
+        guard let device = UltraliteManager.shared.currentDevice, let id = textId else { return }
+        device.canvas.updateText(text: text, id: id)
+        device.canvas.commit()
+    }
+
+    func stop() {
+        UltraliteManager.shared.currentDevice?.releaseControl()   // otherwise the last frame can stick
+        if let l = connectedListener { UltraliteManager.shared.currentDevice?.isConnected.unbind(listener: l) }
+        if let t = tapObserver { NotificationCenter.default.removeObserver(t) }
+        connectedListener = nil; tapObserver = nil; textId = nil; pending = nil
+    }
+
+    private static func tapCount(_ note: Notification) -> Int {
+        switch note.userInfo?["tap"] {                    // value type is undocumented
+        case let v as Int64: return Int(v)
+        case let v as Int: return v
+        case let v as NSNumber: return v.intValue
+        default: return 0
+        }
+    }
+}
+```
+
+I set `timeout: 0` so the display stays on during a conversation. The skill's example used 30 seconds. Confirm on hardware that 0 means "keep on" on iOS, as it does on Android.
+
+## 4. Wiring it together
+
+```swift
+import UIKit
+
+final class CaptionSession {
+    private let glasses = Z100Text()
+    private var speech: SpeechCaptioner?
+    private var fitter = CaptionFitter()
+    private var latest = ""
+    private var lastSent = Date.distantPast
+    private var flushScheduled = false
+    private var paused = false
+
+    @MainActor func begin(from presenter: UIViewController) async throws {
+        guard await SpeechCaptioner.requestPermissions() else { return }
+        let speech = try SpeechCaptioner()
+        self.speech = speech
+
+        glasses.onAction = { [weak self] action in
+            guard let self else { return }
+            switch action {
+            case "clear": self.fitter.clear(); self.push("")
+            case "pause": self.paused.toggle()
+            default: break
+            }
+        }
+        speech.onCaption = { [weak self] text, isFinal in
+            guard let self, !self.paused else { return }
+            self.push(self.fitter.update(text: text, isFinal: isFinal))
+        }
+        glasses.linkIfNeeded(from: presenter)
+        try speech.start()
+    }
+
+    func end() {
+        speech?.stop(); speech = nil
+        glasses.stop()
+    }
+
+    /// Coalesce: send at most one frame per 150 ms, always the newest one.
+    private func push(_ text: String) {
+        latest = text
+        let wait = 0.15 - Date().timeIntervalSince(lastSent)
+        if wait <= 0 { flush() }
+        else if !flushScheduled {
+            flushScheduled = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + wait) { [weak self] in self?.flush() }
+        }
+    }
+    private func flush() {
+        flushScheduled = false
+        lastSent = Date()
+        glasses.show(latest)
+    }
+}
+```
+
+## Things to check on real hardware
+
+1. **Linking:** `isConnected` stays false until the user has linked the glasses inside your app. Test the picker flow first.
+2. **Background:** the app needs the `audio` and `bluetooth-central` background modes to keep captioning with the screen locked. Verify that the display keeps updating. Recognizer restarts in the background are the likeliest thing to break.
+3. **Control stolen:** iOS has no public event for this. Re-request control on `didBecomeActive`, but never in a loop.
+4. **Line budget:** check how many characters actually fit per line on the Z100, then tune `columns`. Keep captions to 2–3 lines.
+5. **Latency:** timestamp the stages (speech to partial, partial to `commit()`). Aim for the first words within about 1 s. On-device recognition is private but usually less accurate than cloud streaming.
+6. **Taps:** `maxNumTaps` must be non-zero or no taps arrive. Ignore taps while nothing is on screen, because adjusting the glasses causes false taps.
+7. **Smoother alternative:** the SDK has a `LiveText` helper (`ScrollLayout.LiveText`) that scrolls words up like TV closed captions. It also renders any script the phone font supports. I left it out because I don't have its iOS signatures. It's worth trying once the basics work.
+
+## Privacy
+
+Captions transcribe people who never installed your app. Show a visible "captioning on" indicator, don't store audio, and keep transcripts on the device. Also check the recording-consent rules where the app will be used.
+
+If you'd like, I can add a fake `GlassesDisplay` protocol so you can test the pipeline in the Simulator without the glasses. I can also swap in a cloud streaming STT for better accuracy.

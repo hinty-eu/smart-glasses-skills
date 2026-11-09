@@ -1,0 +1,62 @@
+The short version is to send the hints out over A2DP (plain media playback) and pin your recording to the phone's built-in mic. The recording usually breaks when the glasses get switched into headset mode (Bluetooth SCO/HFP). That mode reroutes the mic input to the glasses.
+
+## What to do
+
+**1. Pin the input to the built-in mic**
+
+```kotlin
+val am = getSystemService(AudioManager::class.java)
+val builtInMic = am.getDevices(AudioManager.GET_DEVICES_INPUTS)
+    .first { it.type == AudioDeviceInfo.TYPE_BUILTIN_MIC }
+
+val record = AudioRecord.Builder()
+    .setAudioSource(MediaRecorder.AudioSource.VOICE_RECOGNITION)
+    .setAudioFormat(
+        AudioFormat.Builder()
+            .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+            .setSampleRate(16000)
+            .setChannelMask(AudioFormat.CHANNEL_IN_MONO)
+            .build()
+    )
+    .build()
+record.setPreferredDevice(builtInMic)
+```
+
+**2. Play hints as media, not as a call**
+
+```kotlin
+val attrs = AudioAttributes.Builder()
+    .setUsage(AudioAttributes.USAGE_MEDIA)
+    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+    .build()
+tts.setAudioAttributes(attrs)
+```
+
+Then request focus with `AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK` so any music ducks while a hint plays.
+
+**3. Avoid anything that triggers SCO or communication mode**
+
+- Don't call `startBluetoothSco()`, `setCommunicationDevice()`, or `setMode(MODE_IN_COMMUNICATION)`.
+- Don't use `AudioSource.VOICE_COMMUNICATION`. It nudges Android toward the headset route.
+- A2DP is output-only, so it leaves the phone mic alone. The catch is lower quality, plus roughly 150–250 ms latency, which is fine for hints.
+
+**4. Keep recording alive in the background**
+
+- Run it in a foreground service with `foregroundServiceType="microphone"` and the `FOREGROUND_SERVICE_MICROPHONE` permission.
+- Start it while the app is visible. Android 14 and later restrict starting mic services from the background.
+- `AudioRecord` doesn't need audio focus. Don't stop recording when you get a focus-loss callback from another app. Just log it.
+
+## Problems to expect
+
+- **Echo (the big one).** The glasses' speakers are near the wearer, so the phone mic will pick up your own hints and transcribe them as conversation. Options:
+  - Mark the time ranges when TTS is playing, and drop or down-weight transcript segments in them.
+  - Compare the transcript against the hint text you just spoke and discard near-matches.
+  - Keep the hints short and quiet. Open-ear speakers leak less at low volume.
+  - If your phone mic's built-in AEC is good enough, `VOICE_COMMUNICATION` would give you echo cancellation, but it risks the rerouting above. Test it on real hardware before relying on it.
+- **Phone placement.** If the phone is in a pocket, the phone mic is a poor way to hear the conversation. The glasses' mics are better placed. As far as I know, Meta has only offered third-party access to them through its Wearables Device Access Toolkit, which I haven't verified, so check Meta's current developer docs. Until then, the glasses' mics are only reachable via the headset route, which then competes with your output path.
+- **Meta AI app.** Its "Hey Meta" wake word and its own audio handling can occasionally change the routing. Test with the Meta app both running and force-stopped.
+- **Device variance.** OEMs differ in how they handle concurrent A2DP output and mic capture. Test on at least a Pixel and a Samsung.
+
+To verify routing at runtime, register `AudioRecord.addOnRoutingChangedListener` and log `routedDevice`. If it ever reports a Bluetooth device, something switched to SCO, and you can call `setPreferredDevice` again.
+
+If you share your recorder and TTS setup code, I can check it for the specific calls that cause the rerouting.

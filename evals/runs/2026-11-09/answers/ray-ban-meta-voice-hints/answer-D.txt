@@ -1,0 +1,55 @@
+**Short version:** record from the phone's built-in mic, and send the hints to the glasses as ordinary TTS over Bluetooth A2DP. Don't open the glasses' mic (HFP/SCO). The glasses have no text or display path, so voice is the only route. Everything below comes from the skill's reference docs. The code is untested on real glasses.
+
+## Why recording breaks
+
+Bluetooth A2DP (stereo output) and HFP (two-way mono voice) are mutually exclusive. If anything puts the glasses into HFP, such as `startBluetoothSco()`, `setCommunicationDevice()` or `MODE_IN_COMMUNICATION`, then:
+- the phone's audio output drops to mono voice quality, and
+- Android may re-route your input to the glasses mic, which only hears the wearer and not the person they're talking to.
+
+Other apps can also take the mic. Since Android 10, two ordinary apps never capture at once, and the loser gets silence. A call or the Meta assistant wins.
+
+## Recipe
+
+**1. Run the recorder in a foreground service.**
+- Declare `foregroundServiceType="microphone"` and the `FOREGROUND_SERVICE_MICROPHONE` permission.
+- Start the service while your app is visible. `RECORD_AUDIO` is a while-in-use permission, so starting it from the background fails.
+- Without a foreground service, Android 9+ gives you silence.
+
+**2. Pin capture to the built-in mic.**
+```kotlin
+val r = AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION, 16_000,
+    AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufSize)
+am.getDevices(AudioManager.GET_DEVICES_INPUTS)
+  .firstOrNull { it.type == AudioDeviceInfo.TYPE_BUILTIN_MIC }
+  ?.let { r.setPreferredDevice(it) }
+```
+Use `VOICE_RECOGNITION`, not `VOICE_COMMUNICATION` or `CAMCORDER`. Those privacy-sensitive sources lose to other apps.
+
+**3. Detect when the mic is taken.** Register an `AudioRecordingCallback` before `startRecording()`. Check `activeRecordingConfiguration.isClientSilenced` and show a "mic taken" state. Otherwise you'll just see an empty transcript and not know why.
+
+**4. Speak hints through plain TTS.**
+```kotlin
+tts.setAudioAttributes(AudioAttributes.Builder()
+    .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
+    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
+tts.speak(hint, TextToSpeech.QUEUE_FLUSH, null, "hint")
+```
+- `QUEUE_FLUSH` means the newest hint replaces stale ones.
+- Request `AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK` per utterance and abandon it in `onDone`. Recording needs no focus.
+- Keep hints to a few words, one idea each. The speakers are open-ear, so nearby people can hear them. Don't speak secrets.
+
+**5. Handle echo.** Speech from the glasses can leak back into the phone mic, though less than into a glasses mic. The cheap fix is to drop or tag transcript frames while TTS is speaking and for about 300 ms after. Measure before relying on `AcousticEchoCanceler`, since it varies by device.
+
+## Things to avoid
+
+- Don't call `startBluetoothSco()` or `setCommunicationDevice()` on this path.
+- Don't use the Meta DAT SDK just for this. Plain Bluetooth audio needs no Meta SDK or registration. DAT is limited to invited Beta testers and can end sessions when HFP opens. Add it only if you want wear detection (pause when the glasses come off) or camera features.
+- Ray-Ban Meta Audio (the no-camera model) is just a Bluetooth headset. The same recipe works.
+
+## Test and ship
+
+- Test with any Bluetooth headset first. It reproduces both the A2DP output and the HFP switch, so you can rule out your code before blaming the glasses.
+- Log route changes with `AudioDeviceCallback`. Then you can see if some other app flips the glasses to HFP.
+- Check the privacy requirements. You're recording other people, so you need prominent disclosure for Google Play, an on-screen "listening" indicator, and no stored audio by default. Some jurisdictions require everyone's consent to a recording.
+
+Do you want me to look at your existing recording service and add the silence detection and TTS?

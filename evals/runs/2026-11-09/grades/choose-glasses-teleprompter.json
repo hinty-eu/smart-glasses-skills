@@ -1,0 +1,170 @@
+{
+  "case": "choose-glasses-teleprompter",
+  "items": 12,
+  "answers": {
+    "A": {
+      "scores": [
+        0.5,
+        0.5,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0.5,
+        0,
+        1,
+        1
+      ],
+      "reasons": [
+        "Rules Meta out on one vague reason (gated access).",
+        "iPhone/Android and Even Hub named; no plugin model or review facts.",
+        "Lumps Z100 with 'limited iOS support'; misses iOS SDK.",
+        "No Z100 availability risk.",
+        "USB-C display glasses not considered.",
+        "No iOS 27 scene accessory.",
+        "Rokid not recommended.",
+        "Offers MentraOS as a hedge with an app store.",
+        "Monochrome HUD noted; no display limits.",
+        "No input facts for G2, Z100 or USB-C.",
+        "Clear G2-first, G1 fallback, tied to constraints.",
+        "Says details are from memory; lists checks this week."
+      ],
+      "points": 4.5,
+      "percent": 37.5,
+      "critical": [
+        {
+          "error": "Recommends a MentraOS miniapp as shippable to the public now",
+          "quote": "Hedge worth considering: MentraOS is an open-source layer that supports several glasses on iOS and Android. If you build on it, you aren't locked to one pair, but you take on a dependency and a second app store.",
+          "status": "confirmed",
+          "why": "Offered as a hedge for this month's public release through a store; docs.mentraglass.com distribution page: 'There is currently no way to distribute a miniapp built with the Miniapp SDK'; the Miniapp Store does not support it in MentraOS 3.0."
+        }
+      ],
+      "other_errors": [
+        {
+          "quote": "Rokid, Vuzix Z100, Brilliant Labs, Halliday: Each has a smaller or less reliable path. Typically that's an Android-leaning SDK, limited iOS support, a small user base, or an immature app ecosystem.",
+          "why": "Vuzix Z100 has a full iOS UltraliteSDK (iOS 14+) and ships as an ordinary App Store app."
+        }
+      ]
+    },
+    "B": {
+      "scores": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "reasons": [
+        "All three Meta reasons given (publishing, MFi, Web Apps).",
+        "Plugin in Even app, manual review, no published time, free only.",
+        "iOS SDK exists, no store review.",
+        "Availability unclear since July 2026.",
+        "iPhone 15+ minus 16e/17e/Air, ordinary App Store app.",
+        "No iOS 27 scene accessory mention.",
+        "Rokid developer account requirement noted.",
+        "MentraOS ruled out explicitly.",
+        "G2 display limits; display-less glasses ruled out.",
+        "G2 temples/R1 and USB-C phone/remote input covered.",
+        "G2, then USB-C, then Z100, tied to constraints.",
+        "Dated sources; re-check Even queue, Vuzix stock, Meta."
+      ],
+      "points": 11,
+      "percent": 91.7,
+      "critical": [],
+      "other_errors": []
+    },
+    "C": {
+      "scores": [
+        0.5,
+        1,
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0.5,
+        1,
+        1
+      ],
+      "reasons": [
+        "Meta ruled out with one reason (public publishing closed).",
+        "Plugin in Even app, manual review, no turnaround, free only.",
+        "Native iOS and Android SDK, no store review.",
+        "Flags unclear retail availability as a risk.",
+        "USB-C display glasses not considered.",
+        "No iOS 27 scene mention.",
+        "Rokid not recommended for the iPhone brief.",
+        "Recommends no platform that cannot distribute.",
+        "G2 font, size and capacity limits noted.",
+        "Only G2 temple/R1 input covered.",
+        "G2 primary, Z100 runner-up, tied to constraints.",
+        "Claims dated 2026-11-08; advises hardware check."
+      ],
+      "points": 9.0,
+      "percent": 75.0,
+      "critical": [],
+      "other_errors": []
+    },
+    "D": {
+      "scores": [
+        0.5,
+        0,
+        0,
+        0.5,
+        0,
+        0,
+        1,
+        0,
+        0.5,
+        0,
+        0.5,
+        1
+      ],
+      "reasons": [
+        "Meta rejected only as a gated/preview risk, left conditional.",
+        "Unaware of Even Hub plugin and review; claims no gatekeeper.",
+        "Says Z100 has weaker iOS support; wrong.",
+        "Only a generic 'less available' remark.",
+        "USB-C display glasses not considered.",
+        "No iOS 27 mention.",
+        "Rokid not recommended.",
+        "Recommends MentraOS as fallback distribution path.",
+        "Rules out display-less glasses; no display limits.",
+        "No input facts for any candidate.",
+        "Clear primary, but the backup (MentraOS) cannot ship.",
+        "Flags knowledge cutoff; lists checks before committing."
+      ],
+      "points": 4.0,
+      "percent": 33.3,
+      "critical": [
+        {
+          "error": "Recommends a MentraOS miniapp as shippable to the public now",
+          "quote": "Recommendation: Even Realities (G1, or G2 if you can get one), with MentraOS as the fallback distribution path.",
+          "status": "confirmed",
+          "why": "docs.mentraglass.com distribution page: 'There is currently no way to distribute a miniapp built with the Miniapp SDK'; the Miniapp Store does not support it in MentraOS 3.0."
+        }
+      ],
+      "other_errors": [
+        {
+          "quote": "No platform gatekeeper. The glasses talk to the phone over BLE. [...] You can ship your own phone app to the App Store without waiting for a third-party-app program to approve you.",
+          "why": "For G2 the documented third-party path is an Even Hub plugin with manual store review."
+        },
+        {
+          "quote": "Vuzix Z100, Rokid and similar: These have weaker iOS support or are less available to consumers.",
+          "why": "Z100 has a full iOS UltraliteSDK and ships as an ordinary App Store app."
+        }
+      ]
+    }
+  }
+}

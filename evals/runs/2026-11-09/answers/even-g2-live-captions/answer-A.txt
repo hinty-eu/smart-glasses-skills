@@ -1,0 +1,236 @@
+# Live captions on the G2: structure and glasses-side code
+
+**Caveat:** I wrote the Even Hub SDK calls (`@evenrealities/even_hub_sdk`) from memory, and I didn't check them against the current docs. Class and field names may have drifted, so verify them. The architecture doesn't depend on those names.
+
+## Architecture
+
+```
+G2 mics ──BLE──▶ Even app (phone WebView) ──PCM──▶ your app (TS)
+                                                      │ WebSocket
+                                                      ▼
+                                         Streaming STT (Deepgram/Soniox/etc.)
+                                                      │ interim + final transcripts
+                                                      ▼
+                                 CaptionBuffer (wrap, keep last N lines, throttle)
+                                                      │
+                                                      ▼
+                                   bridge.textContainerUpgrade ──BLE──▶ G2 display
+```
+
+Your app runs as a web app inside the Even app. The glasses are only an audio source and a display. The phone does the STT and layout work.
+
+Decisions that matter for the ~1 s target:
+
+- **Use streaming STT with interim results.** Batch or chunked Whisper adds 2–4 s. Show interim words right away and replace them when the final result arrives. Deepgram Nova, Soniox and Google streaming all do this at about 300 ms.
+- **Use the glasses mic.** It's closer to the other speaker than the phone is, and it keeps the phone free in your pocket. Expect it to pick up your own voice too. If that's a problem, add diarization in the STT config and drop the wearer's speaker. You could also just accept it.
+- **Treat the display as the bottleneck.** The panel is small (about 576×288) and BLE writes are slow. Show only the last 2–4 lines, throttle updates to about 5–8 per second, and never send identical content.
+- **Stream the audio as-is.** Send 16 kHz mono PCM16 straight to the STT socket. Don't buffer it.
+- **Keep your STT key off the client.** Mint short-lived tokens from a tiny backend rather than shipping the key in the bundle.
+
+## Code
+
+### `captions.ts`: wrapping and buffering (pure logic, easy to test)
+
+```ts
+export interface CaptionLayout {
+  charsPerLine: number; // tune on-device; ~40-50 for the default font
+  maxLines: number;     // 3-4 reads comfortably
+}
+
+export class CaptionBuffer {
+  private finalLines: string[] = [];
+  private interim = "";
+
+  constructor(private layout: CaptionLayout) {}
+
+  setInterim(text: string) { this.interim = text; }
+
+  commitFinal(text: string) {
+    this.finalLines.push(...this.wrap(text));
+    this.finalLines = this.finalLines.slice(-this.layout.maxLines);
+    this.interim = "";
+  }
+
+  render(): string {
+    const lines = [...this.finalLines, ...this.wrap(this.interim)];
+    return lines.slice(-this.layout.maxLines).join("\n");
+  }
+
+  private wrap(text: string): string[] {
+    const out: string[] = [];
+    let line = "";
+    for (const word of text.trim().split(/\s+/).filter(Boolean)) {
+      if (line && line.length + 1 + word.length > this.layout.charsPerLine) {
+        out.push(line);
+        line = word;
+      } else {
+        line = line ? `${line} ${word}` : word;
+      }
+    }
+    if (line) out.push(line);
+    return out;
+  }
+}
+```
+
+### `glasses.ts`: display and mic via the SDK
+
+```ts
+import {
+  waitForEvenAppBridge,
+  CreateStartUpPageContainer,
+  TextContainerProperty,
+  TextContainerUpgrade,
+} from "@evenrealities/even_hub_sdk";
+
+const CONTAINER_ID = 1;
+const CONTAINER_NAME = "captions";
+
+export class GlassesCaptions {
+  private bridge!: Awaited<ReturnType<typeof waitForEvenAppBridge>>;
+  private lastSent = "";
+  private pending: string | null = null;
+  private timer: ReturnType<typeof setTimeout> | null = null;
+  private readonly minIntervalMs = 150; // ~6-7 updates/sec
+
+  async init() {
+    this.bridge = await waitForEvenAppBridge();
+
+    await this.bridge.createStartUpPageContainer(
+      new CreateStartUpPageContainer({
+        containerTotalNum: 1,
+        textObject: [
+          new TextContainerProperty({
+            xPosition: 0,
+            yPosition: 0,
+            width: 576,
+            height: 288,
+            borderWidth: 0,
+            borderColor: 0,
+            paddingLength: 4,
+            containerID: CONTAINER_ID,
+            containerName: CONTAINER_NAME,
+            content: "Listening…",
+            isEventCapture: 1,
+          }),
+        ],
+      })
+    );
+  }
+
+  /** Coalesce rapid updates; only the newest text is ever sent. */
+  show(text: string) {
+    if (text === this.lastSent) return;
+    this.pending = text;
+    if (this.timer) return;
+    this.flush();
+    this.timer = setTimeout(() => {
+      this.timer = null;
+      if (this.pending !== null && this.pending !== this.lastSent) this.flush();
+    }, this.minIntervalMs);
+  }
+
+  private async flush() {
+    const text = this.pending;
+    this.pending = null;
+    if (text === null) return;
+    const prevLen = this.lastSent.length;
+    this.lastSent = text;
+    try {
+      await this.bridge.textContainerUpgrade(
+        new TextContainerUpgrade({
+          containerID: CONTAINER_ID,
+          containerName: CONTAINER_NAME,
+          contentOffset: 0,
+          contentLength: Math.max(prevLen, text.length),
+          content: text,
+        })
+      );
+    } catch (e) {
+      console.warn("display update failed", e);
+    }
+  }
+
+  /** Start the glasses mic and hand raw PCM chunks to the callback. */
+  async startMic(onPcm: (pcm: Uint8Array) => void) {
+    this.bridge.onEvenHubEvent((event: any) => {
+      const pcm = event?.audioEvent?.audioPcm;
+      if (pcm) onPcm(pcm instanceof Uint8Array ? pcm : new Uint8Array(pcm));
+    });
+    await this.bridge.audioControl(true);
+  }
+
+  async stopMic() { await this.bridge.audioControl(false); }
+}
+```
+
+### `stt.ts`: streaming transcription (Deepgram as the example)
+
+```ts
+export interface SttHandlers {
+  onInterim(text: string): void;
+  onFinal(text: string): void;
+}
+
+export function connectStt(token: string, h: SttHandlers) {
+  const url =
+    "wss://api.deepgram.com/v1/listen?" +
+    new URLSearchParams({
+      model: "nova-3",
+      encoding: "linear16",
+      sample_rate: "16000",
+      channels: "1",
+      interim_results: "true",
+      endpointing: "300",
+      smart_format: "true",
+    });
+  const ws = new WebSocket(url, ["bearer", token]); // short-lived token from your backend
+
+  ws.onmessage = (m) => {
+    const msg = JSON.parse(m.data as string);
+    const text = msg.channel?.alternatives?.[0]?.transcript;
+    if (!text) return;
+    (msg.is_final ? h.onFinal : h.onInterim)(text);
+  };
+
+  return {
+    sendAudio: (pcm: Uint8Array) => ws.readyState === WebSocket.OPEN && ws.send(pcm),
+    close: () => ws.close(),
+  };
+}
+```
+
+### `main.ts`: wiring
+
+```ts
+import { CaptionBuffer } from "./captions";
+import { GlassesCaptions } from "./glasses";
+import { connectStt } from "./stt";
+
+async function main() {
+  const glasses = new GlassesCaptions();
+  await glasses.init();
+
+  const buf = new CaptionBuffer({ charsPerLine: 44, maxLines: 4 });
+  const token = await fetch("/api/stt-token").then((r) => r.text());
+
+  const stt = connectStt(token, {
+    onInterim: (t) => { buf.setInterim(t); glasses.show(buf.render()); },
+    onFinal:   (t) => { buf.commitFinal(t); glasses.show(buf.render()); },
+  });
+
+  await glasses.startMic((pcm) => stt.sendAudio(pcm));
+}
+
+main();
+```
+
+## Things to check on real hardware
+
+1. **Audio format.** Confirm the sample rate and encoding the SDK delivers. I believe it's 16 kHz PCM16 mono. If it differs, change `sample_rate` or resample.
+2. **Chars per line and line count.** Tune `charsPerLine` and `maxLines` by eye. The font isn't monospaced, so leave some margin.
+3. **Update rate.** If the display lags or drops frames, raise `minIntervalMs`.
+4. **Reconnects.** Add reconnect and keepalive handling on the STT socket (Deepgram closes idle sockets). Also handle the glasses disconnecting.
+5. **Echo and self-speech.** If your own voice pollutes the captions, try diarization or a push-to-talk toggle on the temple tap. Tap events arrive through the same `onEvenHubEvent`.
+
+I can add a small token-minting backend, speaker filtering, or a tap gesture that pauses and resumes captions, if you'd like any of those.

@@ -1,0 +1,52 @@
+Double tap = "repeat the last caption" isn't possible on all four, and on one of them it conflicts with a store rule. This comes from the smart-glasses skill docs, which are docs-only and haven't been tested on hardware. Check each row on a real device.
+
+| Glasses | Double tap reaches your app? | Verdict |
+|---|---|---|
+| Vuzix Z100 | Yes | Works |
+| Even G2 | Yes, but the root page reserves it | Conflicts with a review rule |
+| Rokid Glasses | No, not with the phone SDK | Needs a glasses-side APK, or a different input |
+| Meta Ray-Ban Display | No documented double tap for apps | Not available |
+
+## Vuzix Z100: works
+- Any tap on the frame counts, and the SDK doesn't tell left from right.
+- You must hold display control, and you must set `maxNumTaps` to 2 or more. The default of 0 reports nothing.
+- Android: `EventListener.onTap(tapCount)`, with `tapCount == 2` as your repeat. Pass the tap count to `sdk.setLayout(Layout.CANVAS, 30, true, false, 2)`.
+- iOS: observe `Notification.Name.tap` and read `userInfo["tap"]`. Pass `maxNumTaps: 2` to `requestControl`.
+- Ignore taps while nothing is on screen. Adjusting the frame causes false taps.
+- With `maxNumTaps` at 2, a single tap is held back until the double-tap window closes. That adds a small delay to single taps.
+
+## Even G2 (and the R1 ring): conflict
+- The events do arrive. In `onEvenHubEvent`, a `sysEvent` with `OsEventTypeList.DOUBLE_CLICK_EVENT` is your double tap. `eventSource` 1 is the right temple, 2 the ring and 3 the left.
+- A double tap on the root page must open the exit dialog (`shutDownPageContainer(1)`). The docs list this as a review rule for the Even Hub store.
+- So you can't use double tap for repeat on the root page without risking rejection.
+- Options:
+  - Put repeat on a single tap, which is the mapping the docs suggest.
+  - Use double tap for repeat only on a non-root page. I haven't checked how strictly review enforces this.
+- Check double tap and long press before plain tap. A single tap arrives with no `eventType`, so treat a missing one as `CLICK_EVENT`.
+
+## Rokid Glasses: not from the phone app
+- With the public CXR-L SDK in a `CUSTOM_VIEW` session, touchpad taps and swipes never reach the phone. Two community tests on real glasses agree.
+- Two ways to get real gestures:
+  - **Glasses-side APK.** Use `CUSTOM_APP` with CXR-S (`cxr-service-bridge`). Your APK sees the touchpad as key events, including double click, and sends a custom command back to the phone. Community reports say this link is flaky, and firmware updates have broken third-party installs.
+  - **AI key.** With `AiInterceptMode.BLOCK_AI`, a press calls `onAiWake()`. That gives you one button, not a double tap. It blocks the Rokid assistant while your view is open, and it's an unverified experiment.
+- The practical fallback is a "Repeat" button in the phone UI.
+
+## Meta Ray-Ban Display: not available
+- **DAT:** the wearer navigates with the Neural Band or the touchpad, and focus moves between your on-screen buttons. A "Repeat" button fires `onClick`. Raw `Inputs` is beta and not for production.
+- **Web App:** you get `keydown` for the arrow keys and `Enter`. There is no double-tap event.
+- **Reserved gestures:** the system already uses double taps on the band and touchpad for Meta AI and for wake or sleep. Back ends the DAT session and isn't delivered to you.
+- Use an on-screen focusable "Repeat" button, and keep a phone button too.
+
+## Recommendation for product
+Don't promise double tap everywhere. Promise "repeat last caption" everywhere and map it per device:
+
+| Target | Repeat |
+|---|---|
+| Vuzix | 1 tap or 2 taps. The docs map 1 tap to repeat and 2 to skip, so use 2 only if product insists on double tap. |
+| Even G2 | Single tap, or double tap off the root page |
+| Rokid | Phone button, or a glasses APK if the investment is worth it |
+| Meta Display | On-screen button, plus the phone |
+
+Route every source through one shared `repeat` action with a roughly 300 ms debounce. The skill has the shared-action pattern and an Even event mapper in `references/input.md`, and the example caption protocol already carries `{"type":"action","action":"repeat"}`.
+
+I can wire up the Vuzix handler and the Even mapper in your repo. I haven't looked at your code yet.

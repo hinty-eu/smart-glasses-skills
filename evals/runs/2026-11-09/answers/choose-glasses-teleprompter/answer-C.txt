@@ -1,0 +1,31 @@
+**Target the Even Realities G2, shipped as an Even Hub plugin.** One caveat: everything below comes from vendor docs dated 2026-11-08, and none of it has been tested on real glasses.
+
+**Why the G2 fits your constraints**
+- **Public release this month:** The Even Hub store is open worldwide and has been since April 2026. Meta Ray-Ban Display can't be published to the public yet, and its DAT access is limited to invited beta testers. Android XR display glasses aren't on sale yet.
+- **iPhone first:** The plugin is a web app that runs inside the Even phone app on both iOS and Android. Android comes at no extra cost, so your bonus is covered.
+- **Teleprompter fit:** There's a lot of control over the display.
+  - You can place text containers at exact positions and update one container's text without flicker.
+  - Taps, swipes and long press work from the temples or the R1 ring. That covers pause, next line, and speed.
+  - Speaker mode needs no glasses mic, but a mic is available if you later want voice-following.
+- **No hardware needed to start:** There's an official simulator for Windows, macOS and Linux. Your starting point is `npx degit even-realities/evenhub-templates/text-heavy`.
+
+**Risks to plan around, since the deadline is tight**
+- **Manual review with no published turnaround.** Submit early in the month and expect a second round. Reviewers test with the phone locked and the Even app in the background, using only glasses or ring input. They also require these:
+  - A root double-tap exit.
+  - A privacy policy.
+  - A message on the glasses when setup is missing.
+  - An app name without "Even" in it.
+  - There is no rollback, so you can only fix forward.
+- **Free apps only.** There's no paid distribution yet, so you can't charge in the store.
+- **Display limits:** There's one font size and no alignment control. A full screen holds about 400–500 characters, or roughly 10 lines. Arabic, Hebrew, Thai and Devanagari don't render at all, and the glyphs are dropped silently. If you need those scripts, G2 is the wrong first target.
+- **iOS quirk:** The plugin's WebView can be killed in the background. Save the script position often and repaint when the app returns to the foreground.
+- **Competing feature:** Even's built-in Conversate has Prep Notes, so be clear about what your app does better. That could be script pacing, rehearsal, or timing cues.
+
+**Alternatives and why they rank lower**
+- **Vuzix Z100:** It has a native SDK on both iOS and Android, no store review, and is a sound runner-up. But retail availability is unclear and it has no microphone, so it's risky to build around.
+- **Rokid Glasses:** It can ship through your own listing, but the SDK path is Android-first and iOS support is unverified. That fails your iPhone-first requirement.
+- **Any other display glasses:** The notification route works without an SDK. It's too limited for a teleprompter because you can't control timing or layout.
+
+Before you commit, buy or borrow one G2 so you can check real-world scroll speed and legibility. The simulator doesn't emulate Bluetooth timing or font rendering.
+
+If you tell me your speech-to-text needs and which languages you support, I can sketch the plugin architecture. The `smart-glasses-live-captions` skill also covers teleprompters.

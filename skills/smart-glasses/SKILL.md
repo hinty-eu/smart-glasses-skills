@@ -3,7 +3,7 @@ name: smart-glasses
 description: Build apps for smart glasses and AI glasses across brands - Even Realities G2 (Even Hub), Meta Ray-Ban Display (Wearables Device Access Toolkit and Web Apps), Rokid Glasses, Vuzix Z100, audio-only glasses such as Ray-Ban Meta and Oakley Meta, USB-C display glasses such as XREAL and VITURE, and standalone Android glasses such as RayNeo X3 Pro, with pointers for Android XR, MentraOS, Brilliant Labs and Snap Spectacles. Use when the user wants to choose which glasses to build for or ship on, show text or a HUD on glasses, fall back when there is no SDK, handle input from taps, rings or touchpads, play speech or hints through glasses speakers, capture audio, test a glasses app without owning the glasses, or check whether a glasses app can be published today. Use it even for quick questions about glasses platforms, because SDKs and store rules change monthly and model memory is often out of date. Not for VR or MR headsets such as Meta Quest or Apple Vision Pro, and not for regular phone UI.
 license: Apache-2.0
 metadata:
-  version: "1.0.0"
+  version: "1.0.1"
   last-updated: "2026-11-09"
 ---
 

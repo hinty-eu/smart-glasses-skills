@@ -18,7 +18,7 @@ Plugin installs for each tool are under [Install for other agents](#install-for-
 
 ![The live-captions example on two targets. Left: the Even Realities G2 official simulator shows the demo captions in green on a 576x288 canvas. Right: the web app in a 600x600 browser window shows the same captions in white with Repeat, Skip and Hide buttons.](docs/images/live-captions.png)
 
-Version 1.0.0, released 2026-11-09. Vendor facts were checked against their sources on 2026-11-08 and 2026-11-09.
+Version 1.0.1, released 2026-11-09. Vendor facts were checked against their sources on 2026-11-08 and 2026-11-09.
 Nothing has been tested on real glasses yet, and every file says how it was verified.
 
 ## What your agent gets

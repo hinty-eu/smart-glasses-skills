@@ -3,7 +3,7 @@ name: smart-glasses-live-captions
 description: Live captions, translation and real-time hints on smart glasses - capture speech on the phone or the glasses, stream it to speech-to-text, turn partial and final results into lines that fit each glasses display, keep end-to-end latency low, and fall back to a short hint or voice in the ear. Covers Even Realities G2, Meta Ray-Ban Display (Web Apps and DAT), Rokid Glasses, Vuzix Z100, USB-C display glasses, phone notifications and audio-only glasses, with a runnable example (Node caption server, glasses web page, Even Hub plugin). Use when building subtitles for deaf or hard-of-hearing users, a live translator, a teleprompter, meeting captions or an AI assistant that shows or speaks text on glasses, or when captions on glasses lag, flicker, wrap badly or drop characters. Not for offline video subtitling or meeting transcription that never reaches glasses.
 license: Apache-2.0
 metadata:
-  version: "1.0.0"
+  version: "1.0.1"
   last-updated: "2026-11-09"
 ---
 

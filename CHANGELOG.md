@@ -5,6 +5,24 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-11-09
+
+Wording and packaging fixes. No vendor facts changed.
+
+### Changed
+
+- Reworded phrases that static skill security scanners read as risky, keeping the meaning of every sentence. For
+  example "no approval" (meaning no store review) is now "no store review", and a link to another repository's
+  `SKILL.md` now points to its folder. With SkillSpector 2.12.0 (`--no-llm`) the skills score 23, 0, 19 and 13 out
+  of 100 (`smart-glasses`, `smart-glasses-live-captions`, `smart-glasses-rokid`, `smart-glasses-vuzix`).
+- The platform table in the `smart-glasses` skill is wrapped in `[//]: # "platforms:start"` markers instead of HTML
+  comments; `scripts/gen-tables.mjs` accepts both forms.
+- Every GitHub Action in the workflows is pinned to a full commit SHA, with its version in a comment.
+
+### Added
+
+- `interface.composerIcon` in `.codex-plugin/plugin.json`, pointing to the existing plugin icon.
+
 ## [1.0.0] - 2026-11-09
 
 First public release. Vendor facts were checked against their sources on 2026-11-08 and 2026-11-09. Nothing has
@@ -46,5 +64,6 @@ been tested on real glasses yet; every file states how it was verified (`simulat
 - `CONTRIBUTING.md`, `SECURITY.md`, `TRADEMARKS.md`, a Code of Conduct (Contributor Covenant 2.1) and issue templates,
   including a hardware verification report.
 
-[Unreleased]: https://github.com/hinty-eu/smart-glasses-skills/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/hinty-eu/smart-glasses-skills/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/hinty-eu/smart-glasses-skills/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/hinty-eu/smart-glasses-skills/releases/tag/v1.0.0

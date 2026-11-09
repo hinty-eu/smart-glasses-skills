@@ -9,8 +9,10 @@ Thanks for helping. This project lives or dies by accurate, current facts, so th
 - **Every fact needs a source and a date.** Facts about platforms live in `data/platforms.json` with `source`,
   `checked` (YYYY-MM-DD) and `confidence` (`official`, `community`, `press`, `unverified`). Tables are generated from
   it: run `node scripts/gen-tables.mjs` after editing.
-- **Say how you verified it.** Examples and brand files carry a `verified` level: `hardware`, `simulator`, `compiles`
-  or `docs-only`, plus a date. Never claim `hardware` without testing on the device.
+- **Say how you verified it.** Examples and brand files carry a `verified` level, plus a date:
+  `hardware` (ran on the glasses), `simulator` (ran in the vendor's simulator or emulator), `browser` (a web target ran
+  in a desktop browser), `compiles` (builds, never ran) or `docs-only` (written from documentation). Never claim
+  `hardware` without testing on the device.
 - **Point to the vendor's skill when it is good.** Even Realities, Meta and Google ship official skills. We map and
   connect, we do not duplicate them.
 - **Plain hyphens only.** No em or en dashes in Markdown.

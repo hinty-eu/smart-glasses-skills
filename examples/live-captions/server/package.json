@@ -1,0 +1,19 @@
+{
+  "name": "live-captions-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Text source for the live captions examples: demo script, browser microphone or a streaming speech-to-text adapter.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "demo": "node server.mjs --demo",
+    "mic": "node server.mjs --browser-mic",
+    "check": "node check.mjs"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

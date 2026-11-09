@@ -175,8 +175,10 @@ For known text (a teleprompter) use `AutoScroller` instead; for full control use
   sends them (the Javadoc mentions "non-standard characters for which a custom font needs to be compiled", and that
   the notification icon may be dropped when there are too many). Expect a delay the first time new characters
   appear, and test each script you ship (unverified per script).
-- RTL: Arabic and Hebrew in notifications appeared reversed before 1.9; Vuzix fixed it in 1.9
-  ([Android #2](https://github.com/Vuzix/ultralite-sdk-android/issues/2)). RTL in canvas text is not documented.
+- RTL: Arabic and Hebrew in notifications appeared reversed before 1.9. Vuzix said the fix would ship in 1.9 and
+  closed the issue on 2025-03-20, after the 1.9 release, whose notes say only "1.9 upload"
+  ([Android #2](https://github.com/Vuzix/ultralite-sdk-android/issues/2); not verified by us). RTL in canvas text is
+  not documented.
 - When shaping matters (Arabic, Hebrew, Indic scripts, Thai, complex CJK), render on the phone: `LiveText`, bitmaps,
   or iOS `drawStaticText`. The iOS DocC says `LiveText` "can support any language that the font supports".
 - Emoji: not documented for glasses-rendered text; avoid them (the display is monochrome anyway).

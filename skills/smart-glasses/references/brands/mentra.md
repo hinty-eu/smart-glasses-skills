@@ -19,8 +19,11 @@ Last checked: 2026-11-08. Verification: docs-only (no hardware test yet). Pointe
 - Publishing to everyone today: **no**. "There is currently no way to distribute a miniapp built with the Miniapp
   SDK" ([distribution](https://docs.mentraglass.com/app-devs/getting-started/distribution.md), read 2026-11-08). The
   packaged ZIP is for a future store workflow.
-- Test without hardware: a miniapp runs without glasses, "the display just won't have anywhere to draw". No public
-  simulator for app developers.
+- Test without hardware: a miniapp runs without glasses, "the display just won't have anywhere to draw". No
+  documented simulator for app developers. The native Bluetooth SDK has a `connectSimulated()`, but it is `internal`
+  on Android and not public on iOS (only the React Native module exposes it), and its simulated glasses only log the
+  calls; a public, scriptable version is requested in [#4931](https://github.com/Mentra-Community/MentraOS/issues/4931)
+  (open, 2026-10-23).
 - Official agent skill: none. Official docs MCP server and `llms.txt` exist (below).
 
 ## Status (as of 2026-11-08)

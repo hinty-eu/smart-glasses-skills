@@ -8,7 +8,8 @@ pages and app store listings; nobody documents exactly which third-party notific
   few seconds.
 - How your app puts text on it: rung 4. Post a normal phone notification; the glasses' companion app (or the OS on
   Android XR) forwards it. No SDK, no vendor account.
-- Input: usually dismiss only. Android XR display glasses add direct reply for `MessagingStyle`.
+- Input: usually dismiss only. Android XR display glasses show the system clear action, plus direct reply for
+  `MessagingStyle`; your own action buttons stay on the phone.
 - Microphone for your app: not part of this path. Record on the phone.
 - Speaker: Android XR audio glasses read bridged notifications aloud; some companion apps can too (Rokid, INMO Go3).
   Elsewhere use rung 5 (your own TTS).
@@ -25,7 +26,7 @@ pages and app store listings; nobody documents exactly which third-party notific
 | Even Realities G2 / G1 | Yes, any app that has posted once | Yes, toggle per app; G1 has less common apps off by default | No speaker | [support](https://support.evenrealities.com/hc/en-us/articles/14274501482639-Notifications) official |
 | Rokid Glasses (Hi Rokid) | Yes (FAQ talks about WhatsApp pop-ups) | Unverified | Optional "Voice broadcast" | [FAQ](https://global.rokid.com/pages/faq), [app](https://apps.apple.com/us/app/hi-rokid-rokid-glasses/id6749669942) official |
 | Vuzix Z100 (Vuzix Connect) | Yes, full-screen pop-ups when no SDK app owns the display | Unverified | No | [store](https://apps.apple.com/us/app/vuzix-connect/id6467056741), [docs](https://support.vuzix.com/docs/display-process.md) official |
-| Meta Ray-Ban Display | Messaging apps at launch; wider phone notifications announced "coming soon" on 2026-09-23 | Announced | No | [Meta](https://about.fb.com/news/2026/09/new-features-for-meta-ray-ban-display-navigation-hologram/) official, current state unverified |
+| Meta Ray-Ban Display | Built-in messaging (texts, WhatsApp, Messenger) at launch; press reports a later all-or-nothing phone notification mirror; Meta announced phone notifications with per-app control "coming soon" on 2026-09-23 | Announced, not confirmed shipped | No | [Meta, 2026-09-23](https://about.fb.com/news/2026/09/new-features-for-meta-ray-ban-display-navigation-hologram/) official, [UploadVR, 2026-09-27](https://www.uploadvr.com/meta-ray-ban-display-gets-new-features-online-ordering-international-launch/) press; current state unverified |
 | Ray-Ban Meta, Oakley Meta (no display) | Reads Messenger, WhatsApp, Instagram and phone messages only | Toggles | Yes | [Meta help](https://www.meta.com/en-gb/help/ai-glasses/493802475697609/) official |
 | Android XR audio and display glasses | Yes, rules below | Yes, off by default unless "Suggested" | Yes on audio glasses | [behaviour](https://developer.android.com/develop/xr/jetpack-xr-sdk/glasses/notifications/behavior), [quality](https://developer.android.com/docs/quality-guidelines/android-xr/augmented) official |
 | RayNeo X3 Pro, RayNeo iO | Yes (examples: WhatsApp, Slack, email) | Unverified | iO has no speaker | [RayNeo](https://www.rayneo.com/en-ca/blogs/news/smart-glasses-bluetooth-connectivity-guide-2026) official; iPhone unreliable per [review](https://gizmodo.com/rayneo-x3-pro-review-these-ar-glasses-may-haunt-my-dreams-2000699219) |
@@ -47,13 +48,19 @@ safe baseline for every brand.
 ## Getting text on the display
 
 Rules that work across brands (engineering advice, unverified per device):
-- One message = one notification. Title of a few words, text of one sentence (about 120 characters).
+- One message = one new notification (a new id on Android, a new identifier on iOS). Title of a few words, text of one
+  sentence (about 120 characters). Do not use one notification that you update in place: no brand documents how it
+  treats an update (forwarded again, ignored, or shown as new), Android sheds updates to an existing notification
+  above 5 per second per app (new posts are not rate-limited that way), and Android XR's bridging page describes
+  incoming notifications, not updates. A new post is the one event every forwarder handles.
+- Cancel all but the last two or three, so the shade stays short and a companion app that replays its backlog (Rokid,
+  see Pitfalls) cannot bring stale text back.
 - A separate non-ongoing channel at high importance. Android XR skips ongoing notifications by rule and other
   forwarders may too. Keep your foreground-service notification on its own low channel.
 - Silence the channel on the phone (no sound, no vibration); the importance stays high.
-- Post at most one notification every 2-3 seconds. Glasses show one at a time for a few seconds, so faster posting
-  means the wearer misses lines. Updating an existing notification is unreliable as a display path: some forwarders
-  ignore updates, others show each update as new (unverified per brand). Cancel old ones so the history stays short.
+- Post at most one notification every 2-3 seconds, newest text wins. Glasses show one at a time for a few seconds, so
+  faster posting means the wearer misses lines. `examples/live-captions` (`NotificationDisplay.kt`,
+  `NotificationDisplay.swift`) implements these rules.
 
 Android (Kotlin):
 
@@ -104,9 +111,10 @@ iOS (Swift):
 ```swift
 import UserNotifications
 
-final class GlassesNotifier: NSObject, UNUserNotificationCenterDelegate {
+@MainActor final class GlassesNotifier: NSObject, UNUserNotificationCenterDelegate {
     static let shared = GlassesNotifier()
     private var lastPost = Date.distantPast
+    private var recent: [String] = []
 
     func setUp() async -> Bool {
         let center = UNUserNotificationCenter.current()
@@ -120,12 +128,16 @@ final class GlassesNotifier: NSObject, UNUserNotificationCenterDelegate {
         let content = UNMutableNotificationContent()
         content.title = String(title.prefix(40))
         content.body = String(body.prefix(120))
-        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
-        UNUserNotificationCenter.current().add(request)
+        let id = UUID().uuidString // a new request per message, never a replaced one
+        UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: id, content: content, trigger: nil))
+        recent.append(id)
+        if recent.count > 3 { // keep the last three
+            UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [recent.removeFirst()])
+        }
     }
 
     // Shows notifications posted while your app is in the foreground. unverified: that ANCS then forwards them
-    func userNotificationCenter(_ center: UNUserNotificationCenter,
+    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
         [.banner, .list]
     }
@@ -138,7 +150,10 @@ recording, Bluetooth). Focus modes and Scheduled Summary can hold notifications 
 Realities requires "Show Previews: Always" for content to reach the glasses.
 
 ## Input
-Expect dismiss only. Android XR display glasses add direct reply (voice or smart replies) for `MessagingStyle`.
+Expect dismiss only. Android XR display glasses show bridged notifications as heads-up notifications with the
+system-provided clear action; `MessagingStyle` adds direct reply (voice or smart replies)
+([behaviour](https://developer.android.com/develop/xr/jetpack-xr-sdk/glasses/notifications/behavior)). Your own
+notification action buttons work on the phone and lock screen; whether other brands mirror them is unverified.
 
 ## Audio
 Not part of this rung, except that Android XR audio glasses turn bridged notifications into audio read-outs. For other

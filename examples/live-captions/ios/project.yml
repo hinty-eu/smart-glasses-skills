@@ -1,0 +1,41 @@
+# XcodeGen spec (https://github.com/yonaskolb/XcodeGen). Generate the project with `xcodegen generate` in this folder;
+# the .xcodeproj is not committed.
+name: LiveCaptions
+options:
+  bundleIdPrefix: dev.smartglasses
+  deploymentTarget:
+    iOS: "16.0"
+
+packages:
+  # Vuzix Ultralite SDK, binary Swift package (tag v1.9.0, XCFramework, iOS 14+)
+  UltraliteSDK:
+    url: https://github.com/Vuzix/UltraliteSDK-releases-iOS
+    exactVersion: 1.9.0
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+
+targets:
+  LiveCaptions:
+    type: application
+    platform: iOS
+    sources:
+      - LiveCaptions
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.smartglasses.livecaptions
+        INFOPLIST_FILE: LiveCaptions/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
+    dependencies:
+      - package: UltraliteSDK
+
+schemes:
+  LiveCaptions:
+    build:
+      targets:
+        LiveCaptions: all

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Live Captions</title>
+<style>
+  /* This page shows on the phone inside the Even app. The glasses never render HTML: they show the SDK containers. */
+  :root { font-family: system-ui, -apple-system, sans-serif; }
+  body { margin: 0; padding: 20px; background: #111; color: #eee; }
+  h1 { font-size: 20px; margin: 0 0 12px; }
+  label { display: block; font-size: 14px; color: #aaa; margin: 12px 0 4px; }
+  input { font: inherit; font-size: 17px; width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 10px; border: 1px solid #444; background: #1c1c1c; color: #eee; }
+  #room { text-transform: uppercase; letter-spacing: 0.12em; }
+  button { font: inherit; padding: 10px 16px; border-radius: 10px; border: 1px solid #444; background: #222; color: #eee; margin: 12px 8px 0 0; }
+  button[type=submit] { background: #2563eb; border-color: #2563eb; }
+  #status { margin: 14px 0; color: #aaa; }
+  #mirror { background: #000; color: #4ade80; font: 13px/1.35 ui-monospace, monospace; padding: 10px; border-radius: 10px; white-space: pre-wrap; min-height: 9em; }
+  .note { color: #f59e0b; font-size: 14px; }
+</style>
+</head>
+<body>
+<h1>Live Captions</h1>
+<p id="noBridge" class="note" hidden>No Even app bridge found: this is a browser preview of the phone page.</p>
+<form id="form" autocomplete="off">
+  <label for="server">Caption server</label>
+  <input id="server" inputmode="url" spellcheck="false" placeholder="https://captions.example.com">
+  <label for="room">Room code</label>
+  <input id="room" maxlength="9" spellcheck="false" placeholder="K7MPQ4">
+  <button type="submit">Connect</button>
+</form>
+<div id="status"></div>
+<div>
+  <button id="b-repeat" type="button">Repeat</button>
+  <button id="b-skip" type="button">Skip</button>
+  <button id="b-hide" type="button">Hide</button>
+</div>
+<p>On the glasses:</p>
+<pre id="mirror" aria-label="What the glasses show"></pre>
+<p class="note">Glasses: tap = repeat, swipe down = skip, swipe up or hold = hide, double tap = exit.</p>
+<script type="module" src="./src/main.ts"></script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- Keep zoom available: Meta asks web apps not to disable it -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Live captions from a caption server, for glasses browsers and second screens">
+<meta name="application-name" content="Live captions">
+<!-- Meta Ray-Ban Display Web Apps read this tag (https://wearables.developer.meta.com/docs/develop/webapps) -->
+<meta name="mrbd-web-app-capable" content="yes">
+<title>Live captions</title>
+<style>
+  /* Additive displays (Meta Ray-Ban Display, birdbath and waveguide glasses): black adds no light, so the
+     page stays black and only the text is lit. No bright panels, no full-screen backgrounds. */
+  html, body { margin: 0; height: 100%; background: #000; color: #fff; }
+  body { font-family: "Noto Sans", system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .screen { position: fixed; inset: 0; box-sizing: border-box; padding: 24px; display: flex; flex-direction: column; }
+  [hidden] { display: none !important; }
+
+  #entry h1 { font-size: 32px; line-height: 40px; margin: 0 0 16px; font-weight: 700; }
+  #entry label { display: block; font-size: 22px; line-height: 28px; color: #cfd3d9; margin: 12px 0 6px; }
+  #entry input { font: inherit; font-size: 32px; line-height: 40px; width: 100%; box-sizing: border-box; padding: 8px 12px;
+    background: #1c1e21; color: #fff; border: 2px solid #41454e; border-radius: 12px; }
+  #code { text-transform: uppercase; letter-spacing: 0.12em; }
+  #server { font-size: 22px !important; line-height: 28px !important; }
+  #entry button { font: inherit; font-size: 28px; line-height: 36px; margin-top: 20px; padding: 10px 24px;
+    background: #27282d; color: #fff; border: 2px solid #2694fe; border-radius: 999px; }
+  :where(button, input):focus-visible { outline: 3px solid currentColor; outline-offset: 4px; }
+  #error { color: #ff5668; font-size: 22px; line-height: 28px; min-height: 28px; margin-top: 12px; }
+
+  #status { font-size: 20px; line-height: 28px; height: 28px; color: #aaafb9; white-space: nowrap; overflow: hidden; }
+  /* Caption lines are wrapped by app.js with measured widths; nowrap keeps the browser from re-wrapping a line
+     that is a pixel wider than measured, which would push the oldest line off the top. */
+  #cap { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden;
+    font-size: var(--cap-size, clamp(28px, 6.4vmin, 72px)); line-height: 1.22; font-weight: 500; }
+  .line { white-space: nowrap; overflow: hidden; }
+  .partial { color: #c8ccd4; }
+  /* Real buttons, so the glasses' spatial navigation moves focus and Enter presses them. Dark fill, few lit pixels. */
+  #controls { display: flex; gap: 12px; margin-top: 12px; }
+  #controls button { font: inherit; font-size: 22px; line-height: 28px; padding: 6px 18px; color: #fff;
+    background: #1c1e21; border: 2px solid #41454e; border-radius: 999px; }
+</style>
+</head>
+<body>
+<form id="entry" class="screen" autocomplete="off" hidden>
+  <h1>Live captions</h1>
+  <label for="code">Room code</label>
+  <input id="code" name="code" maxlength="9" inputmode="text" autocapitalize="characters" spellcheck="false" placeholder="K7MPQ4">
+  <label for="server">Server</label>
+  <input id="server" name="server" inputmode="url" spellcheck="false">
+  <div><button id="connect" type="submit">Connect</button></div>
+  <div id="error" role="alert"></div>
+</form>
+
+<main id="captions" class="screen" hidden>
+  <div id="status" aria-live="polite"></div>
+  <div id="cap" aria-live="polite"></div>
+  <div id="controls">
+    <button id="repeat" type="button">Repeat</button>
+    <button id="skip" type="button">Skip</button>
+    <button id="hide" type="button">Hide</button>
+  </div>
+</main>
+<script type="module" src="./app.js"></script>
+</body>
+</html>

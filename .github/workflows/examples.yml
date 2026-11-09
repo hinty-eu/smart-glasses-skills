@@ -1,0 +1,86 @@
+name: Examples
+
+on:
+  push:
+    paths:
+      - "examples/live-captions/android/**"
+      - "examples/live-captions/ios/**"
+      - ".github/workflows/examples.yml"
+  pull_request:
+    paths:
+      - "examples/live-captions/android/**"
+      - "examples/live-captions/ios/**"
+      - ".github/workflows/examples.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # Keep CI runs out of public install counters and tool telemetry.
+  DISABLE_TELEMETRY: "1"
+  DO_NOT_TRACK: "1"
+
+concurrency:
+  group: examples-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    name: Android live captions (debug APK)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: examples/live-captions/android
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+      # No wrapper jar in the repository (no binaries), so the action provides a pinned Gradle.
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: "9.8.1"
+          cache-provider: basic
+      - name: Build the standard flavor and run unit tests
+        run: gradle --no-daemon assembleStandardDebug testStandardDebugUnitTest
+      - name: Build the meta flavor (Meta DAT from Maven Central, no credentials)
+        run: gradle --no-daemon assembleMetaDebug
+      # Only the standard APK is published for testers; the meta flavor is a developer build.
+      - uses: actions/upload-artifact@v7
+        with:
+          name: live-captions-android-debug
+          path: examples/live-captions/android/app/build/outputs/apk/standard/debug/*.apk
+          if-no-files-found: error
+          retention-days: 30
+
+  ios:
+    name: iOS live captions (unsigned build)
+    # macOS minutes cost 10x on private repositories, so this job runs only once the repository is public.
+    if: ${{ !github.event.repository.private }}
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: examples/live-captions/ios
+    env:
+      XCODEGEN_VERSION: "2.46.0"
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install XcodeGen
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/xcodegen.zip" \
+            "https://github.com/yonaskolb/XcodeGen/releases/download/${XCODEGEN_VERSION}/xcodegen.zip"
+          unzip -q "$RUNNER_TEMP/xcodegen.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/xcodegen/bin" >> "$GITHUB_PATH"
+      - name: Tool versions
+        run: |
+          xcodegen --version
+          xcodebuild -version
+      - name: Generate the Xcode project
+        run: xcodegen generate
+      - name: Build without code signing
+        run: >
+          xcodebuild -project LiveCaptions.xcodeproj -scheme LiveCaptions
+          -destination 'generic/platform=iOS'
+          CODE_SIGNING_ALLOWED=NO build

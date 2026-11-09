@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- NotificationDisplay (runtime permission on Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Rokid and Vuzix declare the <queries> for their companion apps in their own AAR manifests;
+         the companion apps own the Bluetooth link, so this app needs no Bluetooth permission for them.
+         The meta flavor adds BLUETOOTH_CONNECT through the DAT AAR. -->
+
+    <!-- usesCleartextTraffic: the example server speaks plain ws:// on your LAN. Use wss:// in production. -->
+    <application
+        android:allowBackup="false"
+        android:label="Live captions"
+        android:supportsRtl="true"
+        android:theme="@android:style/Theme.DeviceDefault.Light"
+        android:usesCleartextTraffic="true">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Repeat / Skip / Hide buttons on the caption notification -->
+        <receiver
+            android:name=".NotificationActionReceiver"
+            android:exported="false" />
+    </application>
+</manifest>

@@ -1,0 +1,27 @@
+{
+  "name": "live-captions-even-hub",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Even Realities G2 plugin (Even Hub) that shows captions from the live captions example server.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit -p . && vite build",
+    "build:sim": "tsc --noEmit -p . && vite build --mode sim",
+    "preview": "vite preview",
+    "sim": "evenhub-simulator \"http://127.0.0.1:5180/?server=http://127.0.0.1:8787&room=TEST42\" --automation-port 9898",
+    "test:sim": "node scripts/sim-test.mjs",
+    "pack": "evenhub pack app.json dist -o live-captions.ehpk"
+  },
+  "dependencies": {
+    "@evenrealities/even_hub_sdk": "0.0.16",
+    "@evenrealities/pretext": "0.1.4"
+  },
+  "devDependencies": {
+    "@evenrealities/evenhub-cli": "0.2.0",
+    "@evenrealities/evenhub-simulator": "0.9.5",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.6"
+  }
+}

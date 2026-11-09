@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Merged into the main manifest for the meta flavor only. The DAT AAR adds BLUETOOTH and BLUETOOTH_CONNECT itself. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Not merged from the DAT AAR, but developers report NO_ELIGIBLE_DEVICE without it.
+         unverified: whether the toolkit needs scan results that neverForLocation would filter (beacons only). -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" />
+
+    <application>
+        <!-- "0" for both in Developer Mode; real values from the Wearables Developer Center (see app/build.gradle.kts) -->
+        <meta-data
+            android:name="com.meta.wearable.mwdat.APPLICATION_ID"
+            android:value="${mwdat_application_id}" />
+        <meta-data
+            android:name="com.meta.wearable.mwdat.CLIENT_TOKEN"
+            android:value="${mwdat_client_token}" />
+        <!-- The toolkit sends analytics and crash reports to Meta unless you opt out -->
+        <meta-data
+            android:name="com.meta.wearable.mwdat.ANALYTICS_OPT_OUT"
+            android:value="true" />
+        <meta-data
+            android:name="com.meta.wearable.mwdat.CRASH_REPORTING_OPT_OUT"
+            android:value="true" />
+
+        <!-- Meta AI returns to the app through this scheme during registration -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="livecaptions" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

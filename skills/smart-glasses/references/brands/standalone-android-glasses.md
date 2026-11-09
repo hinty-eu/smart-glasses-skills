@@ -25,7 +25,7 @@ a web page in a browser on the glasses or install an ordinary Android app.
 
 1. **Web page in a browser on the glasses** (lowest effort). INMO Air3 runs Chrome. RayNeo X3 Pro has no confirmed
    built-in browser; the community browser TapLink X3 (`informalTechCode/TAPLINKX3`, Apache-2.0) is sideloaded and
-   maps tap to click, double tap to Back. The text source is a server the glasses reach over Wi-Fi or the phone's
+   maps tap to click, double tap to Back (so Back leaves your page; do not trap it). The text source is a server the glasses reach over Wi-Fi or the phone's
    hotspot.
 2. **Native Android app on the glasses.** A normal Activity with a black background. Set `minSdk` to 31 or lower for
    the X3 Pro. RayNeo's ARDK for Android (v0.2.6, 2026-04-21, distributed as a download from the docs, no licence
@@ -52,14 +52,14 @@ ws.onmessage = (e) => {
 };
 const act = (action: 'repeat' | 'skip' | 'hide') => ws.send(JSON.stringify({ type: 'action', action }));
 
+// This page has nothing focusable, so keys can map directly; with real buttons, let the browser move focus instead
 addEventListener('keydown', (e) => {
   if (e.key === 'Enter') act('repeat');
   else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') act('skip');
 });
 addEventListener('click', () => act('repeat'));
-// Double tap is Back on these browsers: keep the page open
-history.pushState(null, '', location.href);
-addEventListener('popstate', () => { history.pushState(null, '', location.href); act('hide'); });
+// Double tap is Back on these browsers. Back means leave: do not push history entries to trap it (input.md).
+addEventListener('pagehide', () => ws.close());
 // Screen Wake Lock needs a secure context (https or localhost)
 navigator.wakeLock?.request('screen').catch(() => {});
 ```

@@ -38,11 +38,11 @@
       "reference": "brands/even-g2.md",
       "facts": {
         "display": {
-          "value": "576x288 canvas, 16 levels of green, both eyes",
+          "value": "576x288 per eye, green; text 5 levels, images 16",
           "source": "https://hub.evenrealities.com/docs/build/display",
           "checked": "2026-11-08",
           "confidence": "official",
-          "note": "Consumer spec pages and press quote a 640x350 panel; the SDK canvas is 576x288."
+          "note": "4-bit greyscale display, but textColor is 0-4; images and borders use 16 levels. Consumer spec pages and press quote a 640x350 panel; the SDK canvas is 576x288."
         },
         "text": {
           "value": "Even Hub plugin: web app run by the Even phone app",
@@ -89,7 +89,7 @@
           "source": "https://hub.evenrealities.com/docs/test/simulator",
           "checked": "2026-11-08",
           "confidence": "official",
-          "note": "Not a hardware emulator: no BLE timing, lifecycle, permissions or status events."
+          "note": "npm package 0.9.5 (2026-09-01); the simulator docs page still names v0.9.3. Not a hardware emulator: no BLE timing, lifecycle, permissions or status events."
         },
         "skill": {
           "value": "npx skills add even-realities/everything-evenhub",
@@ -124,7 +124,7 @@
           "source": "https://github.com/meta/meta-wearables-dat-android/issues/210",
           "checked": "2026-11-08",
           "confidence": "community",
-          "note": "HFP is beamformed to the wearer (official docs). Meta staff on 2026-11-04: a Display fix comes 'at a later date'. Use the phone mic."
+          "note": "HFP is beamformed to the wearer (official docs). Meta staff 2026-11-04: software 192.1 covers most displayless cases, the Display fix comes 'at a later date'. Use the phone mic."
         },
         "input": {
           "value": "Neural Band + touchpad: button taps; Web Apps: arrow keys",
@@ -174,7 +174,7 @@
           "source": "https://www.tomsguide.com/computing/smart-glasses/rokid-glasses-review",
           "checked": "2026-11-08",
           "confidence": "press",
-          "note": "Press: 480x398 per eye, 23 degrees, 1500 nits; retailers print other figures. Community measures a 480x640 portrait Android display at 240 dpi. Black is transparent."
+          "note": "Press: 480x398 per eye, 23 degrees, 1500 nits; retailers print other figures. Community measures a 480x640 portrait Android display at 240 dpi. Black is transparent. Rokid Glasses 2 (480x380, 25 degrees) on sale in China from 2026-11-11; CXR-L support unverified."
         },
         "text": {
           "value": "CXR-L custom view from your phone app, or notifications",
@@ -209,7 +209,7 @@
           "source": "https://developerdoc.rokid.com/sdk?lang=zh",
           "checked": "2026-11-08",
           "confidence": "official",
-          "note": "CXR-L is marked public; the user approves your app inside Hi Rokid. Community reports a one-time unverified-app prompt. iOS docs ask for a Rokid developer account (community says not needed, unverified). AIUI agents use the reviewed Hi Rokid Agent Store."
+          "note": "CXR-L is marked public; the user approves your app inside Hi Rokid. Community reports a one-time unverified-app prompt. Android: no app key or registration documented. iOS: docs ask for a Rokid developer account (one community project says not needed, unverified). AIUI agents use the reviewed Hi Rokid Agent Store."
         },
         "test": {
           "value": "No CXR-L simulator; fake the session behind an interface",
@@ -344,7 +344,7 @@
           "source": "https://wearables.developer.meta.com/docs/develop/dat/microphones-and-speakers/",
           "checked": "2026-11-08",
           "confidence": "official",
-          "note": "HFP drops output to 16/8 kHz mono and ends a running DAT session on current firmware (android #206). In-stream audio needs a camera stream; LED stays on."
+          "note": "HFP drops output to 16/8 kHz mono. It ended DAT camera sessions on firmware 72387580077200100 (android #206); Meta staff 2026-11-04: software 192.1 covers most displayless cases (unconfirmed). In-stream audio needs a camera stream; LED stays on."
         },
         "input": {
           "value": "Touchpad, capture button; DAT Inputs is beta only",
@@ -371,7 +371,7 @@
           "source": "https://wearables.developer.meta.com/docs/develop/dat/mock-device-kit/",
           "checked": "2026-11-08",
           "confidence": "official",
-          "note": "MockDeviceKit covers camera, device state, inputs and speech; not HFP conflicts or real gestures."
+          "note": "MockDeviceKit docs page: device states, camera, touchpad tap; Meta's skills add beta Inputs and Speech injection (not on the docs page). No HFP conflicts or real gestures."
         }
       }
     },
@@ -505,7 +505,7 @@
           "source": "https://developer.android.com/develop/xr/jetpack-xr-sdk/glasses/notifications/behavior",
           "checked": "2026-11-08",
           "confidence": "official",
-          "note": "Even, Rokid, Vuzix, RayNeo, INMO Go3, Halliday, MentraOS and Android XR mirror; Meta Display is limited."
+          "note": "Even, Rokid, Vuzix, RayNeo, INMO Go3, Halliday, MentraOS and Android XR mirror. Meta Display: per-app phone notifications announced 2026-09-23, rollout unverified. Post a new notification per message."
         },
         "mic": {
           "value": "Not part of this path; record on the phone",
@@ -641,7 +641,8 @@
           "value": "Runs without glasses, nothing drawn; no simulator",
           "source": "https://docs.mentraglass.com/app-devs/getting-started/quickstart.md",
           "checked": "2026-11-08",
-          "confidence": "official"
+          "confidence": "official",
+          "note": "The Bluetooth SDK has an internal connectSimulated() that only logs calls; a public scriptable simulator is requested in issue #4931 (open, 2026-10-23)."
         }
       }
     },
@@ -712,7 +713,7 @@
           "note": "From $2,195, pre-order in the US, UK and France, expected Fall 2026."
         },
         "text": {
-          "value": "Lens in Lens Studio 5.24 (TypeScript, Text)",
+          "value": "Lens in Lens Studio 5.24.1 (TypeScript, Text)",
           "source": "https://ar.snap.com/download",
           "checked": "2026-11-08",
           "confidence": "official",

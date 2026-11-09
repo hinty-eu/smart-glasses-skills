@@ -21,7 +21,8 @@ APIs and have not been run against these glasses.
 - Phones: any phone for plain Bluetooth. DAT 1.0.1: Android 10+, iOS 17.2+, Meta AI app V292+, glasses V128+.
 - Publishing to everyone today: plain Bluetooth audio apps follow normal store rules. DAT integrations: invited Beta
   testers only, no App Store (as of 2026-11-08, see [meta-display.md](meta-display.md#publishing-and-distribution)).
-- Test without hardware: any Bluetooth headset for audio routing; DAT MockDeviceKit for camera, device state, inputs.
+- Test without hardware: any Bluetooth headset for audio routing; DAT MockDeviceKit for device states, camera and the
+  touchpad tap (Meta's docs page); Meta's official skills also describe beta `Inputs` and `Speech` injection.
 - Official agent skill: `npx skills add meta/meta-wearables-dat-android` / `npx skills add meta/meta-wearables-dat-ios`
   (for DAT only; plain Bluetooth audio needs no vendor SDK). For SDK details install the official skill.
 
@@ -68,6 +69,9 @@ final class EarVoice {
   init() throws {
     // Output only: A2DP to the glasses. If you also record from the phone mic, use .playAndRecord with
     // .allowBluetoothA2DP (not .allowBluetoothHFP) so input stays on the phone and output stays on A2DP.
+    // Trade-off: .duckOthers implies .mixWithOthers, and a mixable session never becomes Now Playing, so touchpad
+    // taps keep controlling the user's music and never reach MPRemoteCommandCenter. To use taps as app input, drop
+    // the option (a non-mixable session pauses other audio) and see input.md, "Media keys on iOS".
     try AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
     try AVAudioSession.sharedInstance().setActive(true)
   }
@@ -88,13 +92,23 @@ want the glasses mic: that switches the glasses to HFP and output drops to mono.
 | Source | Hears | Status | Cost |
 |---|---|---|---|
 | Phone mic | Everyone near the phone | Any app | None; best for captioning other people |
-| Glasses mic via HFP (OS API) | Mostly the wearer (beamformed) | Any app | Output drops to 16/8 kHz mono; ends a running DAT session on current firmware |
+| Glasses mic via HFP (OS API) | Mostly the wearer (beamformed) | Any app | Output drops to 16/8 kHz mono; can end a running DAT session (status below) |
 | DAT in-stream PCM 16/44.1/48 kHz | Ambient, not beamformed | Beta, not in production channels | Needs a camera stream; capture LED stays on ([ios #318](https://github.com/meta/meta-wearables-dat-ios/issues/318)) |
 | DAT `Speech` (on-glasses ASR) | Text, not audio | Beta | Stops reporting after about a minute ([known issues](https://wearables.developer.meta.com/docs/develop/dat/knownissues/), [ios #360](https://github.com/meta/meta-wearables-dat-ios/issues/360)) |
 
 For the wearer's own voice (commands, dictation) HFP is the right mic. For captions of the other person use the phone.
-Meta staff (2026-11-04, [android #210](https://github.com/meta/meta-wearables-dat-android/issues/210)): glasses software
-192.1 "should cover most of the displayless cases" of HFP ending DAT sessions; the version label is theirs, unverified.
+
+HFP and DAT sessions, as of 2026-11-08 (confidence: vendor staff statements, unverified by us):
+- On glasses firmware `72387580077200100` HFP ended DAT camera sessions within milliseconds, even in Meta's documented
+  order ([android #206](https://github.com/meta/meta-wearables-dat-android/issues/206), still open). Meta staff
+  (2026-10-13): the fix is a glasses software update, not an SDK release.
+- Meta staff (2026-11-04, [android #210](https://github.com/meta/meta-wearables-dat-android/issues/210)): glasses
+  software 192.1 "should cover most of the displayless cases". Nobody in either thread has confirmed it yet, and that
+  label does not match the glasses version format in Meta's docs (V128+) or in the Meta AI app (129.0.0.218.272 in
+  [ios #342](https://github.com/meta/meta-wearables-dat-ios/issues/342)), so we cannot tell you which installed
+  version has the fix. The Ray-Ban Display fix comes "at a later date".
+- So: log the glasses software version, test HFP plus your DAT session on the wearer's pair, and keep the phone mic as
+  the default.
 
 ## What DAT adds on these glasses
 - Stable: camera stream, device state (`batteryLevel`, `donState` worn or not, `hingeState`, `thermalLevel`).
@@ -113,7 +127,8 @@ Meta staff (2026-11-04, [android #210](https://github.com/meta/meta-wearables-da
 
 ## Input
 - Without DAT the glasses behave as a headset: touchpad gestures control playback and volume on the phone. Whether your
-  app gets them through `MediaSession` (Android) or `MPRemoteCommandCenter` (iOS) is unverified on these glasses.
+  app gets them through `MediaSession` (Android) or `MPRemoteCommandCenter` (iOS) is unverified on these glasses; on
+  iOS it can only work with a non-mixable audio session (no `.duckOthers`), see [input.md](../input.md).
 - With DAT `Inputs` (beta): a touchpad double tap arrives as `Select`, a swipe as `Nav` (the wearer can invert
   directions), the capture button as `Capture` with `SHORT_PRESS`, `HOLD`, `DOUBLE_PRESS`. A double press also sends a
   `SHORT_PRESS` first: buffer it. Inputs stop after doff and don with wear detection on: re-add the capability.
@@ -121,8 +136,12 @@ Meta staff (2026-11-04, [android #210](https://github.com/meta/meta-wearables-da
 
 ## Testing without hardware
 - Any Bluetooth headset reproduces A2DP output and the HFP switch; do this before blaming the glasses.
-- DAT `MockDeviceKit`: pair a mock Ray-Ban Meta, set battery, don or doff, fold, feed the camera, inject inputs and
-  speech. It does not reproduce HFP conflicts, reserved gestures or real input mapping.
+- DAT `MockDeviceKit` ([docs](https://wearables.developer.meta.com/docs/develop/dat/mock-device-kit/), read
+  2026-11-08): pair a mock Ray-Ban Meta, power it, don or doff, unfold, feed the camera from a file or the phone camera,
+  simulate a touchpad tap (pause and resume) and tap-and-hold (stop), set permission results. The docs page lists
+  nothing for audio or speech; Meta's official agent skills for the beta capabilities describe injecting `Inputs`
+  events and `Speech` transcriptions through the mock glasses (unverified, not on the docs page). It does not reproduce
+  HFP conflicts, reserved gestures or real input mapping.
 
 ## Publishing and distribution
 - Plain Bluetooth audio app: Google Play and App Store as usual; no Meta component is involved (our reading).
@@ -138,8 +157,9 @@ Meta staff (2026-11-04, [android #210](https://github.com/meta/meta-wearables-da
 - Ray-Ban Meta Audio never appears in `Wearables.devices` or never connects
   ([android #222](https://github.com/meta/meta-wearables-dat-android/issues/222), [ios #345](https://github.com/meta/meta-wearables-dat-ios/issues/345)):
   not supported, nothing on your side fixes it.
-- HFP ends DAT camera sessions on current firmware, even in the documented order (settle HFP first, then start the
-  stream) ([android #206](https://github.com/meta/meta-wearables-dat-android/issues/206), open). Fix is glasses-side.
+- HFP ended DAT camera sessions on firmware `72387580077200100`, even in the documented order (settle HFP first, then
+  start the stream) ([android #206](https://github.com/meta/meta-wearables-dat-android/issues/206), open). The fix is
+  glasses-side; Meta says software 192.1 covers most displayless cases (2026-11-04, unconfirmed, see Audio above).
 - `DAT_APP_ON_THE_GLASSES_UPDATE_REQUIRED` on Gen 2 ([android #192](https://github.com/meta/meta-wearables-dat-android/issues/192)):
   see the recovery order in [meta-display.md](meta-display.md#pitfalls).
 - After the glasses v128 update, camera capture fails until the glasses reboot (dev and Beta, known issue).

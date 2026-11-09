@@ -7,7 +7,7 @@ This file is the cross-brand summary. For SDK details install the official skill
 The older Even G1 is covered at the end.
 
 ## At a glance
-- Display: two monochrome green micro-LED displays, one per eye. Apps draw on a 576x288 canvas, 4-bit (16 levels of green), black = off. Consumer spec pages and press quote 640x350 for the panel; build for the 576x288 canvas the SDK exposes.
+- Display: two monochrome green micro-LED displays, one per eye. Apps draw on a 576x288 canvas per eye, black = off. The display is 4-bit greyscale (16 levels of green), but text has only five brightness levels (`textColor` 0-4); images and borders use the 16 levels ([display docs](https://hub.evenrealities.com/docs/build/display)). Consumer spec pages and press quote 640x350 for the panel; build for the 576x288 canvas the SDK exposes.
 - How your app puts text on it: rung 1, an Even Hub plugin (your web app inside the Even phone app). Rung 4 also works: the Even app forwards phone notifications. Rung 5 needs the user's own earbuds, the glasses have no speaker.
 - Input: touchpads on both temples, optional Even R1 ring with the same gestures, a system contextual menu with up to 10 of your items, IMU.
 - Microphone for your app: yes, glasses (4-mic array, one processed mono stream) or phone mic, PCM 16 kHz, 16-bit LE, mono. No speech-to-text in the SDK.
@@ -18,7 +18,7 @@ The older Even G1 is covered at the end.
 - Official agent skill: `npx skills add even-realities/everything-evenhub` (13 skills, MIT).
 
 Versions on npm as of 2026-11-08: SDK `@evenrealities/even_hub_sdk` 0.0.16 (2026-09-24, needs Even app 2.2.10+, MIT),
-CLI `@evenrealities/evenhub-cli` 0.2.0 (binary `evenhub`), simulator `@evenrealities/evenhub-simulator` 0.9.5, font metrics
+CLI `@evenrealities/evenhub-cli` 0.2.0 (binary `evenhub`), simulator `@evenrealities/evenhub-simulator` 0.9.5 (2026-09-01; the [simulator page](https://hub.evenrealities.com/docs/test/simulator) still names v0.9.3), font metrics
 `@evenrealities/pretext` 0.1.4. Starters: `npx degit even-realities/evenhub-templates/<minimal|text-heavy|asr|image> my-app`.
 Use SDK 0.0.16: its changelog fixes repeated `setTimeout`/`setInterval` callbacks present in 0.0.14 and 0.0.15.
 

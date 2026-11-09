@@ -18,7 +18,8 @@ Practical reading: design for **480 px (320 dp) of width**, keep content centred
 the full 640 px height being visible until you have looked through a real pair. The press figure of 398 visible
 rows suggests the top and bottom are cut.
 
-The successor Rokid Glasses 2 (China, 2026-11-11) lists 480x380 and 25 degrees. Same width, so layouts that fit the
+The successor Rokid Glasses 2 (announced in China on 2026-10-27, on sale there from 2026-11-11, press) lists 480x380
+and 25 degrees. Same width, so layouts that fit the
 first model should fit; untested.
 
 ## Custom view JSON

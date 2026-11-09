@@ -8,12 +8,16 @@ reference and has not been compiled or run on glasses.
   ([Road to VR](https://roadtovr.com/meta-ray-ban-smart-glasses-display-price-release-date-specs/), press; 600x600 also
   in [Meta's docs](https://wearables.developer.meta.com/docs/develop/dat/display-overview/)). Black is transparent.
 - How your app puts text on it: rung 1 (DAT Display capability from your Android or iOS app) or rung 2 (a Web App:
-  an HTTPS page in the glasses' browser). Rung 5 (TTS in the ear) as fallback. Rung 4 is closed to you: built-in
-  notifications cover messages and a few Meta-owned apps (press reports, unverified).
+  an HTTPS page in the glasses' browser). Rung 5 (TTS in the ear) as fallback. Rung 4 is not a path to plan on: at
+  launch only built-in messaging showed; press reports a later all-or-nothing phone notification mirror
+  ([UploadVR, 2026-09-27](https://www.uploadvr.com/meta-ray-ban-display-gets-new-features-online-ordering-international-launch/));
+  Meta announced phone notifications with per-app control "coming soon" on 2026-09-23
+  ([Meta](https://about.fb.com/news/2026/09/new-features-for-meta-ray-ban-display-navigation-hologram/)). Whether
+  third-party notifications reach every wearer today is unverified (2026-11-08).
 - Input: Neural Band (EMG wristband) and temple touchpad. DAT: button taps come back as callbacks. Web Apps: `keydown`
-  `ArrowUp/Down/Left/Right` and `Enter`; Back is `history.back()`.
-- Microphone for your app: DAT only, over Bluetooth HFP, beamformed to the wearer, and opening it currently ends the
-  Display session. Web Apps: no microphone, no camera. Capture audio on the phone.
+  `ArrowUp/Down/Left/Right` and `Enter` move focus and press buttons (spatial navigation); Back is `history.back()`.
+- Microphone for your app: DAT only, over Bluetooth HFP, beamformed to the wearer, and opening it ends the Display
+  session (as of 2026-11-08; Meta's fix for Display comes "at a later date"). Web Apps: no microphone, no camera. Capture audio on the phone.
 - Speaker: open-ear. DAT has no audio API (use A2DP). Web Apps: `speechSynthesis` (one `en-US` voice) and Web Audio.
 - Phones: DAT 1.0.1 needs Android 10+ (Kotlin 2.2+) or iOS 17.2+ (Xcode 26.4+), Meta AI app V292+, glasses V128+.
   Web Apps run on the glasses (glasses v125+, Meta AI app v272+).
@@ -21,8 +25,9 @@ reference and has not been compiled or run on glasses.
   US, CA, UK, FR, DE, IT ([Meta help center](https://www.meta.com/help/ai-glasses/4961066940605960/), 2026-11-08).
 - Test without hardware: DAT MockDeviceKit display preview; Chrome extension "Meta Ray-Ban Display Simulator" (both).
 - Official agent skill: `npx skills add meta/meta-wearables-dat-android` / `npx skills add meta/meta-wearables-dat-ios`
-  (skills.sh); Meta documents `claude plugin marketplace add meta/meta-wearables-dat-android` +
-  `claude plugin install mwdat-android@mwdat-android-marketplace` (iOS: `-ios`, `mwdat-ios`). Web Apps (not on skills.sh):
+  (skills.sh); Meta's READMEs document `claude plugin marketplace add facebook/meta-wearables-dat-android` +
+  `claude plugin install mwdat-android@mwdat-android-marketplace` (iOS: `-ios`, `mwdat-ios`; `facebook/` redirects to
+  `meta/`). Web Apps (not on skills.sh):
   `/plugin marketplace add https://github.com/meta/meta-wearables-webapp` + `/plugin install meta-wearables-webapp@meta-wearables`.
   Docs MCP, no auth: `claude mcp add --transport http wearables https://mcp.developer.meta.com/wearables`.
   **For SDK details install the official skill**; this file covers cross-brand decisions.
@@ -116,6 +121,8 @@ Rules for live text ([display overview](https://wearables.developer.meta.com/doc
 HTTPS only. `navigator.install` exists only on the glasses (a runtime check). Budget: first load under 300 KB and 15
 requests, 30 Hz panel, slow CPU. Meta's UI kit sets routine text at 28 px / 36 px, about 35-40 characters per line (our
 estimate). The page speaks the `examples/live-captions` protocol from the server's own HTTPS origin (e.g. a TLS tunnel).
+Input follows Meta's guidance: real `<button>`s, focus moved by the built-in spatial navigation, `click` handlers, no
+arrow or Enter handling of our own.
 
 ```html
 <!doctype html>
@@ -130,14 +137,18 @@ estimate). The page speaks the `examples/live-captions` protocol from the server
   button:focus-visible { outline: 3px solid currentColor; outline-offset: 4px; }
 </style></head>
 <body><main><div id="lines" aria-live="polite"></div>
-  <div><button id="repeat">Repeat</button> <button id="hide">Hide</button></div></main>
+  <div><button id="repeat">Repeat</button> <button id="skip">Skip</button> <button id="hide">Hide</button></div></main>
 <script type="module">
   const room = encodeURIComponent(new URLSearchParams(location.search).get('room') ?? '');
   const box = document.getElementById('lines');
   const done = []; let partial = ''; let ws;
   function render(m) {
     if (m.type === 'clear') { done.length = 0; partial = ''; }
-    else if (m.type === 'caption') { if (m.final) { done.push(m.text); done.splice(0, done.length - 3); partial = ''; } else partial = m.text; }
+    else if (m.type === 'caption') {
+      // repeat:true is the last final sent again ("show this again"): do not add it twice
+      if (m.final) { if (!(m.repeat && done.at(-1) === m.text)) done.push(m.text); done.splice(0, done.length - 3); partial = ''; }
+      else partial = m.text;
+    }
     else return;
     const rows = [...done, partial].filter(Boolean);
     box.replaceChildren(...rows.map((t, i) => Object.assign(document.createElement('p'), { textContent: t, className: i < rows.length - 1 ? 'old' : '' })));
@@ -155,10 +166,9 @@ estimate). The page speaks the `examples/live-captions` protocol from the server
     const r = await fetch(`/latest?room=${room}`); if (r.ok) render(await r.json());
     connect();
   });
-  // Enter (pinch or touchpad tap) clicks the focused button; arrow keys move focus on their own.
-  for (const id of ['repeat', 'hide']) document.getElementById(id).addEventListener('click', () => send({ type: 'action', action: id }));
-  // Nothing is focusable below the buttons, so ArrowDown can mean "skip"; stop its default scroll.
-  document.addEventListener('keydown', (e) => { if (e.key === 'ArrowDown') { e.preventDefault(); send({ type: 'action', action: 'skip' }); } });
+  // Arrow keys move focus between the buttons on their own; Enter (pinch or touchpad tap) clicks the focused one.
+  for (const id of ['repeat', 'skip', 'hide']) document.getElementById(id).addEventListener('click', () => send({ type: 'action', action: id }));
+  document.getElementById('repeat').focus();
   connect();
 </script></body></html>
 ```
@@ -175,16 +185,21 @@ with both values percent-encoded (an unencoded `?room=` is dropped). The add scr
 - `Inputs` (raw Nav, Select, Drag, capture button) is beta, dev and Beta channels only, and Terms §2.8 keep it out of
   production. Without interactive content a single tap pauses the session and tap-and-hold stops it ([inputs](https://wearables.developer.meta.com/docs/develop/dat/inputs/)).
 - Web Apps: native `<button>`s and built-in spatial navigation, no global focus index, no synthetic click on `Enter`.
-  Back is `popstate` (history capped at five entries), `Escape` is desktop-only, password fields do not open the
-  composer ([input and navigation](https://wearables.developer.meta.com/docs/develop/webapps/build/input-and-navigation/)).
+  Meta: "let Chromium WebView or UI Toolkit own directional focus movement and activation", handle keys directly only
+  for "a custom interaction that cannot be expressed with ordinary controls", and call `preventDefault()` only when you
+  mean to replace the default; a listener that moves focus without it runs alongside the built-in traversal. Back is
+  `popstate` (history capped at five entries), `Escape` is desktop-only, password fields do not open the composer
+  ([input and navigation](https://wearables.developer.meta.com/docs/develop/webapps/build/input-and-navigation/), read
+  2026-11-08).
 
 ## Audio
 - A2DP (output) and HFP (glasses mic) are exclusive; HFP drops output to 16 or 8 kHz mono and beamforms to the wearer,
   so it is the wrong mic for captioning others ([microphones and speakers](https://wearables.developer.meta.com/docs/develop/dat/microphones-and-speakers/)).
 - Opening HFP/SCO ends the Display session on current glasses software ([android #210](https://github.com/meta/meta-wearables-dat-android/issues/210),
-  [ios #342](https://github.com/meta/meta-wearables-dat-ios/issues/342), open). Meta staff, 2026-11-04: an update fixes
-  most displayless cases, "the display should be coming out at a later date". A developer kept the Display alive with
-  `BluetoothHeadset.startVoiceRecognition()` (community, unverified). Phone calls end the session too.
+  [ios #342](https://github.com/meta/meta-wearables-dat-ios/issues/342), open). Meta staff, 2026-11-04: glasses software
+  192.1 "should cover most of the displayless cases", and "the display should be coming out at a later date". A
+  developer kept the Display alive with `BluetoothHeadset.startVoiceRecognition()` (community, unverified). Phone
+  calls end the session too.
 - In-stream PCM needs a camera stream, is beta and keeps the capture LED on. On-glasses `Speech` is beta and "silently
   stops reporting text" after about a minute ([known issues](https://wearables.developer.meta.com/docs/develop/dat/knownissues/),
   which also list no HFP audio on iPhone 17 with iOS 26, fixed in iOS 27). Default for captions and assistants: phone

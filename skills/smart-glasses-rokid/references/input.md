@@ -89,6 +89,6 @@ The caption protocol of the `smart-glasses-live-captions` skill uses `repeat`, `
 
 ## Ring
 
-Rokid launched the Rokid Ring in China on 2026-10-27, next to Rokid Glasses 2 and Rokid Color (swipes, taps,
-finger snap; [Wareable](https://www.wareable.com/wearable-tech/rokid-glasses-2-color-ring-announcement-international-availability)).
+Rokid announced the Rokid Ring in China on 2026-10-27, next to Rokid Glasses 2 and Rokid Color (swipes, taps,
+finger snap; [Wareable](https://www.wareable.com/wearable-tech/rokid-glasses-2-color-ring-announcement-international-availability), press).
 Whether its events reach phone apps through CXR-L is unknown as of 2026-11-08.

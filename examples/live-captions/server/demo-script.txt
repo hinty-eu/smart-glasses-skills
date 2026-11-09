@@ -1,0 +1,11 @@
+# Demo captions for `node server.mjs --demo`. One caption per line, played word by word as partial results,
+# then sent as final. `{first|final}` shows `first` in the partial results and corrects it to `final` two words
+# later, the way streaming speech-to-text revises a word. Lines starting with # are ignored.
+Hi, thanks for joining. These captions come from a small demo server, not from a microphone.
+Each word arrives as a partial result, and the whole line is sent again as final when the sentence ends.
+Watch this word change: we can meet at {for|four} tomorrow, if that works for you.
+A short line.
+This one is deliberately long, so that every target has to wrap it over several lines and keep only the newest lines that fit on the display.
+Tap or press Enter to repeat the last line, swipe down to skip the rest of a sentence, and swipe up to hide the captions.
+Numbers and names are hard for speech recognition: call {Anna|Ana} on 555 0134 before 9:30.
+That is the end of the script. It starts again in a few seconds.

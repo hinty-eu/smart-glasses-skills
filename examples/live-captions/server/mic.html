@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Caption source: microphone</title>
+<style>
+  :root { color-scheme: dark; font-family: system-ui, sans-serif; }
+  body { margin: 0; padding: 24px; background: #111; color: #eee; max-width: 640px; }
+  h1 { font-size: 20px; margin: 0 0 16px; }
+  label { display: block; margin: 12px 0 4px; color: #aaa; font-size: 14px; }
+  input, button { font: inherit; padding: 10px 12px; border-radius: 8px; border: 1px solid #444; background: #1c1c1c; color: #eee; }
+  input { width: 12ch; text-transform: uppercase; letter-spacing: 0.1em; }
+  button { margin-top: 16px; background: #2563eb; border-color: #2563eb; cursor: pointer; }
+  #status { margin-top: 16px; color: #aaa; }
+  #text { margin-top: 12px; font-size: 22px; min-height: 2.6em; }
+  .partial { color: #9ca3af; }
+</style>
+</head>
+<body>
+<h1>Microphone source</h1>
+<p id="how"></p>
+<label for="room">Room code</label>
+<input id="room" autocomplete="off" maxlength="8">
+<label for="lang">Language (BCP 47)</label>
+<input id="lang" value="en-US" style="text-transform:none;letter-spacing:0">
+<div><button id="go" type="button">Start</button></div>
+<div id="status">Stopped</div>
+<div id="text"></div>
+<script type="module">
+// Two modes:
+//   default  - the browser's Web Speech API recognises speech and sends text: {"type":"source","text","final"}
+//   ?pcm=1   - sends raw 16 kHz s16le mono PCM as binary WebSocket frames to the server's --stt adapter
+const q = new URLSearchParams(location.search)
+const PCM = q.get('pcm') === '1'
+const $ = id => document.getElementById(id)
+$('room').value = q.get('room') || localStorage.getItem('captions.room') || ''
+$('how').textContent = PCM
+  ? 'Streams your microphone as 16 kHz PCM to the server, which runs the speech-to-text adapter.'
+  : 'Uses the browser speech recognition (Chrome or Safari). In Chrome the audio goes to a cloud service unless on-device recognition is installed.'
+let ws = null
+let running = false
+let stopAudio = null
+
+function status(s) { $('status').textContent = s }
+function show(text, partial) { $('text').innerHTML = ''; const d = document.createElement('div'); d.textContent = text; if (partial) d.className = 'partial'; $('text').append(d) }
+
+function connect(room) {
+  return new Promise((ok, fail) => {
+    const s = new WebSocket(location.origin.replace(/^http/, 'ws') + '/ws?room=' + encodeURIComponent(room))
+    s.binaryType = 'arraybuffer'
+    s.onopen = () => { s.send(JSON.stringify({ type: 'hello', target: PCM ? 'mic-pcm' : 'mic-webspeech' })); ok(s) }
+    s.onclose = e => { if (e.code === 4403) status('Wrong room code'); else if (running) status('Disconnected'); fail(e) }
+    s.onerror = () => {}
+  })
+}
+const send = m => ws && ws.readyState === 1 && ws.send(JSON.stringify(m))
+
+function startWebSpeech() {
+  const R = window.SpeechRecognition || window.webkitSpeechRecognition
+  if (!R) throw new Error('This browser has no Web Speech API. Use Chrome or Safari, or start the server with --stt.')
+  const rec = new R()
+  rec.lang = $('lang').value || 'en-US'
+  rec.continuous = true // Chrome on Android ignores this and stops after each sentence; onend restarts it
+  rec.interimResults = true
+  rec.onresult = e => {
+    let partial = ''
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const r = e.results[i]
+      if (r.isFinal) { send({ type: 'source', text: r[0].transcript, final: true }); show(r[0].transcript, false) }
+      else partial += r[0].transcript
+    }
+    if (partial.trim()) { send({ type: 'source', text: partial, final: false }); show(partial, true) }
+  }
+  rec.onerror = e => status('Speech error: ' + e.error)
+  rec.onend = () => { if (running) try { rec.start() } catch {} } // recognition stops after silence or about a minute
+  rec.start()
+  return () => { running = false; rec.stop() }
+}
+
+async function startPcm() {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } })
+  let ctx
+  try { ctx = new AudioContext({ sampleRate: 16000 }) } catch { ctx = new AudioContext() }
+  // Box-filter downsampling to 16 kHz in an AudioWorklet, 100 ms frames (1600 samples, 3200 bytes)
+  const worklet = `class P extends AudioWorkletProcessor {
+    constructor() { super(); this.r = sampleRate / 16000; this.p = 0; this.a = 0; this.c = 0; this.b = new Int16Array(1600); this.n = 0 }
+    process(inputs) { const ch = inputs[0][0]; if (!ch) return true
+      for (let i = 0; i < ch.length; i++) { this.a += ch[i]; this.c++; this.p += 1
+        if (this.p >= this.r) { this.p -= this.r; const v = Math.max(-1, Math.min(1, this.a / this.c)); this.a = 0; this.c = 0
+          this.b[this.n++] = v < 0 ? v * 32768 : v * 32767
+          if (this.n === 1600) { this.port.postMessage(this.b.buffer.slice(0)); this.n = 0 } } }
+      return true } }
+  registerProcessor('pcm16', P)`
+  await ctx.audioWorklet.addModule(URL.createObjectURL(new Blob([worklet], { type: 'text/javascript' })))
+  const node = new AudioWorkletNode(ctx, 'pcm16')
+  node.port.onmessage = e => { if (ws && ws.readyState === 1) ws.send(e.data) }
+  ctx.createMediaStreamSource(stream).connect(node)
+  return () => { running = false; stream.getTracks().forEach(t => t.stop()); ctx.close() }
+}
+
+$('go').onclick = async () => {
+  if (running) { stopAudio?.(); ws?.close(); $('go').textContent = 'Start'; status('Stopped'); return }
+  const room = $('room').value.toUpperCase().replace(/[^A-Z0-9]/g, '')
+  localStorage.setItem('captions.room', room)
+  try {
+    ws = await connect(room)
+    running = true
+    stopAudio = PCM ? await startPcm() : startWebSpeech()
+    $('go').textContent = 'Stop'
+    status(PCM ? 'Streaming audio to the server' : 'Listening')
+  } catch (e) {
+    running = false
+    if (e && e.message) status(e.message)
+  }
+}
+</script>
+</body>
+</html>

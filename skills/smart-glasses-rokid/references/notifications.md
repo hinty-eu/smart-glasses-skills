@@ -42,12 +42,19 @@ known in-place update on the glasses.
 
 - **Title**: 2-4 words. **Text**: one sentence, under about 80 characters. The glasses show green text on a narrow
   area; long text gets cut or scrolls (behaviour unverified).
-- One notification per message. Do not stack many; with the backlog replay above they all come back.
-- Cancel notifications that are out of date, so a replay does not show stale hints.
-- Use a regular (not silent, not ongoing) notification. Mirroring apps commonly skip ongoing and low-importance
-  notifications; whether Hi Rokid does is unverified, so test both.
+- One new notification per message, and cancel all but the last one or two. With the backlog replay above, anything
+  you leave posted can come back after the glasses go back on. Do not update one notification in place: whether Hi
+  Rokid forwards an update, replaces the old text or ignores it is undocumented, and Android sheds updates to an
+  existing notification above 5 per second per app.
+- A high-importance channel with sound and vibration off. Rokid's FAQ asks for pop-up notifications on the phone, and
+  on Android a pop-up (heads-up) notification needs `IMPORTANCE_HIGH`. Not ongoing: mirroring apps commonly skip
+  ongoing notifications; whether Hi Rokid does is unverified.
+- At most one every 2-3 seconds; the glasses show one at a time.
 - No emoji, no special symbols, plain sentences.
 - Tell the user to enable your app in Hi Rokid's notification settings, and offer a "send test notification" button.
+
+The same rules apply to every brand on this rung; the reasoning and sources are in the `smart-glasses` skill
+(`references/brands/notification-glasses.md`).
 
 ### Android
 
@@ -59,50 +66,64 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 
 private const val CHANNEL = "glasses_hints"
-private const val HINT_ID = 4201
+private var nextId = 4200
+private val posted = ArrayDeque<Int>()
 
 fun createChannel(ctx: Context) {
-    val ch = NotificationChannel(CHANNEL, "Hints on glasses", NotificationManager.IMPORTANCE_DEFAULT)
+    val ch = NotificationChannel(CHANNEL, "Hints on glasses", NotificationManager.IMPORTANCE_HIGH).apply {
+        setSound(null, null)                                 // pops up, but silent on the phone
+        enableVibration(false)
+    }
     ctx.getSystemService(NotificationManager::class.java).createNotificationChannel(ch)
 }
 
-/** Needs POST_NOTIFICATIONS on Android 13+. */
+/** Needs POST_NOTIFICATIONS on Android 13+. Call from the main thread. */
 fun postHint(ctx: Context, title: String, text: String) {
     val n = NotificationCompat.Builder(ctx, CHANNEL)
         .setSmallIcon(android.R.drawable.ic_dialog_info)   // use your own monochrome icon
         .setContentTitle(title.take(30))
         .setContentText(text.take(80))
         .setCategory(NotificationCompat.CATEGORY_MESSAGE)
-        .setOnlyAlertOnce(false)                            // each hint should alert
         .setTimeoutAfter(30_000)                            // stale hints disappear from the phone
         .setAutoCancel(true)
         .build()
-    NotificationManagerCompat.from(ctx).notify(HINT_ID, n)   // same id: the phone keeps only the latest
+    val nm = NotificationManagerCompat.from(ctx)
+    val id = nextId++                                       // a new post per hint, never an update
+    nm.notify(id, n)
+    posted.addLast(id)
+    while (posted.size > 2) nm.cancel(posted.removeFirst()) // a replay cannot bring back old hints
 }
 
-fun clearHint(ctx: Context) = NotificationManagerCompat.from(ctx).cancel(HINT_ID)
+fun clearHints(ctx: Context) {
+    val nm = NotificationManagerCompat.from(ctx)
+    posted.forEach { nm.cancel(it) }
+    posted.clear()
+}
 ```
-
-Reusing one notification id keeps the phone's shade clean. Whether Hi Rokid shows an update to the same id as a new
-notification, replaces it, or ignores it is unverified; test with two posts a few seconds apart.
 
 ### iOS
 
 ```swift
 import UserNotifications
 
-func postHint(title: String, body: String) {
+@MainActor private var hintIds: [String] = []
+
+@MainActor func postHint(title: String, body: String) {
     let content = UNMutableNotificationContent()
     content.title = String(title.prefix(30))
     content.body = String(body.prefix(80))
     content.sound = nil
-    // Same identifier replaces the previous request in Notification Center.
-    let request = UNNotificationRequest(identifier: "glasses-hint", content: content, trigger: nil)
-    UNUserNotificationCenter.current().add(request)
+    let id = UUID().uuidString                              // a new request per hint, never a replaced one
+    UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: id, content: content, trigger: nil))
+    hintIds.append(id)
+    if hintIds.count > 2 {
+        UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [hintIds.removeFirst()])
+    }
 }
 
-func clearHint() {
-    UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: ["glasses-hint"])
+@MainActor func clearHints() {
+    UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: hintIds)
+    hintIds.removeAll()
 }
 ```
 

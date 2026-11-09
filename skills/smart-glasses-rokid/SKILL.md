@@ -48,9 +48,10 @@ For an app that ordinary owners install next to Hi Rokid, **CXR-L is the only op
 In the display-text ladder of the `smart-glasses` skill, Rokid Glasses support rung 1 (**Vendor SDK**, CXR-L),
 rung 4 (**phone notification mirrored by the companion app**) and rung 5 (**voice in the ear**).
 
-A newer model, Rokid Glasses 2 (480x380, 25 degree field of view), goes on sale in China on 2026-11-11 with no global
-date ([Notebookcheck, 2026-10-28](https://www.notebookcheck.net/Rokid-Glasses-2-launch-with-upgraded-design-bigger-battery-and-Dolby-Audio-support.1435436.0.html)).
-Whether CXR-L 1.1.2 drives it is unverified.
+A newer model, Rokid Glasses 2 (480x380, 25 degree field of view), was announced in China on 2026-10-27 and goes on
+sale there on 2026-11-11, with no sale date outside China
+([Notebookcheck, 2026-10-28](https://www.notebookcheck.net/Rokid-Glasses-2-launch-with-upgraded-design-bigger-battery-and-Dolby-Audio-support.1435436.0.html),
+press). Whether CXR-L 1.1.2 drives it is unverified.
 
 ## Setup in brief
 
@@ -223,10 +224,11 @@ Summary of [display.md](references/display.md):
 
 With the shared caption server of the `smart-glasses-live-captions` skill, the Rokid client:
 
-- sends `{"type":"hello","target":"rokid","lines":3,"cols":22}` (the column count is an estimate for 24sp text,
-  unverified on hardware);
+- sends `{"type":"hello","target":"rokid","lines":3,"cols":22}` (3 lines of 24sp text, about 22 Latin characters
+  each: an estimate, unverified on hardware; `examples/live-captions` uses the same numbers);
 - on each `caption` message replaces the body text, keeps only the last lines that fit, and sends at most one
-  `customViewUpdate` every 250 ms (the newest partial result wins);
+  `customViewUpdate` every 250 ms (also an estimate; the newest partial result wins); a caption marked
+  `"repeat":true` is shown again, not appended a second time;
 - on `clear` sends empty strings;
 - maps shared actions (`repeat`, `skip`, `hide`) to buttons in the phone app, because glasses taps do not arrive.
 

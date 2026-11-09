@@ -19,8 +19,9 @@ This is the cross-brand summary. For depth (setup, full code, display JSON, audi
   China (`com.rokid.sprite.aiapp`) build.
 - Publishing to everyone today: yes, as your own app on Google Play or the App Store; the CXR-L docs describe no Rokid
   review, and the user approves you in Hi Rokid (as of 2026-11-08, [SDK overview](https://developerdoc.rokid.com/sdk?lang=zh)).
-  Android needs no app key or registration. iOS: the docs ask for a registered Rokid developer account plus bundle ID
-  and URL scheme; one community iOS project reports auth worked without registration (unverified either way).
+  Android needs no app key or registration. iOS: the CXR-L page "iOS: SDK import" (v1.2, 2026-09-08, re-read
+  2026-11-09) requires a registered Rokid developer account plus bundle ID and URL scheme; one community iOS project
+  reports auth worked without registration (unverified).
 - Test without hardware: no CXR-L simulator; fake the session. AIUI Studio's web simulator covers AIUI agents only.
 - Official agent skill: none for CXR-L. For AIUI agents on the glasses: `npx skills add yodaos-project/aiui`.
 

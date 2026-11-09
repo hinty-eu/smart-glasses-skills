@@ -1,15 +1,22 @@
 /**
  * Live captions on Even Realities G2 (Even Hub plugin).
  *
- * The plugin only displays. Captions come from the example server (../server): WebSocket first, GET /latest polling
- * when the WebSocket does not come up in the Even WebView. The room code and server address are typed on the
+ * By default the plugin only displays. Captions come from the example server (../server): WebSocket first, GET /latest
+ * polling when the WebSocket does not come up in the Even WebView. The room code and server address are typed on the
  * phone page (the plugin's WebView page inside the Even app), or passed as ?server=...&room=... in the simulator.
+ *
+ * Optional phone-microphone mode (checkbox on the phone page, or ?mic=phone): the plugin opens the phone microphone
+ * through the Even app (audioControl with AudioInputSource.Phone, "phone-microphone" in app.json) and sends every PCM
+ * frame (16 kHz, signed 16-bit little-endian, mono) as a binary WebSocket frame. The server passes binary frames to
+ * its --stt adapter, which holds the provider key; captions come back on the same socket. The SDK itself has no
+ * speech-to-text and no second app is needed. Audio needs the WebSocket: over HTTP polling the mic stays off.
  *
  * Glasses input (temple touchpads or the R1 ring) -> shared actions:
  *   tap = repeat, swipe down = skip, swipe up or press and hold = hide, double tap = exit (system dialog).
  *   The system menu has Repeat, Skip, Hide.
  */
 import {
+  AudioInputSource,
   DeviceConnectType,
   OsEventTypeList,
   waitForEvenAppBridge,
@@ -71,7 +78,9 @@ async function main() {
   const cfg = {
     server: (q.get('server') || (await kvGet('captions.server')) || (import.meta.env.VITE_SERVER_URL as string | undefined) || '').replace(/\/+$/, ''),
     room: normCode(q.get('room') || (await kvGet('captions.room'))),
+    mic: (q.get('mic') || (await kvGet('captions.mic'))) === 'phone', // off unless the wearer turns it on
   }
+  const mic = { on: false, busy: false, stalled: false, retries: 0, frames: 0, bytes: 0, lastAt: 0 }
 
   // ------------------------------------------------------------ render
 
@@ -98,7 +107,15 @@ async function main() {
     else if (!live) message = 'Waiting for speech...'
     const right =
       flash ||
-      (dropped ? 'some characters not shown' : status === 'live' ? `● ${cfg.room}${link.mode === 'http' ? ' HTTP' : ''}` : status === 'offline' ? 'offline' : '')
+      (dropped
+        ? 'some characters not shown'
+        : mic.stalled
+          ? 'mic: no audio'
+          : status === 'live'
+            ? `● ${cfg.room}${link.mode === 'http' ? ' HTTP' : ''}${mic.on ? ' MIC' : ''}`
+            : status === 'offline'
+              ? 'offline'
+              : '')
     const frame: Frame = {
       status: leftRight('Live captions', right, inner(STATUS).w),
       history: message ? '' : block(older.flatMap(t => fitLines(t, hw.w)), hw.lines, hw.w, 'bottom'),
@@ -135,6 +152,7 @@ async function main() {
         status = s
         render()
         phoneStatus()
+        void syncMic()
       },
       open: l => {
         const lines = inner(HISTORY).lines + inner(LIVE).lines
@@ -153,6 +171,72 @@ async function main() {
     Object.assign(state, createState())
     link.start(cfg.server, cfg.room)
   }
+
+  // ------------------------------------------------------------ optional phone microphone -> server STT
+
+  /** Mic on only while wanted, connected and on the WebSocket (binary frames cannot go over HTTP polling) */
+  const micWanted = () => !!bridge && cfg.mic && status === 'live' && link.mode === 'ws'
+  let micRetry: ReturnType<typeof setTimeout> | undefined
+  async function syncMic() {
+    const want = micWanted()
+    if (!want) {
+      mic.retries = 0
+      mic.stalled = false
+    }
+    if (!bridge || mic.busy || want === mic.on) return
+    mic.busy = true
+    clearTimeout(micRetry)
+    try {
+      // The docs say the phone source needs no startup page (the glasses source, "g2-microphone", does). Simulator
+      // 0.9.5 still refuses it until the page exists, and the Even app can refuse until the plugin reopens (#35),
+      // so a refusal is retried a few times before the glasses say "mic: no audio".
+      let ok = true
+      if (want) ok = await within(bridge.audioControl(true, AudioInputSource.Phone), 3000, false)
+      else await within(bridge.audioControl(false), 3000, false)
+      mic.on = want && ok
+      mic.lastAt = Date.now()
+      if (want && !ok) {
+        if (mic.retries++ < 5) micRetry = setTimeout(() => void syncMic(), 1500)
+        else mic.stalled = true
+      } else {
+        mic.retries = 0
+        mic.stalled = false
+      }
+      log(want ? (ok ? 'mic on (phone)' : 'mic refused') : 'mic off')
+    } finally {
+      mic.busy = false
+    }
+    render()
+    phoneStatus()
+    if (micWanted() !== want) void syncMic() // the wish changed while the call was in flight
+  }
+
+  /** One PCM frame from the Even app: forward it as is, drop it when the socket is backed up */
+  function onAudio(pcm: Uint8Array) {
+    if (!mic.on) return
+    mic.lastAt = Date.now()
+    if (mic.stalled) {
+      mic.stalled = false
+      render()
+    }
+    const ws = link.ws
+    if (!ws || ws.readyState !== WebSocket.OPEN || ws.bufferedAmount > 64000) return // about 2 s queued: drop
+    ws.send(pcm.slice()) // a copy: the SDK may reuse the buffer
+    mic.frames++
+    mic.bytes += pcm.length
+    if (mic.frames === 1 || mic.frames % 50 === 0) log(`mic sent ${mic.frames} frames ${mic.bytes} bytes`)
+  }
+
+  // The Even app can stop delivering audio without an error (everything-evenhub #35): say so on the glasses and ask
+  // for the microphone again, at most every 4 s
+  setInterval(() => {
+    if (!mic.on || mic.stalled || Date.now() - mic.lastAt < 4000) return
+    mic.stalled = true
+    log('mic stalled')
+    render()
+    mic.on = false // the next sync calls audioControl(true) again
+    void syncMic()
+  }, 2000)
 
   function act(action: Action) {
     if (!link.isLive()) return showFlash('not connected')
@@ -185,7 +269,7 @@ async function main() {
   ]
 
   function onEvent(ev: EvenHubEvent) {
-    if (ev.audioEvent) return
+    if (ev.audioEvent) return onAudio(ev.audioEvent.audioPcm)
     if (ev.menuItemClickEvent) {
       const id = ev.menuItemClickEvent.itemID
       log('menu', id)
@@ -216,6 +300,9 @@ async function main() {
     }
     if (has(OsEventTypeList.SYSTEM_EXIT_EVENT) || has(OsEventTypeList.ABNORMAL_EXIT_EVENT)) {
       log('exit')
+      if (mic.on && bridge) void bridge.audioControl(false)
+      mic.on = false
+      cfg.mic = false
       link.stop()
       glasses.stop()
       return
@@ -224,6 +311,7 @@ async function main() {
       if (exitArmed()) return // events are inverted while the exit dialog is up
       link.wake()
       glasses.repaint()
+      void syncMic()
       return
     }
     if (has(OsEventTypeList.FOREGROUND_EXIT_EVENT)) {
@@ -253,13 +341,21 @@ async function main() {
   const $ = (id: string) => document.getElementById(id) as HTMLElement
   const serverInput = $('server') as HTMLInputElement
   const roomInput = $('room') as HTMLInputElement
+  const micInput = $('mic') as HTMLInputElement
   serverInput.value = cfg.server
   roomInput.value = cfg.room
+  micInput.checked = cfg.mic
   $('noBridge').hidden = !!bridge
   function phoneStatus() {
-    $('status').textContent =
-      { idle: 'Enter the server and room code', connecting: 'Connecting...', live: link.mode === 'http' ? 'Connected (HTTP polling)' : 'Connected', offline: 'No connection, retrying', 'wrong-code': 'Wrong room code' }[status]
+    const text = { idle: 'Enter the server and room code', connecting: 'Connecting...', live: link.mode === 'http' ? 'Connected (HTTP polling)' : 'Connected', offline: 'No connection, retrying', 'wrong-code': 'Wrong room code' }[status]
+    const micText = !cfg.mic ? '' : mic.on ? '. Phone microphone on.' : link.mode === 'http' ? '. The microphone needs the WebSocket.' : mic.stalled ? '. Microphone not delivering audio.' : ''
+    $('status').textContent = text + micText
   }
+  micInput.addEventListener('change', () => {
+    cfg.mic = micInput.checked
+    kvSet('captions.mic', cfg.mic ? 'phone' : '')
+    void syncMic()
+  })
   function mirror(f: Frame) {
     $('mirror').textContent = BOXES.map(b => f[b.name] || '').join('\n')
   }

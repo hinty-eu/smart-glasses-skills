@@ -8,8 +8,12 @@
   "permissions": [
     {
       "name": "network",
-      "desc": "Connects to your caption server to receive caption text and send the repeat, skip and hide commands. The plugin does not use the microphone.",
+      "desc": "Connects to your caption server to receive caption text and send the repeat, skip and hide commands. With the optional microphone mode on, it also streams microphone audio to that server.",
       "whitelist": ["https://captions.example.com", "wss://captions.example.com"]
+    },
+    {
+      "name": "phone-microphone",
+      "desc": "Optional, off by default: when you turn on the microphone mode on the phone page, audio from the phone microphone is streamed to your caption server for speech-to-text. Nothing is recorded or stored by the plugin."
     }
   ],
   "supported_languages": ["en"]

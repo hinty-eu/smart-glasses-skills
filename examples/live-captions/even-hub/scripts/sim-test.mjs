@@ -3,10 +3,13 @@
 // Starts the example server (--demo) on PORT_SERVER (default 8797), builds the plugin in sim mode, serves it with
 // vite preview on 5180, starts the simulator with --automation-port 9898, then checks what the glasses show (from the
 // "[captions] frame ..." console lines of the sim build) and that gestures reach the server as actions.
-// Then repeats the core checks with ?http=1 (GET /latest polling instead of the WebSocket).
+// Then repeats the core checks with ?http=1 (GET /latest polling instead of the WebSocket), and runs the optional
+// phone-microphone mode (?mic=phone) against a small sink server that counts the binary PCM frames it receives
+// (the simulator feeds the PC's default audio input; skip that pass with SKIP_MIC=1 on a machine without one).
 // Results and glasses screenshots go to results/ (git-ignored). Everything it starts is stopped at the end.
 import { spawn, spawnSync } from 'node:child_process'
 import { mkdirSync, writeFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import { join, resolve } from 'node:path'
 
 const root = resolve(import.meta.dirname, '..')
@@ -176,6 +179,32 @@ try {
     return (await waitObserved(m => m.repeat === true)).text
   })
   obs.close()
+
+  // ---- optional phone-microphone pass: the plugin sends PCM as binary frames; a sink stands in for an --stt server
+  if (!process.env.SKIP_MIC) {
+    const { WebSocketServer } = createRequire(join(root, '../server/package.json'))('ws') // the server's own dependency
+    const SINK = PORT + 1
+    const got = { frames: 0, bytes: 0, odd: 0 }
+    const sink = new WebSocketServer({ port: SINK, host: '127.0.0.1' })
+    sink.on('connection', ws => {
+      ws.send(JSON.stringify({ type: 'caption', seq: 1, text: 'Microphone test', final: true }))
+      ws.on('message', (data, isBinary) => {
+        if (!isBinary) return
+        got.frames++
+        got.bytes += data.length
+        if (data.length % 2) got.odd++ // s16le frames have an even length
+      })
+    })
+    await startSim(`http://127.0.0.1:5180/?server=${encodeURIComponent(`http://127.0.0.1:${SINK}`)}&room=${ROOM}&mic=phone`)
+    await check('[mic] audioControl opens the phone microphone', () => waitLog(/\[captions\] mic on \(phone\)/, 20000))
+    await check('[mic] PCM frames leave the plugin', () => waitLog(/\[captions\] mic sent \d+ frames/, 10000))
+    await check('[mic] the server receives binary 16-bit PCM frames', async () => {
+      await sleep(3000)
+      if (!got.frames || got.odd) throw new Error(JSON.stringify(got))
+      return `${got.frames} frames, ${got.bytes} bytes in about ${(got.bytes / 32000).toFixed(1)} s of audio`
+    })
+    sink.close()
+  }
 } catch (e) {
   step('run', false, e.message)
 } finally {

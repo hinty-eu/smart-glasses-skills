@@ -142,7 +142,8 @@ Halo on iOS already connected to the system may not advertise: look it up with
   that text to an image where the SDK allows, or keep that language on the phone.
 - **Right-to-left text reversed.** Vuzix notifications before SDK 1.9 ([android #2](https://github.com/Vuzix/ultralite-sdk-android/issues/2));
   Rokid RTL is unknown ([rokid/community #20](https://github.com/rokid/community/issues/20)). Test before you promise RTL.
-- **Cut at the end.** Hard limits: Even 1000 characters on create, 2000 on upgrade, and the simulator caps at 999 bytes;
+- **Cut at the end, or not updated at all.** Hard limits: Even 1000 characters on create, 2000 on upgrade, and
+  simulator 0.9.5 rejects (returns `false`) a rebuild or upgrade over about 1000 UTF-8 bytes (our run, 2026-11-09);
   more than 7 Vuzix canvas texts overwrite older ones; Rokid's visible area is smaller than its 480x640 Android display.
   No brand scrolls live text for you ([#45](https://github.com/even-realities/everything-evenhub/issues/45)): keep the
   tail that fits yourself.

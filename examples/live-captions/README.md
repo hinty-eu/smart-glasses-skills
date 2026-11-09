@@ -36,7 +36,7 @@ Nothing in this folder has run on glasses yet.
 |---|---|---|---|---|---|
 | Server | `server/` | - | ran locally (Node 22) | 2026-11-08 | `--demo` stream with `check.mjs`; actions, `/latest`, `POST /action`, `POST /source`, wrong code; `--stt deepgram` with a WAV on stdin and with `/mic?pcm=1` in Chromium (fake microphone) |
 | Web page | `web-glasses/` | 2 | `browser` | 2026-11-08, buttons 2026-11-09 | headless Chromium at 600x600 and 390x300: entry form, WebSocket, `?http=1` polling, Back, wrong code, lines fit; on 2026-11-09 with `--enable-spatial-navigation`: arrows move focus between the buttons, Enter presses the focused one once, a repeat adds no duplicate line, `?buttons=0` maps keys directly; `node fit.test.mjs`. Not run in the Meta simulator or on glasses |
-| Even Realities G2 | `even-hub/` | 1 | `simulator` | 2026-11-08 | official Even Hub simulator 0.9.5 (npm; Even's simulator page still names v0.9.3) through its automation API, 12 of 12 checks (`npm run test:sim`): captions over WebSocket and over HTTP polling, tap, swipes, menu, double tap. `evenhub pack` accepts `app.json` |
+| Even Realities G2 | `even-hub/` | 1 | `simulator` | 2026-11-09 | official Even Hub simulator 0.9.5 (npm; Even's simulator page still names v0.9.3) through its automation API, 15 of 15 checks (`npm run test:sim`): captions over WebSocket and over HTTP polling, tap, swipes, menu, double tap, and the optional phone-microphone mode (PCM frames reach a sink server as binary WebSocket frames). `evenhub pack` accepts `app.json` |
 | Android (Rokid, Vuzix, Meta, USB-C, notification, voice) | `android/` | 1, 3, 4, 5 | see `android/README.md` | 2026-11-08 | written in parallel against this protocol |
 | iOS (Vuzix, external display, notification, voice) | `ios/` | 1, 3, 4, 5 | `compiles` (CI, unsigned) | 2026-11-09 | builds on macOS in the `examples` workflow |
 
@@ -91,7 +91,7 @@ Optional, added by this server and used by the targets in this folder:
 | `"recent": [{"seq","text"}]` in `GET /latest` | the last 20 final lines, so a polling client can rebuild the screen after missing messages |
 | `POST /action?room=CODE` with `{"type":"action","action":"skip"}` | actions when only HTTP works |
 | `POST /source?room=CODE` with `{"text":"...","final":true}` | inject text with curl or from another process |
-| binary WebSocket frames | 16 kHz, 16-bit little-endian, mono PCM for the `--stt` adapter (from `/mic?pcm=1` or a glasses microphone) |
+| binary WebSocket frames | 16 kHz, 16-bit little-endian, mono PCM for the `--stt` adapter (from `/mic?pcm=1`, the Even Hub plugin's phone-microphone mode, or a glasses microphone); ignored in `--demo` and `--browser-mic` mode |
 | `GET /health` | `{"ok":true,"mode":"demo","clients":1}` without a room code |
 | `GET /` and other paths | the files of `web-glasses/`, so a phone or laptop on the same network can open the captions page |
 
@@ -155,19 +155,32 @@ cd even-hub && npm install
 cp .env.example .env               # optional: default server baked into the build
 npm run dev                        # Vite on :5173
 npx evenhub-simulator "http://localhost:5173/?server=http://localhost:8787&room=CODE"
-npm run test:sim                   # Node 22+: starts its own server, builds, runs the simulator, 12 checks
+npm run test:sim                   # Node 22+: starts its own server, builds, runs the simulator, 15 checks
 ```
 
 - The plugin imports `../web-glasses/fit.js` and `link.js` (the same caption state, word wrap and connection code as
   the web target). Copy those two files along if you move the folder.
+- **Optional phone-microphone mode** (off by default): tick "Send the phone microphone" on the plugin's phone page,
+  or add `&mic=phone` to the simulator URL, and start the server with `--stt NAME`. The plugin opens the phone
+  microphone through the Even app (`audioControl(true, AudioInputSource.Phone)`, permission `phone-microphone` in
+  `app.json`) and sends each PCM frame (16 kHz, s16le, mono) as a binary WebSocket frame; the server feeds them to its
+  STT adapter, which holds the key, and the captions come back on the same socket. No second app is involved. It
+  needs the WebSocket (over HTTP polling the microphone stays off), and the glasses show "mic: no audio" when frames
+  stop. For the wearer's own voice, switch to `AudioInputSource.Glasses` and declare `g2-microphone` instead.
+  Simulator 0.9.5 accepts the phone source only after the startup page exists and feeds the PC's default microphone
+  tagged as `glasses` (our run, 2026-11-09); `SKIP_MIC=1 npm run test:sim` skips that pass on a machine without one.
+- Text updates send only `containerID`, `containerName` and `content`, which replaces the whole text, and every
+  container stays under 999 UTF-8 bytes (simulator 0.9.5 rejects more, whatever the character count).
 - On real glasses: sideload with `npx evenhub qr --url http://YOUR-LAN-IP:5173` (debug only), or build and pack:
   put your server's exact `https://` and `wss://` origins in `app.json` > `permissions` > `network` > `whitelist`
   (no wildcards; the Even app blocks anything else), set `VITE_SERVER_URL`, then `npm run build && npm run pack`.
-  The server must also answer CORS, which this one does. Never commit the `.ehpk` or `node_modules`.
+  The server must also answer CORS, which this one does. Never commit the `.ehpk` or `node_modules`. Store review
+  wants a privacy policy that covers every permission: cover `phone-microphone`, or delete that entry and the
+  microphone code if you do not ship the mode.
 - The wearer types the server and room code on the plugin's phone page in the Even app. Glasses input: tap = repeat,
   swipe down = skip, swipe up or hold = hide, double tap = exit dialog; the system menu has Repeat, Skip, Hide.
 - What the simulator does not show: BLE timing, the real font rendering and brightness levels, the R1 ring, WebView
-  suspension when the phone locks. The official skill covers the platform:
+  suspension when the phone locks, permissions, and the real phone microphone path. The official skill covers the platform:
   `npx skills add even-realities/everything-evenhub`.
 
 ## Run the Android and iOS targets

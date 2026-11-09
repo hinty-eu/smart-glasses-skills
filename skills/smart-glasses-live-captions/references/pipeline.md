@@ -32,7 +32,7 @@ wearer to put it on the table or hold it. A clip-on or USB-C microphone on the p
 
 | Glasses | How to get audio | Format | Source |
 |---|---|---|---|
-| Even Realities G2 | `bridge.audioControl(true, AudioInputSource.Glasses)` (or `.Phone`); frames arrive in `onEvenHubEvent` as `audioEvent.audioPcm`; needs the `g2-microphone` or `phone-microphone` permission in `app.json`, and a page created first | PCM 16 kHz, s16le, mono; the simulator sends 100 ms per event | https://hub.evenrealities.com/docs (SDK 0.0.16 types) |
+| Even Realities G2 | `bridge.audioControl(true, AudioInputSource.Glasses)` (or `.Phone`); frames arrive in `onEvenHubEvent` as `audioEvent.audioPcm`; needs the `g2-microphone` or `phone-microphone` permission in `app.json`; the glasses source also needs the page created first, the phone source does not; the plugin captures either itself, no second app | PCM 16 kHz, s16le, mono; the simulator sends 100 ms per event | https://hub.evenrealities.com/docs (SDK 0.0.16 types) |
 | Meta Ray-Ban Display Web App | none | - | https://wearables.developer.meta.com/docs/develop/webapps |
 | Meta glasses with DAT | the glasses as a Bluetooth headset (HFP); the Speech capability (beta, dev and beta channels) returns text on the glasses side | HFP audio, or text | https://wearables.developer.meta.com/docs/develop/dat/knownissues/ |
 | Rokid Glasses (CXR-L from the phone) | `startAudioStream()`, callback `onAudioReceived(ByteArray)`, needs the microphone scope approved in the Hi Rokid app | PCM 16 kHz, 16-bit, mono (CXR-L 1.1.2 changelog, 2026-09-08, on Rokid's SDK overview, read 2026-11-08) | https://developerdoc.rokid.com/sdk?lang=zh |

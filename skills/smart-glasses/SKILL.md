@@ -1,6 +1,6 @@
 ---
 name: smart-glasses
-description: Build apps for smart glasses across brands - Even Realities G2 (Even Hub), Meta Ray-Ban Display (Wearables Device Access Toolkit and Web Apps), Rokid Glasses, Vuzix Z100, audio-only glasses such as Ray-Ban Meta and Oakley Meta, USB-C display glasses such as XREAL and VITURE, and standalone Android glasses such as RayNeo X3 Pro, with pointers for Android XR, MentraOS, Brilliant Labs and Snap Spectacles. Use when the user wants to choose which glasses to target, show text or a HUD on glasses, fall back when there is no SDK, handle tap, ring or touchpad input, route audio to or from glasses, test a glasses app without the hardware, or find out whether a glasses app can be published today. Not for VR or MR headsets such as Meta Quest or Apple Vision Pro, and not for regular phone UI.
+description: Build apps for smart glasses and AI glasses across brands - Even Realities G2 (Even Hub), Meta Ray-Ban Display (Wearables Device Access Toolkit and Web Apps), Rokid Glasses, Vuzix Z100, audio-only glasses such as Ray-Ban Meta and Oakley Meta, USB-C display glasses such as XREAL and VITURE, and standalone Android glasses such as RayNeo X3 Pro, with pointers for Android XR, MentraOS, Brilliant Labs and Snap Spectacles. Use when the user wants to choose which glasses to build for or ship on, show text or a HUD on glasses, fall back when there is no SDK, handle tap, ring or touchpad input, play speech or hints through glasses speakers, capture audio, test a glasses app without owning the glasses, or check whether a glasses app can be published today. Use it even for quick questions about glasses platforms, because SDKs and store rules change monthly and model memory is often out of date. Not for VR or MR headsets such as Meta Quest or Apple Vision Pro, and not for regular phone UI.
 license: Apache-2.0
 metadata:
   version: "0.1.0"
@@ -19,7 +19,9 @@ Nothing in this skill has been tested on real glasses yet. Brand files say how e
 ## How to work with this skill
 
 1. **Pin down the target.** If the user has not named the glasses, or named several, read
-   [references/choose-target.md](references/choose-target.md) and ask only the questions it lists.
+   [references/choose-target.md](references/choose-target.md) and ask only the questions it lists. When you recommend
+   glasses, go through each option in choose-target.md's "ship this month" list and give one line on why it is in or
+   out.
 2. **Read the brand file** for each target in `references/brands/` (table below). It tells you how text gets onto the
    display, what input and audio exist, how to test, and whether you can publish today.
 3. **Pick the rung of the display-text ladder** (next section). If the app must work on more than one brand, build

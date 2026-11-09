@@ -27,14 +27,14 @@ Rokid's CXR-L documentation is a JavaScript portal; its entry point is https://d
 
 - Says you must build an app that runs on the glasses just to show text, or that the phone app should talk to the glasses over raw Bluetooth without Rokid's companion app.
 - Recommends CXR-M as the SDK for this app. Official: CXR-M is available only through Rokid's business team and "is not publicly available on the developer site" (https://developerdoc.rokid.com/sdk?lang=zh, checked 2026-11-08).
-- Says the SDK is on Maven Central.
+- Says the SDK is on Maven Central. (`mavenCentral()` for other dependencies is fine.)
 - Says touchpad taps on the glasses arrive in the phone app's custom view.
-- Presents API names that do not exist as Rokid API. Real names include `CxrSessionManager.requestAuthorization`, `CxrSessionManager.isRokidAppInstalled`, `CxrSessionManager.checkRokidAppCompatibility`, `create(config)`, `connect(token)`, `close()`, `customViewUpdate`, `ISessionLifecycleCbk`, `onSessionPaused`, `onSessionResumed`, `startAudioStream`. Code marked as unverified or pseudo-code is not an error.
+- Presents API names that do not exist as Rokid API. Real names include `CxrSessionManager.getInstance`, `CxrSessionManager.requestAuthorization`, `parseAuthorizationResult`, `CxrSessionManager.isRokidAppInstalled`, `CxrSessionManager.checkRokidAppCompatibility`, `RokidAppStatus.Compatible`, `GlassPermission.MEDIA`, `SessionConfig`, `AiInterceptMode.ALLOW_WITH_PAUSE`, `SessionTimeouts`, `create(config)`, `connect(token)`, `close()`, `customViewUpdate`, `addLifecycleCallback`, `removeLifecycleCallback`, `ISessionLifecycleCbk`, `onConnectResult`, `onSessionPaused`, `onSessionResumed`, `onSessionTerminating`, `onSessionClosed`, `PausedReason`, `CloseReason.LINK_LOST`, `CloseReason.CHAIN_TORN`, `SessionState.Started`, `SessionErrorCode.NOT_AUTHENTICATED`, `SessionErrorCode.TOKEN_EXPIRED`, `startAudioStream` (verified against the client-l 1.1.2 public signatures on 2026-11-09). A name missing from this list is not automatically invented; only count it as invented if it contradicts the official docs. Code marked as unverified or pseudo-code is not an error.
 - Pastes a long block that it says is copied from Rokid's samples or docs.
 
 ## Scoring
 
-List each item with its score (1, 0.5 or 0) and one short reason, then list any critical error you found. Compute the percent: points earned divided by 13, times 100. Report the percent.
+List each item with its score (1, 0.5 or 0) and one short reason, then list any critical error you found. If you mark a critical error, name it and quote the sentence from the answer. Compute the percent: points earned divided by 13, times 100. Report the percent.
 
 PASS if the percent is at least 70 and no critical error is present.
 FAIL if the percent is below 70 or any critical error is present.

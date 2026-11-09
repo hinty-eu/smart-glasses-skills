@@ -80,6 +80,9 @@ dependencies { implementation("com.rokid.cxr:client-l:1.1.2") } // pin it, never
 - The user needs Hi Rokid installed, signed in, and the glasses connected **inside Hi Rokid** (pairing in Android
   Bluetooth settings is not enough). client-l 1.1.2 checks for Hi Rokid versionCode 10110000 (1.11.0) or newer.
 - No app key, client secret or Rokid registration is documented for Android (as of 2026-11-08).
+- Rokid publishes no licence for the SDK: none in the docs, none in the client-l 1.1.2 POM (checked 2026-11-09).
+  Depend on the Maven artifact and do not copy SDK files,
+  `.aar` contents or Rokid's sample code into your repository; write your own calls against the documented API.
 
 ## The core flow
 

@@ -10,6 +10,10 @@
  *   textContainerUpgrade, which does not flicker; rebuildPageContainer only to recover a lost page.
  * - One write at a time: concurrent bridge calls are reported to break the BLE link. Debounce 120 ms like the
  *   official asr template, then send only the containers whose text changed.
+ * - textContainerUpgrade with only containerID, containerName and content replaces the whole text (as in the official
+ *   templates). contentOffset/contentLength are for partial updates, their unit is undocumented and simulator 0.9.5
+ *   ignores them, so we never send them.
+ * - Every container stays under 999 UTF-8 bytes: the simulator rejects more, whatever the character count.
  */
 import {
   CreateStartUpPageContainer,
@@ -21,7 +25,7 @@ import {
   TextContainerUpgrade,
   type EvenAppBridge,
 } from '@evenrealities/even_hub_sdk'
-import { LINE_H, utf8Len } from './text'
+import { LINE_H, tailBytes } from './text'
 
 export interface Box {
   id: number
@@ -138,7 +142,7 @@ export class Glasses {
           containerName: b.name,
           isEventCapture: b.capture ? 1 : 0,
           textColor: b.color,
-          content: (f[b.name] || '').slice(0, 999), // create and rebuild accept up to 1000 characters
+          content: tailBytes(f[b.name] || ''), // create and rebuild: 1000 characters, and under 1000 bytes in the simulator
         }),
     )
     const menuObject = new MenuContainerProperty({ menuItems: MENU.map(m => new MenuItemProperty({ itemID: m.id, itemName: m.label })) })
@@ -184,10 +188,7 @@ export class Glasses {
             new TextContainerUpgrade({
               containerID: b.id,
               containerName: b.name, // must match the container's name and ID, or the call silently does nothing
-              content: next.slice(0, 1999),
-              // replace the whole old text: offset 0, length in bytes of the longer of old and new
-              contentOffset: 0,
-              contentLength: Math.max(utf8Len(prev), utf8Len(next)),
+              content: tailBytes(next), // no contentOffset/contentLength: the whole text is replaced
             }),
           ),
           CALL_TIMEOUT_MS,

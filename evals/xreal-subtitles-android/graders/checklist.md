@@ -30,7 +30,7 @@ You are grading an answer to a developer who wants an Android app to show subtit
 
 ## Scoring
 
-List each item with its score (1, 0.5 or 0) and one short reason, then list any critical error you found. Compute the percent: points earned divided by 13, times 100. Report the percent.
+List each item with its score (1, 0.5 or 0) and one short reason, then list any critical error you found. If you mark a critical error, name it and quote the sentence from the answer. Compute the percent: points earned divided by 13, times 100. Report the percent.
 
 PASS if the percent is at least 70 and no critical error is present.
 FAIL if the percent is below 70 or any critical error is present.

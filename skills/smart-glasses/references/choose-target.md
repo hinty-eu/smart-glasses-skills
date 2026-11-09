@@ -34,8 +34,8 @@ Must the wearer read text?
       Android -> rung 1: Rokid CXR-L, Vuzix Ultralite, Even Hub plugin (store review, free apps only)
                  rung 3: USB-C display glasses with Presentation
                  rung 4: notifications for every other brand that mirrors them
-      iOS     -> rung 1: Even Hub plugin, Vuzix Ultralite iOS; Rokid iOS (private pods, docs ask for a Rokid
-                 developer account; unverified)
+      iOS     -> rung 1: Even Hub plugin, Vuzix Ultralite iOS; Rokid iOS SDK (needs a registered Rokid
+                 developer account with your bundle ID, see the teleprompter example below)
                  rung 3: external display scene (iPhone 15 or newer with USB-C video, not 16e, 17e, Air)
                  rung 4: notifications (ANCS)
       none    -> INMO Air3 app on Google Play (global version), or a Brilliant Labs Halo host app
@@ -62,7 +62,7 @@ As of 2026-11-08. "Public" means anyone can install it from a store today.
 | Target | Rungs | Phones | Glasses mic for you | Input reaching your app | Public today | Hardware price (press) | Test without hardware |
 |---|---|---|---|---|---|---|---|
 | [Even Realities G2](brands/even-g2.md) | 1, 4 | Android, iOS (Even app WebView) | Yes, 16 kHz PCM | Taps, swipes, long press, R1 ring | Yes, Even Hub review, free only | USD 599, R1 ring USD 249 | Official simulator |
-| [Rokid Glasses](brands/rokid.md) | 1, 4, 5 | Android; iOS (unverified) | Yes, 16 kHz PCM | Lifecycle events only in custom views | Yes, your own listing | USD 499 at 2025 launch | Fake the session |
+| [Rokid Glasses](brands/rokid.md) | 1, 4, 5 | Android; iOS (Rokid developer account) | Yes, 16 kHz PCM | Lifecycle events only in custom views | Yes, your own listing | USD 499 at 2025 launch | Fake the session |
 | [Vuzix Z100](brands/vuzix-z100.md) | 1, 4 | Android 12+, iOS 14+ | None | 1-3 frame taps | Yes, your own listing | USD 499 at launch (2024); sale unclear | Fake the SDK |
 | [Meta Ray-Ban Display](brands/meta-display.md) | 1, 2, 5 | Android 10+, iOS 17.2+; Web Apps on the glasses | DAT HFP ends Display; Web Apps none | Buttons and focus (band, touchpad); Web: arrow keys, Enter | No: Beta testers, Developer Mode | USD 799 with Neural Band (US) | MockDeviceKit, Chrome extension |
 | [Ray-Ban Meta, Oakley Meta](brands/meta-audio-glasses.md) | 5 | Any (Bluetooth) | HFP, wearer only | Media keys (unverified) | Yes, plain Bluetooth app | Gen 3 USD 449, Gen 2 USD 379 | Any Bluetooth headset |
@@ -84,22 +84,72 @@ and deal coverage such as [Notebookcheck](https://www.notebookcheck.com/Viture-L
 
 ## If you need to ship to the public this month
 
-As of 2026-11-08 (November 2026):
+As of 2026-11-09 (November 2026). When you recommend glasses, go through every row and give the developer one line
+on why that option is in or out for their brief. Do not skip the "No" rows: saying why Meta or MentraOS is out is
+part of the answer.
 
-- **Ships without any vendor gate:** an ordinary Android or iOS app with rung 3 (USB-C display glasses), rung 4
-  (notifications mirrored by Even, Rokid, Vuzix, RayNeo, INMO Go3, Halliday and Android XR) and rung 5 (voice on
-  Ray-Ban Meta and any Bluetooth audio). Add rung 1 for Rokid (CXR-L, no Rokid review in the docs) and Vuzix Z100
-  (no Vuzix store or review). Store review time is the only delay.
-- **Possible, plan for review:** an Even Hub plugin. Manual review, free apps only, review time not published, no
-  rollback. Submit early in the month and expect a second round; read the review checklist in
-  [brands/even-g2.md](brands/even-g2.md#publishing-and-distribution).
-- **Possible, few users yet:** Android XR audio glasses through Google Play; Warby Parker pre-orders open on
-  2026-11-12 with delivery in the holiday season ([9to5Google, 2026-11-05](https://9to5google.com/2026/11/05/android-xr-glasses-pre-order/)).
-- **Not possible this month:** Meta DAT and Meta Web Apps for the public ("Publishing DAT integrations to all users
-  isn't open yet", Meta staff, 2026-11-05), MentraOS miniapps (no distribution), Android XR display glasses (not on
-  sale, publishing "stay tuned"), Snap Specs (not shipping yet).
+| Option | Public this month? | Why |
+|---|---|---|
+| USB-C display glasses (rung 3) | Yes | Ordinary Android or iOS app, no vendor SDK or approval; needs a phone with DisplayPort over USB-C ([usb-c-displays.md](brands/usb-c-displays.md)) |
+| Notifications on display glasses (rung 4) | Yes | No SDK, no approval; the user enables your app in the companion app; short text, timing you do not control |
+| Voice in the ear (rung 5) | Yes | Plain Bluetooth audio app; works on Ray-Ban Meta and Oakley Meta, but there is no display |
+| Rokid Glasses, CXR-L (rung 1) | Yes on Android; iOS after a Rokid step | Your own store listing, no Rokid review in the docs. iOS: the CXR-L "iOS: SDK import" page (v1.2, 2026-09-08) requires a registered Rokid developer account with your bundle ID and URL scheme |
+| Vuzix Z100, Ultralite SDK (rung 1) | App yes, hardware unclear | Ordinary app on both stores, no Vuzix review; the vuzix.com product page showed it out of stock on 2026-07-10 and redirects to a general page since 2026-09-06 ([archived page](https://web.archive.org/web/20260710075701/https://www.vuzix.com/products/z100-smart-glasses)) |
+| Even G2, Even Hub plugin (rung 1) | Possible, review risk | Runs in the Even app on iPhone and Android; manual review of every build, review time not published, free apps only, no rollback ([FAQ](https://hub.evenrealities.com/docs/reference/faq), 2026-10-09) |
+| Android XR audio glasses | Yes, few users | Google Play; Warby Parker pre-orders open on 2026-11-12 ([9to5Google, 2026-11-05](https://9to5google.com/2026/11/05/android-xr-glasses-pre-order/)) |
+| Brilliant Labs Halo | Yes | Your own host app; Halo has no app launcher of its own |
+| INMO Air3 / RayNeo X3 Pro | Air3 yes, RayNeo no | Air3 apps through Google Play (global version); RayNeo has no public store, sideload only |
+| Meta Ray-Ban Display, DAT | No | Two blockers: "Publishing DAT integrations to all users isn't open yet" ([Meta staff, 2026-11-05](https://github.com/meta/meta-wearables-dat-android/discussions/229)); and on iOS, Apple asks DAT apps for an MFi PPID that Meta cannot issue, so they do not pass App Store review ([Meta staff, 2026-09-28](https://github.com/meta/meta-wearables-dat-ios/discussions/313)) |
+| Meta Ray-Ban Display, Web Apps | No | Developer Mode only; Meta "will share how to submit your experience soon" ([Explore](https://developers.meta.com/wearables/explore), no date) |
+| Ray-Ban Meta, Oakley Meta via DAT | No | Same two DAT blockers; a plain Bluetooth audio app (rung 5) is fine |
+| MentraOS miniapps | No | "There is currently no way to distribute a miniapp built with the Miniapp SDK" ([distribution](https://docs.mentraglass.com/app-devs/getting-started/distribution.md), read 2026-11-08) |
+| Android XR display glasses | No | Not on sale; distribution "stay tuned" |
+| Snap Specs | No | Pre-order, not shipping yet |
 
-For store and review details, see [publishing.md](publishing.md).
+For Even G2, submit in the first days of the month and expect a second round; read the review checklist in
+[brands/even-g2.md](brands/even-g2.md#publishing-and-distribution). For store and review details of every platform,
+see [publishing.md](publishing.md).
+
+## Example: teleprompter, public this month, iPhone first
+
+Brief: one pair of glasses first, released to the public this month, must work with iPhone (Android is a bonus), the
+wearer reads a script and advances it. Ranking as of 2026-11-09:
+
+1. **Even Realities G2 (Even Hub plugin).** In: the plugin is a web app inside the Even app on iPhone and Android,
+   the Even Hub store is open, and input on the glasses fits paging (temple touchpads and the R1 ring: tap, swipe,
+   long press). Limits: one firmware font with no size control on a 576x288 canvas (about 10 lines of 60 Latin
+   characters), no Arabic, Hebrew, Thai or Devanagari glyphs, free apps only, and a manual review with no published
+   time. The Even app already has a built-in Teleprompt feature (speech-paced, fixed speed or manual paging with the
+   ring or touchpad, [Even](https://www.evenrealities.com/teleprompter-glasses), checked 2026-11-09), so your plugin
+   must beat it on something concrete (your own script source, slide sync, a language).
+2. **USB-C display glasses (XREAL, VITURE, RayNeo Air) through the iOS external display scene.** In: no vendor
+   gate, an ordinary App Store app, and the phone draws any font, size and script. iPhones with video out: 15, 16
+   (not 16e), 17 (not 17e), 18 Pro and iPhone Duo ([Apple](https://support.apple.com/en-us/105099), 2026-10-22);
+   iPhone Air has USB 2 only ([specs](https://www.apple.com/iphone-air/specs/)). From iOS 27 the app gets the
+   `windowExternalDisplayNonInteractive` scene only after it registers a scene accessory on a view controller
+   ([Apple](https://developer.apple.com/documentation/uikit/presenting-content-on-a-connected-display)); content shows
+   while that view controller is presented, so plan for foreground only. The glasses send no input: page with the
+   phone screen or a Bluetooth presentation remote (most pair as a keyboard; unverified per model). Tinted lenses and
+   a cable suit a stage, not a face-to-face talk. If the date is fixed, swap 1 and 2: this path has no vendor review.
+3. **Vuzix Z100 (Ultralite SDK).** In: iOS SDK (`UltraliteSDK`, iOS 14+) and Android SDK, an ordinary store app
+   with no Vuzix review; 640x480 monochrome green, right eye only; 1, 2 or 3 taps anywhere on the frame map to next,
+   previous and pause. Risk: hardware. Availability has been unclear since July 2026 (see the table above); confirm
+   that you and your users can buy it before you commit.
+
+Out, one line each:
+- **Meta Ray-Ban Display:** publishing to all users is not open (2026-11-05), DAT apps cannot pass App Store review
+  because of MFi (2026-09-28), and Web Apps have no public submission.
+- **Ray-Ban Meta, Oakley Meta and other audio-only glasses:** no display, so no teleprompter (rung 5 can read cues
+  aloud, which is a different product).
+- **MentraOS:** miniapps cannot be distributed yet.
+- **Rokid Glasses on iPhone:** the iOS SDK exists (`RGCxrClient` 1.1.1.1, iOS 16+), but the CXR-L docs (v1.2,
+  2026-09-08) require a registered Rokid developer account with your bundle ID and URL scheme, the CocoaPods route
+  needs Rokid's private specs source, and taps on a custom view do not reach your app (community), so paging needs
+  the phone. A fair Android-first pick, a risky one for "iPhone this month".
+- **Android XR display glasses, Snap Specs:** not on sale or not shipping.
+
+Tell the developer to re-check the Even review queue, Vuzix stock and Meta's publishing status on the day they
+commit; all three change month to month.
 
 ## If you want the biggest audience
 

@@ -57,5 +57,19 @@ export function leftRight(left: string, right: string, innerW: number): string {
   return left + ' '.repeat(Math.max(2, gap)) + r
 }
 
-/** Bytes as the firmware counts them (text replace ranges, menu labels) */
+/** UTF-8 bytes (menu labels are limited to 32; simulator 0.9.5 rejects container text over about 1000) */
 export const utf8Len = (s: string): number => new TextEncoder().encode(s).length
+
+/**
+ * Keep the end of `s` within `max` UTF-8 bytes, never splitting a character. Safety net only: the boxes hold far less.
+ * Simulator 0.9.5 returns false for a rebuild or upgrade over about 1000 bytes even under the 1000/2000 character
+ * limits (checked 2026-11-09), and the hardware byte limit is not documented.
+ */
+export function tailBytes(s: string, max = 999): string {
+  if (utf8Len(s) <= max) return s
+  const chars = [...s]
+  let i = chars.length
+  let n = 0
+  while (i > 0 && n + utf8Len(chars[i - 1]) <= max) n += utf8Len(chars[--i])
+  return chars.slice(i).join('')
+}

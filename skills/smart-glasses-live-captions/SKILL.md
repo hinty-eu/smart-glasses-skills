@@ -46,7 +46,7 @@ display and avoids the call-audio mode that some glasses switch into when their 
 
 | Glasses (as of 2026-11-08) | Microphone available to your app | Use it for |
 |---|---|---|
-| Even Realities G2 | Yes: `audioControl(true, AudioInputSource.Glasses)` or `.Phone`, 16 kHz 16-bit mono PCM | wearer's speech, a second "me" channel |
+| Even Realities G2 | Yes, from the plugin itself: `AudioInputSource.Phone` (phone mic) or `.Glasses`, 16 kHz s16le mono PCM | phone mic: the other person; glasses mic: the wearer |
 | Meta Ray-Ban Display, Web App | No (Meta: only the Device Access Toolkit can capture audio) | nothing; capture on the phone |
 | Meta glasses via DAT | Bluetooth headset (HFP) microphone; on-glasses speech recognition is beta | wearer's speech, with known issues |
 | Rokid Glasses (CXR-L) | Yes: `startAudioStream`, 16 kHz 16-bit mono PCM (Rokid docs) | wearer's speech |
@@ -54,7 +54,32 @@ display and avoids the call-audio mode that some glasses switch into when their 
 | USB-C display glasses | Usually a USB audio device on the phone | either |
 | Audio-only glasses (Ray-Ban Meta and others) | Bluetooth headset microphone only | wearer's speech; costs audio quality |
 
+**Even G2 needs no second app for the phone microphone.** The Even Hub plugin opens it itself with
+`bridge.audioControl(true, AudioInputSource.Phone)` (permission `phone-microphone`) to caption the other person, or
+`AudioInputSource.Glasses` (permission `g2-microphone`, only after `createStartUpPageContainer`) for the wearer. Frames
+arrive in `onEvenHubEvent` as `event.audioEvent.audioPcm` (`Uint8Array`, PCM 16 kHz, signed 16-bit little-endian,
+mono). The SDK has no speech-to-text: send the PCM as binary WebSocket frames to your STT relay, which holds the
+provider key and sends caption text back over the same socket. Use `audioControl`, not `getUserMedia`, which fails in
+the plugin WebView on iOS ([device APIs](https://hub.evenrealities.com/docs/build/device-apis), 2026-08-29;
+[#11](https://github.com/even-realities/everything-evenhub/issues/11)). The example plugin has this as an optional
+phone-microphone mode.
+
 Details, VAD and streaming: `references/pipeline.md`.
+
+### Even Hub plugin checklist (as of 2026-11-09)
+
+- `app.json` `permissions`: `{"name": "phone-microphone", "desc": "..."}` for `AudioInputSource.Phone`,
+  `g2-microphone` for `AudioInputSource.Glasses`, and `network` with a `whitelist` of full origins, both
+  `https://captions.example.com` and `wss://captions.example.com` (no wildcards, no bare hosts). The whitelist does
+  not bypass CORS: the relay must still send `Access-Control-Allow-Origin`. Declare only what the code uses
+  ([packaging](https://hub.evenrealities.com/docs/ship/packaging), [networking](https://hub.evenrealities.com/docs/build/networking)).
+- On the root page a double tap calls `bridge.shutDownPageContainer(1)` (system exit dialog); mode 0 is rejected.
+- No provider keys in the package: "Never bundle secrets or API keys into the `.ehpk`"
+  ([app submission](https://hub.evenrealities.com/docs/ship/app-submission), 2026-10-09). The official `asr`
+  template reads `VITE_STT_API_KEY`, which ends up in the bundle; replace it with your relay.
+- The privacy policy covers every permission, and the glasses show a message when setup is missing.
+- The simulator "is not a hardware emulator" (BLE timing, real font rendering and WebView suspension are not
+  reproduced): measure latency and microphone behaviour on glasses before you promise "about a second".
 
 ## 2. Pick a streaming STT that returns partial results
 
@@ -141,8 +166,9 @@ Prompt patterns and per display budgets: `references/short-hints.md`.
 - **One phone app does everything** (capture, STT, fit, send to the glasses SDK): lowest latency, needed for rungs 1,
   3, 4 and 5 on Android and iOS.
 - **Phone or browser captures, a server relays, the glasses page or plugin displays**: needed for rung 2 and for
-  plugin platforms such as Even Hub, where the display code runs in a WebView. Pair screens with a short room code
-  typed on the phone; keep STT keys on the server.
+  plugin platforms such as Even Hub, where the display code runs in a WebView. On Even Hub the plugin can also be the
+  capture side: it streams PCM from `audioControl` to the relay and shows the captions that come back. Pair screens
+  with a short room code typed on the phone; keep STT keys on the server.
 - **WebSocket first, HTTP polling as the fallback.** Some glasses WebViews fail the WebSocket handshake while `fetch`
   works (reported for the Even app on iOS, community). After two failed attempts, poll a `/latest` endpoint every
   0.5 to 1 s and keep retrying the socket slowly.

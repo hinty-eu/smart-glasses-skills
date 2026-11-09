@@ -209,7 +209,7 @@
           "source": "https://developerdoc.rokid.com/sdk?lang=zh",
           "checked": "2026-11-08",
           "confidence": "official",
-          "note": "CXR-L is marked public; the user approves your app inside Hi Rokid. Community reports a one-time unverified-app prompt. Android: no app key or registration documented. iOS: docs ask for a Rokid developer account (one community project says not needed, unverified). AIUI agents use the reviewed Hi Rokid Agent Store."
+          "note": "CXR-L is marked public; the user approves your app inside Hi Rokid. Community reports a one-time unverified-app prompt. Android: no app key or registration documented. iOS: Rokid's iOS docs (v1.2, 2026-09-08) require a Rokid developer account with your bundle ID registered; one community project reports it worked without one. AIUI agents use the reviewed Hi Rokid Agent Store."
         },
         "test": {
           "value": "No CXR-L simulator; fake the session behind an interface",

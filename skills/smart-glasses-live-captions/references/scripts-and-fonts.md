@@ -70,15 +70,22 @@ When the font lacks the script, draw the text on the phone and send a bitmap:
 
 1. Render with the platform's text engine (Canvas 2D in a WebView, `StaticLayout` on Android, Core Text on iOS) at the
    glasses' pixel size, white or green on black.
-2. Convert to the target's image format and bit depth (Even G2: 4-bit greyscale image containers of at most 288x144,
-   four per page; Vuzix: 2-bit `LVGLImage` or canvas background bitmaps up to 640x480).
-3. Send finals only. Images are slow over BLE: on Even G2 about 100 ms per image write and about 800 ms for a full
-   screen (Even docs and community measurements); Vuzix notes that "sending large bitmaps is often slower than
-   sending text".
+2. Hand the bitmap over in the format the target takes.
+   - **Even G2:** apps cannot ship or upload a font ([FAQ](https://hub.evenrealities.com/docs/reference/faq),
+     2026-10-09), and no RTL or Arabic shaping is documented for text containers, so the image is the only way.
+     Draw at exactly the image container's size (at most 288x144, four per page); the official UI skill describes
+     `imageSizeInvalid` as "image dimensions do not match container". `updateImageRawData` accepts `number[]`, `Uint8Array`, `ArrayBuffer` or base64; pass the
+     encoded PNG and let the SDK convert it to 4-bit greyscale itself (the official `image` template does this). Image
+     containers cannot capture input: keep one full-screen text container with `content: ' '` and
+     `isEventCapture: 1` behind them. Fill images only after the page exists, await each call and pace about 100 ms
+     between image sends.
+   - **Vuzix:** 2-bit `LVGLImage` or canvas background bitmaps up to 640x480.
+3. Send finals only. Images are slow over BLE: on Even G2 a full screen takes about 800 ms (Even docs); Vuzix notes
+   that "sending large bitmaps is often slower than sending text".
 4. Keep a text path for scripts the font has, and switch per line, not per session.
 
-For Even's image API and format, follow the official `even-glasses-ui` skill; for Vuzix, the `smart-glasses-vuzix`
-skill in this repository.
+Even G2 code for this path: `smart-glasses` skill, `references/brands/even-g2.md`, section "Arabic and other scripts
+the font lacks", and the official `even-glasses-ui` skill. Vuzix: the `smart-glasses-vuzix` skill.
 
 ## Fonts on web targets
 

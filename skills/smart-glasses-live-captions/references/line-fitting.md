@@ -93,8 +93,15 @@ Fewer lines are easier to read in front of one eye. Default to 3 or 4 lines and 
   No alignment, no font size, no RTL: centre or bottom-align by padding with spaces and `\n`.
 - `content` up to 1000 characters on create and rebuild, 2000 on `textContainerUpgrade`.
 - `createStartUpPageContainer` once; then `textContainerUpgrade` per changed container (no flicker). Pass the same
-  `containerID` and `containerName` as on create, or the call does nothing. To replace everything, the example sends
-  `contentOffset: 0` and `contentLength` = the longer of the old and new text in UTF-8 bytes.
+  `containerID` and `containerName` as on create, or the call does nothing.
+- To replace a container's text, send only `containerID`, `containerName` and `content`, as the official templates
+  and the example do; the official `even-glasses-ui` skill passes `contentOffset: 0, contentLength: 0` for the same
+  full replacement. The docs say only that the two fields "are for partial-string updates", with no unit (characters
+  or bytes). Simulator 0.9.5 ignores both: on 2026-11-09 every upgrade we sent (offsets 0 to 6, lengths 0 to 12,
+  Latin, Polish and Japanese text) replaced the whole text. Partial updates are unverified on hardware.
+- Keep each container under 999 UTF-8 bytes, not just under the character limits: simulator 0.9.5 returned `false`
+  for a rebuild and an upgrade over about 1000 bytes (513 Polish letters) and kept the old text (our run,
+  2026-11-09). The example caps every container at 999 bytes.
 - `n` line breaks make `n + 1` lines: padding an empty container with `\n` overflows it and shows a scrollbar (we hit
   this in the simulator).
 - Exactly one container is the event-capture container. If its text overflows, the firmware scrolls it and only

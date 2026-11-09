@@ -18,6 +18,8 @@
   #status { margin: 14px 0; color: #aaa; }
   #mirror { background: #000; color: #4ade80; font: 13px/1.35 ui-monospace, monospace; padding: 10px; border-radius: 10px; white-space: pre-wrap; min-height: 9em; }
   .note { color: #f59e0b; font-size: 14px; }
+  label.check { display: flex; gap: 10px; align-items: flex-start; color: #ccc; margin-top: 16px; }
+  label.check input { width: auto; margin-top: 3px; }
 </style>
 </head>
 <body>
@@ -28,6 +30,8 @@
   <input id="server" inputmode="url" spellcheck="false" placeholder="https://captions.example.com">
   <label for="room">Room code</label>
   <input id="room" maxlength="9" spellcheck="false" placeholder="K7MPQ4">
+  <label class="check"><input id="mic" type="checkbox"> Send the phone microphone to the server for speech-to-text
+    (the server must run with <code>--stt</code>)</label>
   <button type="submit">Connect</button>
 </form>
 <div id="status"></div>

@@ -33,7 +33,8 @@ Ranked options:
 Display model ([display docs](https://hub.evenrealities.com/docs/build/display), updated 2026-10-09; names checked in SDK 0.0.16 typings):
 - Containers at absolute pixel positions: up to 8 text or list containers plus up to 4 image containers per page (`containerTotalNum` 1-12). Exactly one container has `isEventCapture: 1`. `containerName` is max 16 characters and unique per page.
 - No background fill, font choice, font size, bold or alignment. Text is left and top aligned; `\n` breaks lines. Decoration is border (`borderWidth` 0-5, `borderRadius` 0-10) and `paddingLength` 0-32. `textColor` 0-4 is brightness (default 4; 0 can be nearly invisible).
-- Text length: 1000 characters on create or rebuild, 2000 on `textContainerUpgrade`. A full-screen container shows about 400-500 characters. The simulator (0.7.1+) caps text at 999 bytes, so keep multi-byte text shorter.
+- Text length: 1000 characters on create or rebuild, 2000 on `textContainerUpgrade`. A full-screen container shows about 400-500 characters. Simulator 0.9.5 counts bytes: in our run on 2026-11-09 a rebuild and an upgrade with 963 UTF-8 bytes worked, while 1023 bytes (513 characters) and 1404 bytes returned `false` and left the old text. Hardware byte limits are not documented, so keep each container under 999 UTF-8 bytes (Polish and Cyrillic letters take 2 bytes, CJK 3).
+- `textContainerUpgrade` replaces the whole text when you send only `containerID`, `containerName` and `content`, as the official templates do; the official `even-glasses-ui` skill passes `contentOffset: 0, contentLength: 0` for the same full replacement. The docs say only that the two fields "are for partial-string updates" and give no unit. Simulator 0.9.5 ignores both: on 2026-11-09 every upgrade we sent (offsets 0-6, lengths 0-12, Latin, Polish and Japanese text) replaced the whole text. Partial updates are unverified on hardware; do not rely on them.
 - Lists: up to 20 items of 64 characters, no per-item styling, no in-place update (rebuild the page).
 - One proportional LVGL font in firmware, 27 px line height: 10 lines on 288 px and about 60 Latin characters per full-width line (measured with `@evenrealities/pretext`).
 - Scripts, checked in the official `@evenrealities/pretext` 0.1.4 font tables on 2026-11-08: Latin with Latin Extended-A (Polish, Czech, German, French, Nordic, Turkish), Cyrillic (Russian, Ukrainian), Greek, Chinese, Japanese kana and Korean Hangul render. Arabic, Hebrew, Thai and Devanagari have no glyphs and are dropped silently, no placeholder ([#37](https://github.com/even-realities/everything-evenhub/issues/37)). The FAQ says no emoji; U+2713 (check mark) is missing, while ▶ ● ■ ★ and box drawing exist. Filter text to glyphs you have verified.
@@ -107,6 +108,76 @@ bridge.onEvenHubEvent(event => {
 
 Build with Vite (`build.target` `esnext` for top-level await) and pack the `dist` folder with `app.json` (see Publishing).
 
+### Arabic and other scripts the font lacks
+
+Checked 2026-11-09 against the docs, the SDK 0.0.16 typings, the official `even-glasses-ui` skill and the official
+`image` template ([evenhub-templates](https://github.com/even-realities/evenhub-templates)). Verification: `docs-only`.
+
+- **Empty display with Arabic is expected.** The firmware font has no Arabic glyphs and "Characters outside the font
+  set are silently dropped" ([display docs](https://hub.evenrealities.com/docs/build/display), updated 2026-10-09).
+- **You cannot ship or upload a font.** FAQ: "Can I use my own font? No. The glasses render with a fixed system
+  font." ([FAQ](https://hub.evenrealities.com/docs/reference/faq), updated 2026-10-09). No encoding, language or
+  direction setting on a container changes this.
+- **No RTL or shaping for text containers.** The docs describe left and top aligned plain text and document no
+  direction option or Arabic shaping. Even with glyphs, Arabic would need bidi reordering and contextual letter forms.
+- **Fallback: draw the text in the WebView and send it as an image.** Canvas 2D in the plugin's WebView applies the
+  phone's shaping and right-to-left order. Keep the text path for supported scripts and switch per message (filter
+  with `getAdvW` from `@evenrealities/pretext`). Rules for the image path:
+  - Image containers cannot capture input (`ImageContainerProperty` has no `isEventCapture`), so keep one full-screen
+    text container with `content: ' '` and `isEventCapture: 1` behind them.
+  - Up to 4 image containers per page, each at most 288x144, 4-bit greyscale. They start empty and cannot be filled
+    during `createStartUpPageContainer`: create, then call `updateImageRawData`.
+  - `updateImageRawData` accepts `number[]`, `Uint8Array`, `ArrayBuffer` or base64. The official `image` template
+    passes encoded PNG bytes and the SDK converts them to 4-bit greyscale itself (`imageToGray4Failed` if it cannot).
+  - Draw at exactly the container's width and height. The official template says the SDK resizes, but the official
+    UI skill describes `imageSizeInvalid` as "image dimensions do not match container"; matching sizes avoids both
+    the error and resampling blur.
+  - Await each call, one image in flight, and pace about 100 ms between image sends (SDK 0.0.14+ holds the image
+    path for 100 ms, "Treat 100ms as a floor"). A full-screen refresh takes about 800 ms, so images suit short
+    messages, not live captions.
+  - After `shutDownPageContainer(1)` image sends fail until relaunch ([#18](https://github.com/even-realities/everything-evenhub/issues/18)).
+  - Check on glasses: the simulator "is not a hardware emulator" and does not match font or greyscale rendering.
+
+Our own sketch (`compiles`: names checked in the SDK 0.0.16 typings, type-checked with TypeScript 7.0, not run):
+
+```ts
+import { CreateStartUpPageContainer, ImageContainerProperty, ImageRawDataUpdate, ImageRawDataUpdateResult,
+  TextContainerProperty, type EvenAppBridge } from '@evenrealities/even_hub_sdk'
+const W = 288, H = 144 // one image container at its maximum size
+
+export function createPage(bridge: EvenAppBridge) {
+  return bridge.createStartUpPageContainer(new CreateStartUpPageContainer({
+    containerTotalNum: 2,
+    textObject: [new TextContainerProperty({ // input layer behind the image
+      containerID: 1, containerName: 'input', xPosition: 0, yPosition: 0, width: 576, height: 288,
+      content: ' ', isEventCapture: 1,
+    })],
+    imageObject: [new ImageContainerProperty({ // empty until the first updateImageRawData
+      containerID: 2, containerName: 'line', xPosition: 144, yPosition: 72, width: W, height: H,
+    })],
+  }))
+}
+
+async function renderRtl(text: string): Promise<Uint8Array> {
+  const c = document.createElement('canvas')
+  c.width = W; c.height = H // exactly the container size
+  const g = c.getContext('2d')!
+  g.fillStyle = '#000'; g.fillRect(0, 0, W, H) // black = off
+  g.fillStyle = '#fff'; g.font = '26px sans-serif'; g.direction = 'rtl'; g.textAlign = 'right'; g.textBaseline = 'middle'
+  g.fillText(text, W - 8, H / 2) // one short line; wrap longer text with measureText first
+  const png = await new Promise<Blob>((ok, no) => c.toBlob(b => (b ? ok(b) : no(new Error('toBlob'))), 'image/png'))
+  return new Uint8Array(await png.arrayBuffer()) // encoded PNG; the SDK converts it to 4-bit greyscale
+}
+
+let queue: Promise<unknown> = Promise.resolve() // one image in flight, 100 ms apart
+export const showRtl = (bridge: EvenAppBridge, text: string) => (queue = queue.then(async () => {
+  const imageData = await renderRtl(text)
+  const r = await bridge.updateImageRawData(new ImageRawDataUpdate({ containerID: 2, containerName: 'line', imageData }))
+  if (r !== ImageRawDataUpdateResult.success) console.warn('image send', r) // imageSizeInvalid: wrong width or height
+  await new Promise(done => setTimeout(done, 100))
+}))
+```
+
 ## Input
 - Gestures: tap, double tap, swipe up, swipe down, long press and release, on the left temple, the right temple or the R1 ring (same gestures, [glossary](https://hub.evenrealities.com/docs/reference/glossary)). No haptics. The R1 is not yet compatible with G1.
 - One callback, `bridge.onEvenHubEvent`. Envelopes: `sysEvent` (taps, double taps, long press, lifecycle, IMU; `eventSource` 1 = right temple, 2 = ring, 3 = left temple), `textEvent` or `listEvent` (scroll events from the capture container, no source), `audioEvent`, `menuItemClickEvent`.
@@ -117,15 +188,15 @@ Build with Vite (`build.target` `esnext` for top-level await) and pack the `dist
 - Shared caption actions: tap = repeat, swipe down = skip, long press = hide, double tap = exit on the root page.
 
 ## Audio
-- `bridge.audioControl(true, AudioInputSource.Glasses)` or `AudioInputSource.Phone`; `audioControl(false)` stops. The glasses source needs the startup page to exist first. Declare `g2-microphone` or `phone-microphone` in `app.json` ([device APIs](https://hub.evenrealities.com/docs/build/device-apis)).
+- `bridge.audioControl(true, AudioInputSource.Glasses)` (wearer's voice) or `AudioInputSource.Phone` (the phone's microphone, better for the person opposite); `audioControl(false)` stops. The glasses source needs the startup page to exist first, the phone source does not. Declare `g2-microphone` or `phone-microphone` in `app.json` ([device APIs](https://hub.evenrealities.com/docs/build/device-apis), 2026-08-29). The plugin captures both itself: no second phone app is needed.
 - Frames arrive as `event.audioEvent.audioPcm` (`Uint8Array`), PCM 16 kHz, signed 16-bit little-endian, mono, about 32 KB/s. The simulator sends 100 ms (3200 bytes) per event; the hardware chunk size is not documented.
 - SDK 0.0.14+ adds `direction` and `speakerRole` (`self`, `other`, `unknown`) on glasses frames. It is the Even app's guess, "not a firmware identity assertion": use it as a hint only.
-- No speech-to-text for plugins ([#9](https://github.com/even-realities/everything-evenhub/issues/9), open). Stream PCM to your own server or STT provider. Keep provider keys on a server: anyone can unpack an `.ehpk`. The official `asr` template leaves the provider as a stub.
+- No speech-to-text for plugins ([#9](https://github.com/even-realities/everything-evenhub/issues/9), open). Stream PCM to your own server or STT provider. Keep provider keys on a server: anyone can unpack an `.ehpk`. The official `asr` template leaves the provider as a stub and reads a key from `VITE_STT_API_KEY`, which Vite inlines into the bundle: replace that with your relay before you submit ("Never bundle secrets or API keys into the `.ehpk`", [app submission](https://hub.evenrealities.com/docs/ship/app-submission)).
 - `getUserMedia` inside the plugin WebView fails with `NotAllowedError` on iOS ([#11](https://github.com/even-realities/everything-evenhub/issues/11)); use `audioControl` with the phone source.
 - No speaker and no audio output API ([#26](https://github.com/even-realities/everything-evenhub/issues/26), open). Web Audio in the WebView needs a gesture on the phone screen and stops on lock.
 
 ## Testing without hardware
-- Install and run: `npm i -g @evenrealities/evenhub-simulator`, then `evenhub-simulator http://localhost:5173 --automation-port 9898`. Binaries for Windows, macOS and Linux (x64 and arm64; Linux and Windows arm64 are experimental since 0.9.4). The PC microphone feeds `audioEvent`.
+- Install and run: `npm i -g @evenrealities/evenhub-simulator`, then `evenhub-simulator http://localhost:5173 --automation-port 9898`. Binaries for Windows, macOS and Linux (x64 and arm64; Linux and Windows arm64 are experimental since 0.9.4). The PC microphone feeds `audioEvent`; simulator 0.9.5 refuses `AudioInputSource.Phone` until the startup page exists and tags those frames `glasses` either way (our run, 2026-11-09).
 - Automation API ([simulator docs](https://hub.evenrealities.com/docs/test/simulator)): `GET /api/ping`, `GET /api/screenshot/glasses` (576x288 RGBA, lit pixels have alpha > 0), `GET /api/screenshot/webview`, `GET` or `DELETE /api/console` (`?since_id=N`), `POST /api/input` with `{"action":"up|down|click|double_click|long_press|long_press_release|context_menu"}`. Input is ignored until a capture container exists. There is no shutdown endpoint; kill the process.
 - Not emulated: BLE timing, exact font rendering and brightness, list focus position, image size limits and the LZ4 path, status events (fixed device profile, `eventSource` always 1), permissions, background and lock, iOS WKWebView quirks. The network whitelist is not enforced (community). In our run on 2026-11-08 a double tap closed the page at once, with no exit dialog.
 - Restart the simulator after code edits: on hot reload `createStartUpPageContainer` returns 1 and the display goes dead ([#32](https://github.com/even-realities/everything-evenhub/issues/32)).
@@ -154,7 +225,7 @@ coaching plugin must beat Conversate on something concrete: a language it handle
 - **Microphone silently stops.** `audioControl` can return `false` until the plugin is reopened ([#35](https://github.com/even-realities/everything-evenhub/issues/35)). Watch for "no frames for a few seconds" and show it on the glasses.
 - **SDK timers clash with native timer ids.** SDK 0.0.16 replaces `setTimeout` and `setInterval`, so `clearTimeout` with a native id can cancel an unrelated plugin timer ([#47](https://github.com/even-realities/everything-evenhub/issues/47)). Import the SDK first; do not mix timers captured before it loaded.
 - **Text vanishes in some languages.** See the script list above ([#37](https://github.com/even-realities/everything-evenhub/issues/37)); there is one font size ([#48](https://github.com/even-realities/everything-evenhub/issues/48)).
-- **Requests blocked.** Whitelist the exact origin, including `wss://` for WebSockets (the official `asr` template lists both), and send CORS headers; wildcard behaviour is undocumented ([templates #1](https://github.com/even-realities/evenhub-templates/issues/1)). Expect sockets to drop when the WebView backgrounds.
+- **Requests blocked.** Whitelist the exact origin, including `wss://` for WebSockets (the official `asr` template README shows both), and send CORS headers; wildcard behaviour is undocumented ([templates #1](https://github.com/even-realities/evenhub-templates/issues/1)). Expect sockets to drop when the WebView backgrounds.
 - **Stale manifest from `evenhub init`.** It writes old `min_sdk_version` and `min_app_version` ([#29](https://github.com/even-realities/everything-evenhub/issues/29), [#33](https://github.com/even-realities/everything-evenhub/issues/33)); set `min_sdk_version` to your SDK and pass `--sdk-ver` to `pack`.
 - **Developer section missing in the phone app.** Force-quit alone may not be enough and the entry point moved ([#34](https://github.com/even-realities/everything-evenhub/issues/34)).
 

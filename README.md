@@ -1,25 +1,77 @@
 # Smart Glasses Skills
 
-> **Preview.** This repository is being built in the open. v1.0 is planned for 25 November 2026.
+[![skills.sh](https://skills.sh/b/hinty-eu/smart-glasses-skills)](https://skills.sh/hinty-eu/smart-glasses-skills)
+[![CI](https://github.com/hinty-eu/smart-glasses-skills/actions/workflows/ci.yml/badge.svg)](https://github.com/hinty-eu/smart-glasses-skills/actions/workflows/ci.yml)
+[![License: Apache-2.0 and CC BY 4.0](https://img.shields.io/badge/license-Apache--2.0%20%2B%20CC%20BY%204.0-blue)](#license)
 
-Agent skills that teach coding agents (Claude Code, Codex, Cursor, Copilot, Gemini CLI) how to build apps for smart
-glasses from every major brand: pick a target, get text onto the display, handle input and audio, test without the
-hardware, and check what you can actually publish today.
+Agent skills that teach coding agents to build apps for smart glasses from every major brand.
 
 ```bash
 npx skills add hinty-eu/smart-glasses-skills
 ```
 
-<details>
-<summary>Claude Code plugin</summary>
+Works with Claude Code, Codex, Cursor, GitHub Copilot, Gemini CLI and other agents that read Agent Skills.
+Plugin installs for each tool are under [Install for other agents](#install-for-other-agents).
 
-```
-/plugin install smart-glasses-skills --marketplace hinty-eu/smart-glasses-skills
-```
+![The live-captions example on two targets. Left: the Even Realities G2 official simulator shows the demo captions in green on a 576x288 canvas. Right: the web app in a 600x600 browser window shows the same captions in white with Repeat, Skip and Hide buttons.](docs/images/live-captions.png)
 
-</details>
+Version 1.0.0, released 2026-11-09. Vendor facts were checked against their sources on 2026-11-08 and 2026-11-09.
+Nothing has been tested on real glasses yet, and every file says how it was verified.
+
+## What your agent gets
+
+- Which glasses to build for and what can ship this month, across 12 platforms, with a source and a date for every
+  fact.
+- The display-text ladder: five ways to put text in front of the wearer (vendor SDK, web app on the glasses, USB-C
+  display glasses as an external display, a phone notification the glasses mirror, voice in the ear), and one adapter
+  per rung when an app targets several brands.
+- Input (taps, rings, touchpads, Neural Band), audio routing, small-screen UI, testing without hardware, publishing
+  rules and troubleshooting by symptom.
+- Full guides for Rokid Glasses (CXR-L) and Vuzix Z100 (Ultralite SDK), which have no official agent skill.
+- Live captions end to end: choosing speech-to-text, turning partial and final results into lines that fit each
+  display, a latency budget, and non-Latin scripts.
+- A runnable live-captions example with one server and five targets.
+- For Even Realities, Meta and Google, which ship their own skills: what matters for cross-brand decisions, and the
+  command that installs the vendor's skill.
+
+Not covered: VR and MR headsets such as Meta Quest or Apple Vision Pro, and regular phone UI.
+
+## Why this exists
+
+This market changes monthly, and agents answer from memory. In our evaluation we gave agents 11 realistic developer
+requests, once with these skills and once without. Without them, agents:
+
+- recommended Rokid's CXR-M SDK, which is business-only and cannot run next to the Hi Rokid app;
+- suggested Even G1 or MentraOS as fallbacks, although G1 is no longer sold and MentraOS cannot distribute apps yet;
+- described Meta's toolkit as "camera and audio, display coming later", and missed that publishing to all users is
+  not open and that the App Store blocks DAT apps (MFi);
+- wrote SDK calls from memory and left the glasses side as a stub;
+- mapped Rokid taps to `onKeyDown` in the phone app, although taps on the glasses do not reach phone apps;
+- told the developer to "check UTF-8" or "load a custom font" for Arabic on Even G2, although apps cannot ship fonts;
+- built a fake SDK plus Playwright for CI instead of using the Even simulator's automation API;
+- guessed Meta error codes from their names;
+- suggested USB-C display glasses for iPhone without saying they need an iPhone 15 or later with DisplayPort output,
+  which rules out iPhone 16e, 17e and Air.
+
+Facts in this list are as of 2026-11-08. The skills hand the agent these facts with their sources and dates, so it
+does not have to guess.
+
+## Skills
+
+| Skill | Use it when |
+|---|---|
+| [`smart-glasses`](skills/smart-glasses/SKILL.md) | Start here: choosing glasses, text on any display, input, audio, testing without hardware, publishing. It routes to the other skills and to vendor skills. |
+| [`smart-glasses-live-captions`](skills/smart-glasses-live-captions/SKILL.md) | Captions, translation, a teleprompter or real-time hints on glasses, or captions that lag, flicker or wrap badly. |
+| [`smart-glasses-rokid`](skills/smart-glasses-rokid/SKILL.md) | A phone app that puts text on Rokid Glasses or reads their microphone (CXR-L through Hi Rokid). |
+| [`smart-glasses-vuzix`](skills/smart-glasses-vuzix/SKILL.md) | Vuzix Z100 or Mentra Mach1 from Android or iOS with the Ultralite SDK. |
+
+To install one skill only: `npx skills add hinty-eu/smart-glasses-skills --skill smart-glasses-rokid`.
 
 ## Platforms
+
+The full table, with microphone, input, phones and testing columns and a source for every cell, is in
+[`skills/smart-glasses/references/platforms.md`](skills/smart-glasses/references/platforms.md). Tags: O official,
+S community, P press, ? unverified.
 
 <!-- platforms:start columns=display,text,publish -->
 | Glasses | Display | Text from your app | Publish to everyone today | Checked |
@@ -38,16 +90,170 @@ npx skills add hinty-eu/smart-glasses-skills
 | Snap Specs (Spectacles) | Standalone AR, both eyes; Specs not shipping yet [O](https://www.specs.com/smart-glasses/specs-27) | Lens in Lens Studio 5.24.1 (TypeScript, Text) [O](https://ar.snap.com/download) | Snap review 2-3 days; no Experimental APIs [O](https://developers.snap.com/spectacles/get-started/start-building/publishing-lens) | 2026-11-08 |
 <!-- platforms:end -->
 
+## Examples
+
+[`examples/live-captions`](examples/live-captions/) has one small Node server that produces captions and five
+targets that show them. All of them speak the same WebSocket protocol, so you can copy only the target you need.
+
+| Target | Folder | Verified | Date |
+|---|---|---|---|
+| Caption server: demo script, browser microphone, optional streaming speech-to-text | `server/` | ran locally on Node 22 | 2026-11-08 |
+| Web app for glasses browsers, Meta Web Apps and second screens | `web-glasses/` | `browser` (headless Chromium) | 2026-11-09 |
+| Even Realities G2 plugin (Even Hub) | `even-hub/` | `simulator` (official Even Hub simulator 0.9.5, 15 of 15 checks) | 2026-11-09 |
+| Android: Rokid, Vuzix, Meta DAT, USB-C display, notification, voice | `android/` | `compiles` | 2026-11-08 |
+| iOS: Vuzix, external display, notification, voice | `ios/` | `compiles` (CI, unsigned) | 2026-11-09 |
+
+Run the demo with Node 20 or later:
+
+```sh
+cd examples/live-captions/server && npm install
+node server.mjs --demo        # prints a 6-character room code, for example K7MPQ4
+```
+
+Then open `http://localhost:8787/?room=K7MPQ4` with your code. The
+[example README](examples/live-captions/README.md) covers the protocol and every target.
+
+## How we verify
+
+- Every platform fact lives in [`data/platforms.json`](data/platforms.json) with a source URL, the date it was
+  checked and a confidence level (`official`, `community`, `press`, `unverified`). The tables are generated from it,
+  and CI fails when they drift.
+- Every brand file, skill and example states how it was verified, with a date: `hardware` (ran on the glasses),
+  `simulator` (ran in the vendor's simulator), `browser` (ran in a desktop browser), `compiles` (builds, never ran)
+  or `docs-only` (written from documentation). Code that uses an API we could not confirm carries an
+  `// unverified` comment.
+- Nothing has run on real glasses yet (as of 2026-11-09). If you own a pair and ran an example or followed a skill,
+  please send a
+  [Hardware verification report](https://github.com/hinty-eu/smart-glasses-skills/issues/new?template=hardware-verification.yml)
+  with the glasses model and firmware, the phone and companion app versions, what you tested and what happened. That
+  is how a fact moves from `docs-only` to `hardware`.
+- Vendor documentation and SDK code are described in our own words and linked, never copied. Several vendor licences
+  forbid redistribution.
+- CI checks skill frontmatter, file limits and style, regenerates the tables, validates the Claude Code plugin,
+  installs every skill with `npx skills`, scans for secrets, and builds the Android and iOS examples.
+
+## Evaluation
+
+<!-- results:start -->
+Results are being updated.
+<!-- results:end -->
+
+## Install for other agents
+
+`npx skills add hinty-eu/smart-glasses-skills` works for every agent below. It asks which agents to install for;
+pass `-a <agent>` to choose without the prompt, and `-g` to install for your user instead of the current project.
+
+<details>
+<summary>Claude Code</summary>
+
+As a plugin:
+
+```
+/plugin install smart-glasses-skills --marketplace hinty-eu/smart-glasses-skills
+```
+
+Or in two steps:
+
+```
+/plugin marketplace add hinty-eu/smart-glasses-skills
+/plugin install smart-glasses-skills@hinty-eu
+```
+
+Skills only, into `.claude/skills/`:
+
+```bash
+npx skills add hinty-eu/smart-glasses-skills -a claude-code
+```
+
+</details>
+
+<details>
+<summary>Codex</summary>
+
+Skills only, into `.agents/skills/`:
+
+```bash
+npx skills add hinty-eu/smart-glasses-skills -a codex
+```
+
+As a plugin, add the marketplace, then open `/plugins` in a Codex session, pick the Smart Glasses Skills
+marketplace, install `smart-glasses-skills` and start a new session:
+
+```bash
+codex plugin marketplace add hinty-eu/smart-glasses-skills
+```
+
+</details>
+
+<details>
+<summary>Cursor</summary>
+
+Skills only, into `.agents/skills/`:
+
+```bash
+npx skills add hinty-eu/smart-glasses-skills -a cursor
+```
+
+As a local plugin, clone the repository into `~/.cursor/plugins/local/smart-glasses-skills` and run
+**Developer: Reload Window**. Team admins can add it for the whole team under Dashboard > Plugins & MCPs >
+Team Marketplaces > Add Marketplace > Import from Repo.
+
+</details>
+
+<details>
+<summary>GitHub Copilot</summary>
+
+Skills only, into `.agents/skills/`:
+
+```bash
+npx skills add hinty-eu/smart-glasses-skills -a github-copilot
+```
+
+As a Copilot CLI plugin:
+
+```bash
+copilot plugin marketplace add hinty-eu/smart-glasses-skills
+copilot plugin install smart-glasses-skills@hinty-eu
+```
+
+</details>
+
+<details>
+<summary>Gemini CLI</summary>
+
+As an extension, which loads the skills from `skills/` and `AGENTS.md` as context:
+
+```bash
+gemini extensions install https://github.com/hinty-eu/smart-glasses-skills
+```
+
+Skills only, into `.agents/skills/`:
+
+```bash
+npx skills add hinty-eu/smart-glasses-skills -a gemini-cli
+```
+
+</details>
+
+Agents that do not load skills can read [`AGENTS.md`](AGENTS.md), which points to each skill file.
+
 ## What these skills do, send and download
 
 The skills are plain Markdown files that your agent reads. They do not run code on install, send data anywhere or
 download anything. The examples in `examples/` are small apps you build yourself; each one says what it connects to.
 
+## Contributing
+
+Hardware verification reports help most, then corrections with a source. [CONTRIBUTING.md](CONTRIBUTING.md) has the
+rules (a source and a date for every fact, your own words, plain hyphens) and the checks to run before a pull
+request. This project follows the [Code of Conduct](CODE_OF_CONDUCT.md). Report security problems as described in
+[SECURITY.md](SECURITY.md).
+
 ## Who maintains this
 
 Built and maintained by the team behind [Hinty Voice Assistant](https://www.hinty.eu/assistant/smart-glasses?utm_source=github&utm_medium=readme&utm_campaign=smart-glasses-skills).
-Vendor names are used only to identify products; see [TRADEMARKS.md](TRADEMARKS.md).
 
 ## License
 
-Code and skills: [Apache-2.0](LICENSE). Data in `data/`: [CC BY 4.0](LICENSE-DATA).
+Code and skills: [Apache-2.0](LICENSE). Data in `data/`: [CC BY 4.0](LICENSE-DATA). Vendor names are used only to
+identify products; the project is not affiliated with any vendor. See [TRADEMARKS.md](TRADEMARKS.md).

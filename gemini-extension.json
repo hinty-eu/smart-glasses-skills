@@ -1,6 +1,6 @@
 {
   "name": "smart-glasses-skills",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Agent skills for building apps on smart glasses from every major brand: Even Realities G2, Meta Ray-Ban Display, Rokid, Vuzix Z100, audio-only glasses like Ray-Ban Meta, and USB-C display glasses. Pick a target, get text onto the display, handle input and audio, test without hardware, and check what you can publish today.",
   "contextFileName": "AGENTS.md"
 }

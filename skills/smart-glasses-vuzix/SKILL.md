@@ -3,8 +3,8 @@ name: smart-glasses-vuzix
 description: Vuzix Z100 apps on Android and iOS with the Vuzix Ultralite SDK - bind through Vuzix Connect on Android or link the glasses inside your own app on iOS, request and release control of the display, draw text on the 640x480 monochrome green canvas, run live captions with LiveText, send notifications without control, and handle 1 to 3 taps on the frame. Covers JitPack, Swift Package Manager and CocoaPods setup, the SDK licence, background behaviour and the missing microphone and speaker. Use when the user mentions Vuzix, Z100, Ultralite, UltraliteSDK, Vuzix Connect or the Mentra Mach1 (same hardware), even for small tasks such as mapping taps to actions, because taps only arrive while the app holds control with a tap count set. Not for Vuzix Blade, Blade 2, M400 or M4000, which run Android on the glasses themselves, and not for writing MentraOS miniapps.
 license: Apache-2.0
 metadata:
-  version: "0.0.1"
-  last-updated: "2026-11-08"
+  version: "1.0.0"
+  last-updated: "2026-11-09"
 ---
 
 # Vuzix Z100 with the Ultralite SDK

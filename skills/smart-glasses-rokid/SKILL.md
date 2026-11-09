@@ -3,8 +3,8 @@ name: smart-glasses-rokid
 description: Rokid Glasses apps driven from an Android phone with Rokid's public CXR-L SDK - authorise once in the Hi Rokid companion app (Global or China build), open a custom view on the green display and update its text, stream the glasses microphone as 16 kHz PCM, survive pauses for the Rokid assistant, and fall back to phone notifications mirrored by Hi Rokid (also on iPhone) when the SDK path is not an option. Covers Maven setup, CXR-L versus CXR-M and CXR-S, R8 rules, iOS notes, input limits and real community issues. Use when the user mentions Rokid, Rokid Glasses, RV101, CXR, CXR-L, CXR-M, CXR-S, Hi Rokid, Rokid AI App or YodaOS-Sprite and wants a phone app to put text on the glasses or read their microphone. Not for apps that run on the glasses themselves (see RealComputer/GlassKit or Rokid's bare-metal docs), not for AIUI agents (use the yodaos-project/aiui skill), and not for Rokid Max or other USB-C display glasses (use the smart-glasses skill).
 license: Apache-2.0
 metadata:
-  version: "0.1.0"
-  last-updated: "2026-11-08"
+  version: "1.0.0"
+  last-updated: "2026-11-09"
 ---
 
 # Rokid Glasses from a phone (CXR-L)

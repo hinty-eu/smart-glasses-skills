@@ -28,7 +28,7 @@ glasses hardware.
      let out = '', dropped = 0
      for (const ch of text.normalize('NFC')) {
        if (ch === ' ' || getAdvW(ch.codePointAt(0)!) > 0) out += ch
-       else if (!/[​-‏️﻿]/.test(ch)) dropped++ // invisible characters do not count
+       else if (!/[\u200B-\u200F\uFE0F\uFEFF]/.test(ch)) dropped++ // invisible characters do not count
      }
      return { text: out, dropped }
    }

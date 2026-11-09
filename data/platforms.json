@@ -528,7 +528,7 @@
           "note": "RayNeo forwarding from iPhone is unreliable per press."
         },
         "publish": {
-          "value": "Yes, no approval; user enables your app per brand",
+          "value": "Yes, no store review; user enables your app per brand",
           "source": "https://developer.android.com/develop/xr/jetpack-xr-sdk/glasses/notifications/behavior",
           "checked": "2026-11-08",
           "confidence": "official"

@@ -3,7 +3,7 @@
 Last checked: 2026-11-08. Verification: docs-only (no hardware test yet). Sources:
 [User Input](https://support.vuzix.com/docs/user-input), the
 [Android Javadoc](https://vuzix.github.io/ultralite-sdk-android/javadoc/com/vuzix/ultralite/EventListener.html), the
-[iOS DocC](https://vuzix.github.io/UltraliteSDK-releases-iOS/documentation/ultralitesdk/) and Vuzix's
+[iOS DocC](https://vuzix.github.io/UltraliteSDK-releases-iOS/documentation/ultralitesdk/) and the Vuzix
 [power page](https://support.vuzix.com/docs/how-to-power-on-device).
 
 ## What the glasses offer

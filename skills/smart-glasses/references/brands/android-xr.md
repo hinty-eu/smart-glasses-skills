@@ -33,7 +33,7 @@ skills, use them for the details.
   glasses API in this file. It is orderable now: XREAL's page has "Buy Now" and a launch offer "starting at $1,099"
   through the end of 2026 ([XREAL](https://www.xreal.com/aura), checked 2026-11-09). The lower price applies to orders
   from 2026-10-28, and shipping "is expected to start in mid-November" ([MIXED, 2026-10-29](https://mixed-news.com/en/?p=38674),
-  press); we found no confirmation that units have shipped.
+  press); we could not confirm that units have shipped.
 
 ## Getting text on the display
 Declare a projected activity and start it with projected options from your phone UI. The manifest attributes and the

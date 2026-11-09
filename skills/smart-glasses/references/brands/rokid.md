@@ -41,7 +41,7 @@ reports expect global versions at CES 2027). CXR-L support for either is unverif
    recreate-the-session fallback.
 2. **Phone notification** (no SDK, works for iPhone apps too): short title and one sentence. Old notifications can
    replay for up to a minute when the glasses go back on (review). Not for live captions.
-3. **CXR-L `CUSTOM_APP` + your glasses APK (CXR-S)**: full control and touchpad input, much more work.
+3. **CXR-L `CUSTOM_APP` + your glasses APK (CXR-S)**: full control and input from the touchpad, much more work.
 4. Not phone-driven: apps that run on the glasses ([RealComputer/GlassKit](https://github.com/RealComputer/GlassKit))
    and AIUI agents in the Hi Rokid Agent Store.
 

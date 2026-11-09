@@ -53,7 +53,7 @@ Unverified points: whether the system assistant is fully suppressed, and our not
 deprecated in the SDK's own log text. Treat it as an experiment behind a setting, and tell the user that the Rokid
 assistant is blocked while your view is open.
 
-## Real touchpad input: put an app on the glasses
+## Real touchpad events: put an app on the glasses
 
 To get click, double click, long press and swipes you need code on the glasses. Two ways:
 

@@ -93,7 +93,7 @@ part of the answer.
 | Option | Public this month? | Why |
 |---|---|---|
 | USB-C display glasses (rung 3) | Yes | Ordinary Android or iOS app, no vendor SDK or approval; needs a phone with DisplayPort over USB-C ([usb-c-displays.md](brands/usb-c-displays.md)) |
-| Notifications on display glasses (rung 4) | Yes | No SDK, no approval; the user enables your app in the companion app; short text, timing you do not control |
+| Notifications on display glasses (rung 4) | Yes | No SDK, no store review; the user enables your app in the companion app; short text, timing you do not control |
 | Voice in the ear (rung 5) | Yes | Plain Bluetooth audio app; works on Ray-Ban Meta and Oakley Meta, but there is no display |
 | Rokid Glasses, CXR-L (rung 1) | Yes on Android; iOS after a Rokid step | Your own store listing, no Rokid review in the docs. iOS: the CXR-L "iOS: SDK import" page (v1.2, 2026-09-08) requires a registered Rokid developer account with your bundle ID and URL scheme |
 | Vuzix Z100, Ultralite SDK (rung 1) | App yes, existing owners only | Ordinary app on both stores, no Vuzix review, but the glasses are no longer sold: the product page showed "Sold Out" on 2026-07-10 ([archived](https://web.archive.org/web/20260710075701/https://www.vuzix.com/products/z100-smart-glasses)) and redirects since 2026-09-06, and Vuzix's Q2 2026 report cites smart glasses discontinued at the end of 2025 ([vuzix-z100.md](brands/vuzix-z100.md#publishing-and-distribution)) |

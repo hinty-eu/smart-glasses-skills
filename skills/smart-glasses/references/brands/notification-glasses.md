@@ -15,7 +15,7 @@ pages and app store listings; nobody documents exactly which third-party notific
   Elsewhere use rung 5 (your own TTS).
 - Phones: Android (companion apps use a notification listener) and iOS (glasses read Apple Notification Center Service,
   ANCS, over Bluetooth).
-- Publishing to everyone today: yes, no approval. The user must enable your app in the companion app on most brands.
+- Publishing to everyone today: yes, no store review. The user must enable your app in the companion app on most brands.
 - Test without hardware: Android XR glasses emulator shows bridged notifications. For other brands you need the glasses.
 - Official agent skill: none for this rung.
 

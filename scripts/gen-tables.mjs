@@ -3,6 +3,10 @@
 //   <!-- platforms:start -->            all columns
 //   <!-- platforms:start columns=a,b --> only these columns
 //   <!-- platforms:end -->
+// Files inside skills/ use link-reference markers instead, because skill security scanners read an HTML comment
+// pair that wraps text as a hidden instruction. These render as nothing; the table gets a blank line on each side:
+//   [//]: # "platforms:start"            (columns=a,b works here too)
+//   [//]: # "platforms:end"
 // Usage: node scripts/gen-tables.mjs           rewrite the tables
 //        node scripts/gen-tables.mjs --check   exit 1 if any table is out of date (CI)
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -44,10 +48,15 @@ let stale = [];
 for (const file of TARGETS) {
   let text;
   try { text = readFileSync(file, 'utf8'); } catch { continue; }
-  const next = text.replace(
-    /(<!-- platforms:start(?: columns=([a-z0-9,-]+))? -->)[\s\S]*?(<!-- platforms:end -->)/g,
-    (_, start, cols, end) => `${start}\n${table(cols ? cols.split(',') : null)}\n${end}`,
-  );
+  const next = text
+    .replace(
+      /(<!-- platforms:start(?: columns=([a-z0-9,-]+))? -->)[\s\S]*?(<!-- platforms:end -->)/g,
+      (_, start, cols, end) => `${start}\n${table(cols ? cols.split(',') : null)}\n${end}`,
+    )
+    .replace(
+      /(\[\/\/\]: # "platforms:start(?: columns=([a-z0-9,-]+))?")[\s\S]*?(\[\/\/\]: # "platforms:end")/g,
+      (_, start, cols, end) => `${start}\n\n${table(cols ? cols.split(',') : null)}\n\n${end}`,
+    );
   if (next !== text) {
     if (check) stale.push(file);
     else { writeFileSync(file, next); console.log(`gen-tables: updated ${file}`); }

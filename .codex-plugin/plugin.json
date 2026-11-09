@@ -13,6 +13,7 @@
     "shortDescription": "Build apps for smart glasses from any brand.",
     "developerName": "Hinty",
     "category": "Developer Tools",
-    "capabilities": ["Skills"]
+    "capabilities": ["Skills"],
+    "composerIcon": "./.claude-plugin/icon.png"
   }
 }

@@ -219,7 +219,7 @@ Summary of [display.md](references/display.md):
 ## Input, microphone, iPhone
 
 - **Taps on a custom view do not reach the phone.** You do get pause, resume, close, wearing and screen events.
-  Full touchpad input needs your own APK on the glasses. See [input.md](references/input.md).
+  Full touchpad events need your own APK on the glasses. See [input.md](references/input.md).
 - **Glasses microphone:** `startAudioStream()` delivers PCM 16 kHz, mono, 16-bit, once the session is `Started` and
   `GlassPermission.MICROPHONE` was granted. See [audio.md](references/audio.md).
 - **iPhone:** CXR-L iOS exists (`RGCxrClient` 1.1.1 on CocoaPods trunk; Rokid's sample project pins 1.1.1.1 from
@@ -270,7 +270,7 @@ More, with links: [references/troubleshooting.md](references/troubleshooting.md)
 - [setup.md](references/setup.md) - Maven, artifacts, manifest, R8, Hi Rokid Global vs China, iOS, credentials.
 - [display.md](references/display.md) - view JSON, text layout limits, update pacing, teleprompter-like flows.
 - [audio.md](references/audio.md) - glasses microphone stream, format, routing, speakers.
-- [input.md](references/input.md) - which events reach a phone app and how to get real touchpad input.
+- [input.md](references/input.md) - which events reach a phone app and how to get real touchpad events.
 - [notifications.md](references/notifications.md) - the no-SDK fallback on Android and iPhone, timing quirks.
 - [troubleshooting.md](references/troubleshooting.md) - real issues and fixes.
 

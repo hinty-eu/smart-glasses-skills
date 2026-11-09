@@ -25,7 +25,7 @@ When each rung applies:
   input from the glasses on most brands.
 - **Rung 2** when code runs on the glasses (standalone Android, Meta Web Apps) or the "glasses" are a monitor. One
   page serves several brands. Needs a network path from the glasses to your server.
-- **Rung 3** when the user plugs display glasses into the phone. No SDK, no approval, any script the phone renders.
+- **Rung 3** when the user plugs display glasses into the phone. No SDK, no store review, any script the phone renders.
 - **Rung 4** for every pair that has no usable SDK for you: alerts, answers, one caption per few seconds. Never for
   continuous live captions.
 - **Rung 5** for audio-only glasses, and as the last fallback everywhere. Short items, newest replaces older.

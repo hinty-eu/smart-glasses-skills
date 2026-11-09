@@ -33,7 +33,7 @@ reference and has not been compiled or run on glasses.
   `/plugin marketplace add https://github.com/meta/meta-wearables-webapp` + `/plugin install meta-wearables-webapp@meta-wearables`.
   Docs MCP: `https://mcp.developer.meta.com/wearables` over HTTP, no auth. Meta's `dat-docs-mcp` skill says the
   `mwdat-android` / `mwdat-ios` plugin registers it in Claude Code with no separate setup
-  ([skill](https://github.com/meta/meta-wearables-dat-android/blob/main/plugins/mwdat-android/skills/dat-docs-mcp/SKILL.md),
+  ([skill](https://github.com/meta/meta-wearables-dat-android/tree/main/plugins/mwdat-android/skills/dat-docs-mcp),
   checked 2026-11-09). Without the plugin, our own command (not from Meta's docs):
   `claude mcp add --transport http wearables-dat https://mcp.developer.meta.com/wearables`.
   **For SDK details install the official skill**; this file covers cross-brand decisions.
@@ -53,7 +53,7 @@ should also serve other web-capable glasses.
 
 ### DAT Display: flow and minimal Kotlin
 1. Maven Central: `com.meta.wearable:mwdat-core:1.0.1`, `mwdat-display:1.0.1`, debug-only `mwdat-mockdevice:1.0.1`.
-   No token since 2026-09-15; the GitHub Packages repo (personal access token, versions before 0.7.0) is obsolete
+   No token since 2026-09-15; the GitHub Packages repo (it needed a GitHub token, versions before 0.7.0) is obsolete
    ([announcement](https://github.com/meta/meta-wearables-dat-android/discussions/180)).
 2. Manifest meta-data `com.meta.wearable.mwdat.APPLICATION_ID` and `CLIENT_TOKEN`: `0` in Developer Mode, Developer
    Center values for Beta. iOS: `MWDAT` dict (`AppLinkURLScheme`, `MetaAppID`, `ClientToken`, `TeamID`), HTTPS
@@ -161,7 +161,7 @@ arrow or Enter handling of our own.
   }
   const send = (o) => ws?.readyState === WebSocket.OPEN && ws.send(JSON.stringify(o));
   function connect() {
-    ws = new WebSocket(`wss://${location.host}/ws?room=${room}`);
+    ws = new WebSocket('wss://' + location.host + '/ws?room=' + room);
     ws.onopen = () => send({ type: 'hello', target: 'meta-webapp', lines: 4, cols: 36 });
     ws.onmessage = (e) => render(JSON.parse(e.data));
     ws.onclose = () => { if (document.visibilityState === 'visible') setTimeout(connect, 2000); };
@@ -169,7 +169,7 @@ arrow or Enter handling of our own.
   // A hidden page suspends timers: drop the socket, catch up from /latest when visible again.
   document.addEventListener('visibilitychange', async () => {
     if (document.visibilityState === 'hidden') { ws?.close(); return; }
-    const r = await fetch(`/latest?room=${room}`); if (r.ok) render(await r.json());
+    const r = await fetch('/latest?room=' + room); if (r.ok) render(await r.json());
     connect();
   });
   // Arrow keys move focus between the buttons on their own; Enter (pinch or touchpad tap) clicks the focused one.

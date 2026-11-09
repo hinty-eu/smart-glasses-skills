@@ -26,7 +26,7 @@ Before any branch, make the problem visible:
 |---|---|---|---|---|
 | Even: `createStartUpPageContainer` returns 1 | Called twice, often after hot reload | Happens only after an edit | Restart the simulator or relaunch the plugin; create once per launch | [#32](https://github.com/even-realities/everything-evenhub/issues/32) |
 | Even: returns 2 or 3 | Oversize or out of memory | Count containers and text length | Max 8 text plus 4 image containers; 1000 characters on create | [even-g2.md](brands/even-g2.md#getting-text-on-the-display) |
-| Meta: `addDisplay` or `sendContent` fails | Display added before the session reached `STARTED`, or session not started by the wearer | Log session state before the call | Start from a button; add Display on `STARTED` | [meta-display.md](brands/meta-display.md#dat-display-flow-and-minimal-kotlin) |
+| Meta: `addDisplay` or `sendContent` fails | Display added before the session reached `STARTED`, or session not started by the wearer | Print the session state before the call | Start from a button; add Display on `STARTED` | [meta-display.md](brands/meta-display.md#dat-display-flow-and-minimal-kotlin) |
 | Rokid: `SESSION_NOT_STARTED` / `SESSION_PAUSED` | Sent before `onSessionStarted`, or the Rokid assistant is in front | Lifecycle log | Keep the latest text, send it on start and resume | [Rokid skill](../../smart-glasses-rokid/SKILL.md#the-core-flow) |
 | Vuzix: `requestControl` is `false` | SDK not available, glasses not linked or not connected | Check the three states in that order | Fix the first state that is false | [Vuzix troubleshooting](../../smart-glasses-vuzix/references/troubleshooting.md) |
 

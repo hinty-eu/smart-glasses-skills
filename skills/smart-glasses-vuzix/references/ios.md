@@ -2,8 +2,8 @@
 
 Last checked: 2026-11-08. Verification: docs-only (no hardware test yet). Sources: the SDK
 [README](https://github.com/Vuzix/UltraliteSDK-releases-iOS), the
-[DocC reference](https://vuzix.github.io/UltraliteSDK-releases-iOS/documentation/ultralitesdk/), the repo's
-`Package.swift` and `UltraliteSDK.podspec`, and the BSD-3-Clause [sample apps](https://github.com/Vuzix/ultralite-sdk-ios-sample).
+[DocC reference](https://vuzix.github.io/UltraliteSDK-releases-iOS/documentation/ultralitesdk/), the
+`Package.swift` and `UltraliteSDK.podspec` in that repository, and the BSD-3-Clause [sample apps](https://github.com/Vuzix/ultralite-sdk-ios-sample).
 
 ## Requirements
 

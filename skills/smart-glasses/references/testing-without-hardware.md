@@ -34,8 +34,9 @@ Brand details: [even-g2.md](brands/even-g2.md#testing-without-hardware), [meta-d
 `npm i -g @evenrealities/evenhub-simulator`, then `evenhub-simulator http://localhost:5173 --automation-port 9898`.
 Endpoints ([simulator docs](https://hub.evenrealities.com/docs/test/simulator)): `GET /api/ping`,
 `GET /api/screenshot/glasses` (576x288 RGBA, lit pixels have alpha above 0), `GET /api/screenshot/webview`,
-`GET` or `DELETE /api/console` (`?since_id=N`), `POST /api/input` with `up`, `down`, `click`, `double_click`,
-`long_press`, `long_press_release` or `context_menu`. `--aid <device>` / `--no-aid` choose the audio input.
+`GET /api/console` (`?since_id=N`), `POST /api/input` with `up`, `down`, `click`, `double_click`,
+`long_press`, `long_press_release` or `context_menu`. The console endpoint also accepts the HTTP DELETE method,
+which clears the buffer. `--aid <device>` / `--no-aid` choose the audio input.
 
 ```ts
 // Node 20+. Have the plugin log one marker line per glasses write, e.g. console.log('[glasses] ' + text).

@@ -62,7 +62,7 @@ than libraries that expect a browser
 - On G2, double tap may open the native dashboard (from earlier notes, not confirmed on today's docs); prefer single
   tap and swipes for your actions.
 - Button events need a `BUTTON` hardware requirement in the miniapp manifest, and glasses may send gesture strings
-  beyond the documented six, so treat `kind` as an open string.
+  other than the documented six, so treat `kind` as an open string.
 - The miniapp shares the microphone with the Mentra assistant and cannot suppress it
   ([#3893](https://github.com/Mentra-Community/MentraOS/issues/3893)).
 - CLI on Windows: the QR code can point to a WSL or Tailscale address the phone cannot reach, and hot reload may not

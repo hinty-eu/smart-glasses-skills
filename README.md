@@ -258,6 +258,7 @@ Agents that do not load skills can read [`AGENTS.md`](AGENTS.md), which points t
 
 The skills are plain Markdown files that your agent reads. They do not run code on install, send data anywhere or
 download anything. The examples in `examples/` are small apps you build yourself; each one says what it connects to.
+Details are in [PRIVACY.md](PRIVACY.md).
 
 ## Related projects
 

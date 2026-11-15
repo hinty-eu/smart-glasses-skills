@@ -5,6 +5,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `PRIVACY.md`: the skills collect nothing; what the live-captions example sends when you run it with a
+  speech-to-text key. Linked from the README.
+- Codex manifest (`.codex-plugin/plugin.json`): `longDescription`, `websiteURL`, `privacyPolicyURL`,
+  `termsOfServiceURL`, three `defaultPrompt` starters, `logo` and a screenshot in `assets/`, plus author contact.
+- `.codexignore`, so secrets, local build output and the evaluation material stay out of the Codex plugin.
+
 ## [1.0.1] - 2026-11-09
 
 Wording and packaging fixes. No vendor facts changed.

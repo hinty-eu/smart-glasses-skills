@@ -18,15 +18,16 @@ jobs:
       - name: Check links
         id: lychee
         uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
-        # The excluded hosts answer 403 to every automated client (npm, Cloudflare and Akamai bot walls)
-        # while the pages open fine in a browser. They were checked by hand on 2026-11-15.
+        # The excluded hosts answer 403 to automated clients or to GitHub runner addresses (npm, Cloudflare
+        # and Akamai bot walls) while the pages open fine in a browser. They were checked by hand on 2026-11-15.
+        # Keep lychee's default user agent: Meta's developer docs answer 400 to a browser user agent sent by a bot.
         with:
           args: >-
             --no-progress --max-retries 3 --accept 200,206,429
-            --user-agent "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
             --exclude "^https://www\.npmjs\.com/"
             --exclude "^https://(www\.)?cpsc\.gov/"
             --exclude "^https://www\.neowin\.net/"
+            --exclude "^https://gizmodo\.com/"
             --exclude-path LICENSE --exclude-path LICENSE-DATA
             "**/*.md" data/platforms.json
           fail: false

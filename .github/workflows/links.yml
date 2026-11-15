@@ -28,6 +28,7 @@ jobs:
             --exclude "^https://(www\.)?cpsc\.gov/"
             --exclude "^https://www\.neowin\.net/"
             --exclude "^https://gizmodo\.com/"
+            --exclude "^https://support\.evenrealities\.com/"
             --exclude-path LICENSE --exclude-path LICENSE-DATA
             "**/*.md" data/platforms.json
           fail: false

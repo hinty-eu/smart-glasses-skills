@@ -21,6 +21,10 @@ Plugin installs for each tool are under [Install for other agents](#install-for-
 Version 1.0.1, released 2026-11-09. Vendor facts were checked against their sources on 2026-11-08 and 2026-11-09.
 Nothing has been tested on real glasses yet, and every file says how it was verified.
 
+If the skill saved you time, a star helps other glasses developers find it. If you own glasses, a
+[hardware verification report](https://github.com/hinty-eu/smart-glasses-skills/issues/new?template=hardware-verification.yml)
+helps even more.
+
 ## What your agent gets
 
 - Which glasses to build for and what can ship this month, across 12 platforms, with a source and a date for every
